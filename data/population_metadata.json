@@ -1,0 +1,45 @@
+{
+  "population_size": 100000,
+  "columns": [
+    "student_id",
+    "hours_studied",
+    "sleep_hours",
+    "attendance",
+    "exam_score",
+    "individual_error"
+  ],
+  "data_generating_process": {
+    "equation": "exam_score = 20 + 5 * hours_studied + individual_error",
+    "alpha": 20.0,
+    "beta": 5.0,
+    "sigma": 5.0,
+    "hours_distribution": "Uniform(0, 10)",
+    "error_distribution": "Normal(0, 25)",
+    "seed": 20261016,
+    "sleep_hours": {
+      "description": "Hours of sleep per night; weaker linear association with exam_score than hours_studied.",
+      "seed": 20261017,
+      "typical_range": [
+        3.5,
+        10.5
+      ]
+    },
+    "attendance": {
+      "description": "Class attendance (%); weaker linear association with exam_score than hours_studied.",
+      "seed": 20261018,
+      "typical_range": [
+        40.0,
+        100.0
+      ],
+      "unit": "percent"
+    }
+  },
+  "population_ols": {
+    "alpha": 20.01791846557687,
+    "beta": 4.99415149517876,
+    "r_squared": 0.8922060513623992,
+    "sse": 2506887.8501675054
+  },
+  "sha256": "bb9b9342058a5665bc0d55c4cd572af542426f6554efcde77a227f07aeca03a1",
+  "notes": "Sampling experiments benchmark estimates against population_ols, the ordinary least squares fit on this fixed file. The generating values alpha=20, beta=5 and sigma=5 describe how the file was created; they are not the sampling benchmark. Scores are not clipped."
+}

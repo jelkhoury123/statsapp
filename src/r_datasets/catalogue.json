@@ -1,0 +1,79 @@
+{
+  "mtcars": {
+    "short_name": "mtcars",
+    "description": "Motor Trend car road tests (32 automobiles, 1973–74).",
+    "default_x": "wt",
+    "default_y": "mpg",
+    "numeric": ["mpg", "cyl", "disp", "hp", "drat", "wt", "qsec", "vs", "am", "gear", "carb"]
+  },
+  "cars": {
+    "short_name": "cars",
+    "description": "Speed and stopping distances of cars (1920s).",
+    "default_x": "speed",
+    "default_y": "dist",
+    "numeric": ["speed", "dist"]
+  },
+  "women": {
+    "short_name": "women",
+    "description": "Average height and weight for American women aged 30–39.",
+    "default_x": "height",
+    "default_y": "weight",
+    "numeric": ["height", "weight"]
+  },
+  "faithful": {
+    "short_name": "faithful",
+    "description": "Old Faithful geyser eruption duration and waiting time.",
+    "default_x": "eruptions",
+    "default_y": "waiting",
+    "numeric": ["eruptions", "waiting"]
+  },
+  "airquality": {
+    "short_name": "airquality",
+    "description": "New York air quality measurements (May–September 1973). Contains missing values.",
+    "default_x": "Temp",
+    "default_y": "Ozone",
+    "numeric": ["Ozone", "Solar.R", "Wind", "Temp", "Month", "Day"]
+  },
+  "swiss": {
+    "short_name": "swiss",
+    "description": "Swiss fertility and socioeconomic indicators (1888).",
+    "default_x": "Education",
+    "default_y": "Fertility",
+    "numeric": ["Fertility", "Agriculture", "Examination", "Education", "Catholic", "Infant.Mortality"]
+  },
+  "iris": {
+    "short_name": "iris",
+    "description": "Edgar Anderson's iris flower measurements (Species excluded from X/Y).",
+    "default_x": "Petal.Length",
+    "default_y": "Sepal.Length",
+    "numeric": ["Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width"]
+  },
+  "pressure": {
+    "short_name": "pressure",
+    "description": "Vapor pressure of mercury as a function of temperature.",
+    "default_x": "temperature",
+    "default_y": "pressure",
+    "numeric": ["temperature", "pressure"]
+  },
+  "trees": {
+    "short_name": "trees",
+    "description": "Girth, height and volume for black cherry trees.",
+    "default_x": "Girth",
+    "default_y": "Volume",
+    "numeric": ["Girth", "Height", "Volume"]
+  },
+  "quakes": {
+    "short_name": "quakes",
+    "description": "Locations of seismic events near Fiji.",
+    "default_x": "depth",
+    "default_y": "mag",
+    "numeric": ["lat", "long", "depth", "mag", "stations"]
+  },
+  "rock": {
+    "short_name": "rock",
+    "description": "Measurements on petroleum rock samples.",
+    "default_x": "area",
+    "default_y": "perm",
+    "numeric": ["area", "peri", "shape", "perm"]
+  }
+}
