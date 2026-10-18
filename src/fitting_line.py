@@ -717,6 +717,61 @@ def r_lm_summary_text(
     return "\n".join(lines)
 
 
+def lm_summary_stats(x: np.ndarray, y: np.ndarray) -> dict:
+    """Raw summary(lm(...)) figures for the current sample — same formulas as
+    ``r_lm_summary_text``, exposed as numbers for UI panels that need to
+    reference individual values (rather than the console-text block)."""
+    from scipy import stats
+
+    x_values = np.asarray(x, dtype=np.float64)
+    y_values = np.asarray(y, dtype=np.float64)
+    n = int(x_values.size)
+    ols = fit_ols(x_values, y_values)
+    empty = {
+        "n": n, "df": max(n - 2, 0), "alpha": float("nan"), "beta": float("nan"),
+        "se_alpha": float("nan"), "se_beta": float("nan"),
+        "t_alpha": float("nan"), "t_beta": float("nan"),
+        "p_alpha": float("nan"), "p_beta": float("nan"),
+        "sigma": float("nan"), "r2": float("nan"), "adj_r2": float("nan"),
+        "f_stat": float("nan"), "f_p": float("nan"),
+    }
+    if n < 3 or ols.degenerate or not np.isfinite(ols.sse):
+        return empty
+
+    df = n - 2
+    sigma = residual_standard_error(ols.sse, n)
+    x_mean = float(np.mean(x_values))
+    sxx = float(np.dot(x_values - x_mean, x_values - x_mean))
+    if sxx <= 0 or not np.isfinite(sigma):
+        return empty
+
+    se_beta = float(sigma / np.sqrt(sxx))
+    se_alpha = float(sigma * np.sqrt((1.0 / n) + (x_mean * x_mean) / sxx))
+    t_alpha = float(ols.alpha / se_alpha)
+    t_beta = float(ols.beta / se_beta)
+    p_alpha = float(2.0 * stats.t.sf(abs(t_alpha), df))
+    p_beta = float(2.0 * stats.t.sf(abs(t_beta), df))
+
+    y_mean = float(np.mean(y_values))
+    sst = float(np.dot(y_values - y_mean, y_values - y_mean))
+    ssr = max(sst - float(ols.sse), 0.0)
+    r2 = float("nan") if sst <= 0 else float(1.0 - float(ols.sse) / sst)
+    adj_r2 = (
+        float("nan") if not np.isfinite(r2) else float(1.0 - (1.0 - r2) * (n - 1) / df)
+    )
+    f_stat = float((ssr / 1.0) / (float(ols.sse) / df)) if ols.sse > 0 else float("inf")
+    f_p = float(stats.f.sf(f_stat, 1, df)) if np.isfinite(f_stat) else 0.0
+
+    return {
+        "n": n, "df": df, "alpha": float(ols.alpha), "beta": float(ols.beta),
+        "se_alpha": se_alpha, "se_beta": se_beta,
+        "t_alpha": t_alpha, "t_beta": t_beta,
+        "p_alpha": p_alpha, "p_beta": p_beta,
+        "sigma": float(sigma), "r2": r2, "adj_r2": adj_r2,
+        "f_stat": f_stat, "f_p": f_p,
+    }
+
+
 def best_intercept_for_slope(hours: np.ndarray, scores: np.ndarray, beta: float) -> float:
     """Intercept that minimises SSE for a fixed slope."""
     return float(np.mean(scores) - float(beta) * np.mean(hours))

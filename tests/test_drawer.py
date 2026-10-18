@@ -258,7 +258,9 @@ def test_main_lab_tabs_cover_every_section():
 
     keys = [key for key, _ in MAIN_LAB_TABS]
     assert keys == [
+        "journey",
         "fitting",
+        "correlation",
         "sampling",
         "library",
     ]

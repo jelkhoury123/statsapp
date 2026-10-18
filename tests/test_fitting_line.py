@@ -741,7 +741,7 @@ def test_hats_match_ols_tolerance():
 
 
 def test_fit_metric_label_html_includes_ssr_r2_relation():
-    from app import _fit_metric_label_html, _fit_r2_range_label_html
+    from app import _fit_metric_label_html, _fit_metric_value_html
     from src.stat_tips import tip_html, tipify
 
     ssr = _fit_metric_label_html("SSR")
@@ -758,11 +758,9 @@ def test_fit_metric_label_html_includes_ssr_r2_relation():
     assert "↑" not in r2
     assert "minimizes SSR" in r2
 
-    rng = _fit_r2_range_label_html(0.501, 0.884)
-    assert "50.1%" in rng
-    assert "88.4%" in rng
-    assert "→" in rng
-    assert "fit-metric-r2-range" in rng
+    val = _fit_metric_value_html("88.4%")
+    assert "88.4%" in val
+    assert "fit-metric-value" in val
 
     tip = tip_html("SSR")
     assert tip.count('class="stat-tip"') == 1

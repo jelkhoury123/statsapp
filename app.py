@@ -71,6 +71,7 @@ from src.fitting_line import (
     animation_metric_trajectories,
     animation_steps,
     interactive_n_cap,
+    lm_summary_stats,
     ols_fit,
     poor_candidate_line,
     predicted_scores,
@@ -142,7 +143,9 @@ SAMPLE_SIZES = [10, 20, 30, 50, 100, 200, 500, 1000, 5000]
 
 # Main lab navigation (keys are stable; labels match the former st.tabs titles).
 MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
+    ("journey", "The Statistical Journey"),
     ("fitting", "Simple Linear Regression"),
+    ("correlation", "Correlation & Causation"),
     ("sampling", "Sampling & Inference"),
     ("library", "Dataset Library"),
 )
@@ -873,12 +876,53 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   margin: 0.05rem 0 0 0; text-align: center;
   font-size: 0.74rem; color: #64748B; line-height: 1.15rem;
 }
+.fit-why-lesson { margin: 0; padding: 0.75rem 0 0 0; }
+.fit-why-lesson .points {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start; gap: 0 1rem;
+  margin: 0 0 1.75rem 0;
+}
+@media (max-width: 700px) {
+  .fit-why-lesson .points { grid-template-columns: 1fr; gap: 0.5rem; }
+}
+.fit-why-lesson .point {
+  padding: 0.1rem 0 0.1rem 0.6rem; border-left: 3px solid transparent;
+  transition: border-color 0.5s ease;
+}
+.fit-why-lesson .point .lab {
+  margin: 0 0 0.2rem 0; font-size: 1rem; font-weight: 700;
+  color: #475569; line-height: 1.45; transition: color 0.5s ease;
+}
+.fit-why-lesson .point .txt {
+  margin: 0; font-size: 0.95rem; color: #52606D; line-height: 1.5;
+  transition: color 0.5s ease;
+}
+.fit-why-lesson .point.active { border-left-color: #EA580C; }
+.fit-why-lesson .point.active .lab { color: #C2410C; }
+.fit-why-lesson .point.active .txt { color: #1F2933; }
+.fit-why-eq-caption {
+  margin: 0.35rem 0 0 0; text-align: center;
+  font-size: 0.85rem; color: #52606D; line-height: 1.4;
+}
+.st-key-fit_why_eq_slot, .st-key-fit_why_eq_slot_empty {
+  min-height: 5.5rem;
+}
 .fit-caption { margin: 0; font-size: 0.74rem; color: #7B8794; }
 .fit-sample-n { margin: 0; font-size: 0.78rem; color: #374151; font-variant-numeric: tabular-nums; }
 .fit-sample-n .cap { color: #9B6B2F; }
 .st-key-fit_lab_tabs {
   margin: 0;
   padding: 0;
+}
+.st-key-fit_rcode_toggle_wrap { display: flex; justify-content: flex-end; }
+.st-key-fit_rcode_toggle_wrap button {
+  font-size: 0.74rem !important; font-weight: 600 !important;
+  color: #64748B !important; padding: 0.15rem 0.5rem !important;
+  min-height: 0 !important; border-color: #E2E8F0 !important;
+}
+.st-key-fit_rcode_slot {
+  margin: 0.4rem 0 0.1rem 0; padding: 0.5rem 0.65rem;
+  background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px;
 }
 /* Fit toolbar: one st.columns row — no forced widths / wrap / scroll. */
 .st-key-fit_toolbar {
@@ -942,20 +986,6 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   margin: 0 !important;
   width: fit-content !important;
 }
-.st-key-fit_rcode_wrap {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-.st-key-fit_rcode_wrap [data-testid="stPopover"] button {
-  width: 85px !important;
-  min-width: 85px !important;
-  max-width: 85px !important;
-  white-space: nowrap !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  padding-left: 0.45rem !important;
-  padding-right: 0.35rem !important;
-}
 .st-key-fit_metrics_box {
   margin: 0 !important;
   padding: 6px !important;
@@ -993,20 +1023,15 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.fit-metric-r2-range {
+.fit-metric-value {
   margin: 0 0 1px 0;
-  height: 0.9rem;
-  font-size: 0.72rem;
-  line-height: 0.9rem;
-  font-weight: 600;
-  color: #64748B;
+  height: 1rem;
+  font-size: 0.86rem;
+  line-height: 1rem;
+  font-weight: 780;
+  color: #0F172A;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-.fit-metric-r2-spacer {
-  visibility: hidden;
-  pointer-events: none;
-  user-select: none;
 }
 .stat-tip {
   position: relative; display: inline; cursor: help;
@@ -1328,20 +1353,55 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   font-size: 1.05rem; font-weight: 750; color: #0F172A;
   line-height: 1.35rem;
 }
+.fit-build-question {
+  margin: 0 0 0.15rem 0;
+  font-size: 1.1rem; font-weight: 750; color: #0F172A; line-height: 1.4rem;
+}
+.fit-build-objective {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.85rem; color: #52606D; line-height: 1.4rem;
+}
+.fit-build-results {
+  display: flex; gap: 1.5rem; justify-content: center;
+  margin: 0.6rem 0 0.4rem 0; padding: 0.5rem 0;
+}
+.fit-build-results .metric { text-align: center; }
+.fit-build-results .metric .k {
+  margin: 0; font-size: 0.72rem; font-weight: 780; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #64748B;
+}
+.fit-build-results .metric .v {
+  margin: 0; font-size: 1.5rem; font-weight: 780; color: #1D4ED8;
+  font-variant-numeric: tabular-nums;
+}
+.st-key-fit_build_prompt_slot { min-height: 4.8rem; }
+.fit-build-prompt {
+  margin: 0 0 0.5rem 0; padding: 0.45rem 0.65rem;
+  background: #F8FAFC; border-left: 3px solid #93C5FD; border-radius: 6px;
+}
+.fit-build-prompt.success {
+  background: #F0FDF4; border-left-color: #86EFAC;
+}
+.fit-build-prompt .title {
+  margin: 0 0 0.1rem 0; font-size: 0.86rem; font-weight: 700; color: #1E3A8A;
+}
+.fit-build-prompt.success .title { color: #15803D; }
+.fit-build-prompt .body {
+  margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.3rem;
+}
 .fit-std-banner {
-  margin: 0 0 0.35rem 0; padding: 0.4rem 0.65rem;
-  background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;
-  font-size: 0.92rem; font-weight: 750; color: #1E3A8A; line-height: 1.3rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem; font-weight: 400; color: #334155; line-height: 1.4rem;
 }
 .fit-std-insight {
-  margin: 0.25rem 0 0.15rem 0; padding: 0.4rem 0.6rem;
-  background: #EFF6FF; border: 1px solid #93C5FD; border-radius: 8px;
-  font-size: 0.88rem; font-weight: 700; color: #1E3A8A; line-height: 1.3rem;
+  margin: 0.3rem 0 0.2rem 0; padding: 0.3rem 0 0.3rem 0.65rem;
+  border-left: 2px solid #CBD5E1;
+  font-size: 0.88rem; font-weight: 400; color: #334155; line-height: 1.35rem;
 }
-.fit-std-insight b { color: #1D4ED8; font-weight: 820; }
+.fit-std-insight b { color: #1E293B; font-weight: 650; }
 .fit-std-note {
-  margin: 0.1rem 0 0.2rem 0; font-size: 0.84rem; font-weight: 650;
-  color: #475569; line-height: 1.25rem;
+  margin: 0.15rem 0 0.3rem 0; font-size: 0.78rem; font-weight: 400;
+  color: #64748B; line-height: 1.2rem;
 }
 .fit-std-formula-pane {
   margin: 0; padding: 0.35rem 0.45rem 0.2rem;
@@ -1364,7 +1424,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   font-size: 0.84rem; color: #0F172A; line-height: 1.25rem;
   font-variant-numeric: tabular-nums;
 }
-.fit-std-slope b { color: #1D4ED8; font-weight: 780; }
+.fit-std-slope b { color: #1E293B; font-weight: 650; }
 .fit-std-how {
   margin: 0.2rem 0 0.15rem 0; padding: 0.4rem 0.55rem;
   background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
@@ -1419,28 +1479,104 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .fit-r2-lesson .note {
   margin: 0.15rem 0 0 0; font-size: 0.82rem; color: #64748B; line-height: 1.3rem;
 }
+.fit-r2-math-heading {
+  margin: 0.4rem 0 0.1rem 0; font-size: 0.72rem; font-weight: 780;
+  letter-spacing: 0.06em; text-transform: uppercase; color: #64748B;
+}
+.fit-r2-math-heading:first-child { margin-top: 0; }
+.fit-rout-snippet {
+  margin: 0 0 0.4rem 0; padding: 0.4rem 0.55rem;
+  background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 7px;
+  font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+  font-size: 0.78rem; color: #78350F; white-space: pre-wrap;
+  font-variant-numeric: tabular-nums; line-height: 1.3rem;
+}
+.fit-rout-console {
+  margin: 0 !important; padding: 0.65rem 0.75rem !important;
+  background: #F1F5F9 !important; border: 1px solid #E2E8F0; border-radius: 8px;
+  font-family: "SFMono-Regular", Consolas, Menlo, monospace !important;
+  font-size: 0.78rem !important; line-height: 1.3rem !important; color: #1F2933;
+  white-space: pre !important; overflow-x: auto !important;
+  tab-size: 4; -moz-tab-size: 4;
+  word-break: normal !important; word-wrap: normal !important;
+}
+.fit-rout-console .hl {
+  background: #FDE68A; color: #78350F; border-radius: 3px;
+  padding: 0 0.1rem; font-weight: 700; white-space: pre;
+}
+.st-key-fit_r2_math { margin: 0; }
+.st-key-fit_r2_math [data-testid="stElementContainer"] {
+  margin: 0 !important;
+}
+.st-key-fit_r2_math p {
+  margin: 0.1rem 0 !important; font-size: 0.84rem; color: #334155;
+  line-height: 1.25rem;
+}
+.st-key-fit_r2_math .katex-display {
+  margin: 0.1rem 0 !important;
+}
+.st-key-fit_r2_math .katex { font-size: 0.92em; }
 .fit-r2-lesson .metrics {
   display: flex; flex-wrap: wrap; gap: 0.55rem 1.1rem; margin: 0.2rem 0 0.35rem 0;
   font-size: 0.9rem; font-variant-numeric: tabular-nums; color: #0F172A;
 }
 .fit-r2-lesson .metrics b { font-weight: 780; }
+.fit-r2-lesson .takeaway {
+  margin: 0.5rem 0 0 0; padding: 0.45rem 0.65rem;
+  background: #EFF6FF; border-left: 3px solid #93C5FD; border-radius: 6px;
+}
+.fit-r2-lesson .takeaway .lab {
+  margin: 0 0 0.1rem 0; font-size: 0.72rem; font-weight: 780;
+  letter-spacing: 0.06em; text-transform: uppercase; color: #1D4ED8;
+}
+.fit-r2-lesson .takeaway p {
+  margin: 0; font-size: 0.88rem; color: #1E3A8A; line-height: 1.35rem;
+}
+.fit-r2-lesson .compare {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.9rem;
+  margin: 0.2rem 0 0.5rem 0;
+}
+@media (max-width: 700px) {
+  .fit-r2-lesson .compare { grid-template-columns: 1fr; gap: 0.5rem 0; }
+}
+.fit-r2-lesson .compare .col { padding: 0.1rem 0; }
+.fit-r2-lesson .compare .col .h {
+  margin: 0 0 0.2rem 0; font-size: 0.74rem; font-weight: 780;
+  letter-spacing: 0.04em; text-transform: uppercase; color: #64748B;
+}
+.fit-r2-lesson .compare .col p:not(.h):not(.formula) {
+  margin: 0 0 0.3rem 0; font-size: 0.86rem; color: #334155; line-height: 1.3rem;
+}
+.fit-r2-lesson .result {
+  margin: 0.3rem 0 0 0; padding: 0.55rem 0.7rem;
+  background: #F0FDF4; border-left: 3px solid #86EFAC; border-radius: 6px;
+  text-align: center;
+}
+.fit-r2-lesson .result p {
+  margin: 0 0 0.15rem 0; font-size: 0.88rem; color: #166534; line-height: 1.35rem;
+}
+.fit-r2-lesson .result p.big {
+  margin: 0; font-size: 1.15rem; font-weight: 780; color: #15803D;
+}
 .fit-r2-bar {
   display: flex; width: 100%; height: 1.4rem; border-radius: 7px;
-  overflow: hidden; margin: 0.35rem 0 0.4rem 0; background: #E2E8F0;
+  margin: 0.35rem 0 0.4rem 0; background: #E2E8F0;
 }
 .fit-r2-bar .explained {
   background: #3B82F6; color: white; font-size: 0.72rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  font-variant-numeric: tabular-nums; min-width: 0;
+  font-variant-numeric: tabular-nums; white-space: nowrap; padding: 0 0.35rem;
+  border-radius: 7px 0 0 7px;
 }
 .fit-r2-bar .unexplained {
   background: #94A3B8; color: white; font-size: 0.72rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  font-variant-numeric: tabular-nums; min-width: 0;
+  font-variant-numeric: tabular-nums; white-space: nowrap; padding: 0 0.35rem;
+  border-radius: 0 7px 7px 0;
 }
 .fit-r2-compare {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem;
-  margin: 0.35rem 0 0.2rem 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.45rem; margin: 0.35rem 0 0.2rem 0;
 }
 @media (max-width: 900px) {
   .fit-r2-compare { grid-template-columns: 1fr; }
@@ -1459,21 +1595,6 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 }
 .fit-r2-card .val b { font-weight: 780; }
 .fit-r2-card.best { border-color: #FDBA74; background: #FFF7ED; }
-.fit-r2-conclusion {
-  margin: 0.45rem 0 0.25rem 0; padding: 0.5rem 0.65rem;
-  background: #FFF7ED; border: 1px solid #FDBA74; border-radius: 8px;
-}
-.fit-r2-conclusion .q {
-  margin: 0 0 0.25rem 0; font-size: 0.88rem; font-weight: 780; color: #9A3412;
-  line-height: 1.3rem;
-}
-.fit-r2-conclusion .a {
-  margin: 0 0 0.3rem 0; font-size: 0.84rem; color: #334155; line-height: 1.35rem;
-}
-.fit-r2-conclusion .takeaway {
-  margin: 0.3rem 0 0 0; font-size: 0.88rem; font-weight: 800; color: #9A3412;
-  line-height: 1.35rem;
-}
 .fit-r2-warn {
   margin: 0.3rem 0 0 0; font-size: 0.84rem; color: #9A3412; line-height: 1.35rem;
 }
@@ -1587,6 +1708,400 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     }
     .st-key-one_scatter, .st-key-one_alpha, .st-key-one_beta { height: auto !important; }
 }
+.journey-hero {
+  margin: 0 0 0.45rem 0;
+}
+.journey-hero h1 {
+  margin: 0 0 0.14rem 0;
+  font-size: 1.4rem; font-weight: 780; color: #0F172A; line-height: 1.55rem;
+}
+.journey-hero .journey-lead {
+  margin: 0; max-width: 42rem;
+  font-size: 0.9rem; font-weight: 550; color: #475569; line-height: 1.3rem;
+}
+.journey-hero .journey-hint {
+  margin: 0.2rem 0 0 0; max-width: 42rem;
+  font-size: 0.78rem; font-weight: 550; color: #94A3B8; line-height: 1.15rem;
+}
+.st-key-journey_card_build,
+.st-key-journey_card_why,
+.st-key-journey_card_use,
+.st-key-journey_card_evaluate,
+.st-key-journey_card_test,
+.st-key-journey_card_improve,
+.st-key-journey_card_interpret ,
+.st-key-journey_card_question {
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0.55rem 0.65rem 0.45rem !important;
+  min-height: 16.5rem !important;
+  height: 100% !important;
+  border-radius: 12px !important;
+  border: 1px solid #E2E8F0 !important;
+  background: #FFFFFF !important;
+  cursor: pointer !important;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.st-key-journey_card_build:hover,
+.st-key-journey_card_why:hover,
+.st-key-journey_card_use:hover,
+.st-key-journey_card_evaluate:hover,
+.st-key-journey_card_test:hover,
+.st-key-journey_card_improve:hover,
+.st-key-journey_card_interpret:hover ,
+.st-key-journey_card_question:hover {
+  border-color: #93C5FD !important;
+  box-shadow: 0 5px 16px rgba(29, 78, 216, 0.12);
+  transform: translateY(-2px) !important;
+}
+.st-key-journey_card_build:has(.journey-is-front),
+.st-key-journey_card_why:has(.journey-is-front),
+.st-key-journey_card_use:has(.journey-is-front),
+.st-key-journey_card_evaluate:has(.journey-is-front),
+.st-key-journey_card_test:has(.journey-is-front),
+.st-key-journey_card_improve:has(.journey-is-front),
+.st-key-journey_card_interpret:has(.journey-is-front) ,
+.st-key-journey_card_question:has(.journey-is-front) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 100%) !important;
+}
+.st-key-journey_card_build:has(.journey-is-back),
+.st-key-journey_card_why:has(.journey-is-back),
+.st-key-journey_card_use:has(.journey-is-back),
+.st-key-journey_card_evaluate:has(.journey-is-back) {
+  background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 100%) !important;
+  border-color: #93C5FD !important;
+}
+.st-key-journey_card_test:has(.journey-is-back),
+.st-key-journey_card_improve:has(.journey-is-back),
+.st-key-journey_card_interpret:has(.journey-is-back) ,
+.st-key-journey_card_question:has(.journey-is-back) {
+  background: linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 100%) !important;
+  border-color: #FDBA74 !important;
+}
+.st-key-journey_card_build:has(.journey-is-front),
+.st-key-journey_card_why:has(.journey-is-front),
+.st-key-journey_card_use:has(.journey-is-front),
+.st-key-journey_card_evaluate:has(.journey-is-front) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 100%) !important;
+}
+.st-key-journey_card_test:has(.journey-is-front),
+.st-key-journey_card_improve:has(.journey-is-front),
+.st-key-journey_card_interpret:has(.journey-is-front) ,
+.st-key-journey_card_question:has(.journey-is-front) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFAF5 100%) !important;
+}
+@keyframes journeyFlipIn {
+  from { transform: rotateY(88deg); opacity: 0.35; }
+  to { transform: rotateY(0deg); opacity: 1; }
+}
+.st-key-journey_card_build:has(.journey-is-back),
+.st-key-journey_card_why:has(.journey-is-back),
+.st-key-journey_card_use:has(.journey-is-back),
+.st-key-journey_card_evaluate:has(.journey-is-back),
+.st-key-journey_card_test:has(.journey-is-back),
+.st-key-journey_card_improve:has(.journey-is-back),
+.st-key-journey_card_interpret:has(.journey-is-back) ,
+.st-key-journey_card_question:has(.journey-is-back) {
+  animation: journeyFlipIn 0.35s ease;
+}
+.journey-stage { margin: 0; }
+.journey-stage-title {
+  margin: 0 0 0.1rem 0;
+  font-size: 0.84rem; font-weight: 800; letter-spacing: 0.06em;
+  color: #0F172A; line-height: 1.1rem;
+}
+.journey-phase-build .journey-stage-title { color: #1E3A8A; }
+.journey-phase-eval .journey-stage-title { color: #9A3412; }
+.journey-stage-q {
+  margin: 0 0 0.2rem 0;
+  font-size: 0.92rem; font-weight: 650; color: #1F2933; line-height: 1.2rem;
+  min-height: 2.4rem;
+}
+.journey-back {
+  display: flex; flex-direction: column;
+  min-height: 11.5rem;
+}
+.journey-back .journey-back-body {
+  margin: 0.45rem 0 0.7rem 0;
+  font-size: 0.88rem; font-weight: 550; color: #334155; line-height: 1.35rem;
+  flex: 1 1 auto;
+}
+.journey-back .journey-key-concepts {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.74rem; font-weight: 550; color: #64748B; line-height: 1.15rem;
+}
+.journey-back .journey-key-concepts span {
+  font-weight: 700; color: #94A3B8; letter-spacing: 0.02em;
+}
+.st-key-journey_card_build:has(.journey-is-back),
+.st-key-journey_card_why:has(.journey-is-back),
+.st-key-journey_card_use:has(.journey-is-back),
+.st-key-journey_card_evaluate:has(.journey-is-back),
+.st-key-journey_card_test:has(.journey-is-back),
+.st-key-journey_card_improve:has(.journey-is-back),
+.st-key-journey_card_interpret:has(.journey-is-back) ,
+.st-key-journey_card_question:has(.journey-is-back) {
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.st-key-journey_card_build:has(.journey-is-back) .st-key-journey_explore_build,
+.st-key-journey_card_why:has(.journey-is-back) .st-key-journey_explore_why,
+.st-key-journey_card_use:has(.journey-is-back) .st-key-journey_explore_use,
+.st-key-journey_card_evaluate:has(.journey-is-back) .st-key-journey_explore_evaluate,
+.st-key-journey_card_test:has(.journey-is-back) .st-key-journey_explore_test,
+.st-key-journey_card_improve:has(.journey-is-back) .st-key-journey_explore_improve,
+.st-key-journey_card_interpret:has(.journey-is-back) .st-key-journey_explore_interpret ,
+.st-key-journey_card_question:has(.journey-is-back) .st-key-journey_explore_question {
+  margin-top: auto !important;
+}
+/* Charts must not steal clicks from the flip overlay. */
+.st-key-journey_card_build .stPlotlyChart,
+.st-key-journey_card_why .stPlotlyChart,
+.st-key-journey_card_use .stPlotlyChart,
+.st-key-journey_card_evaluate .stPlotlyChart,
+.st-key-journey_card_test .stPlotlyChart,
+.st-key-journey_card_improve .stPlotlyChart,
+.st-key-journey_card_interpret .stPlotlyChart,
+.st-key-journey_card_question .stPlotlyChart,
+.st-key-journey_card_build .js-plotly-plot,
+.st-key-journey_card_why .js-plotly-plot,
+.st-key-journey_card_use .js-plotly-plot,
+.st-key-journey_card_evaluate .js-plotly-plot,
+.st-key-journey_card_test .js-plotly-plot,
+.st-key-journey_card_improve .js-plotly-plot,
+.st-key-journey_card_interpret .js-plotly-plot,
+.st-key-journey_card_question .js-plotly-plot,
+.st-key-journey_card_build iframe,
+.st-key-journey_card_why iframe,
+.st-key-journey_card_use iframe,
+.st-key-journey_card_evaluate iframe,
+.st-key-journey_card_test iframe,
+.st-key-journey_card_improve iframe,
+.st-key-journey_card_interpret iframe ,
+.st-key-journey_card_question iframe {
+  pointer-events: none !important;
+}
+/* Full-card flip / unflip hit target — button must fill the card, not sit at 22px. */
+.st-key-journey_flip_build,
+.st-key-journey_flip_why,
+.st-key-journey_flip_use,
+.st-key-journey_flip_evaluate,
+.st-key-journey_flip_test,
+.st-key-journey_flip_improve,
+.st-key-journey_flip_interpret,
+.st-key-journey_flip_question,
+.st-key-journey_unflip_build,
+.st-key-journey_unflip_why,
+.st-key-journey_unflip_use,
+.st-key-journey_unflip_evaluate,
+.st-key-journey_unflip_test,
+.st-key-journey_unflip_improve,
+.st-key-journey_unflip_interpret ,
+.st-key-journey_unflip_question {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 20 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+}
+.st-key-journey_flip_build > div,
+.st-key-journey_flip_why > div,
+.st-key-journey_flip_use > div,
+.st-key-journey_flip_evaluate > div,
+.st-key-journey_flip_test > div,
+.st-key-journey_flip_improve > div,
+.st-key-journey_flip_interpret > div,
+.st-key-journey_flip_question > div,
+.st-key-journey_unflip_build > div,
+.st-key-journey_unflip_why > div,
+.st-key-journey_unflip_use > div,
+.st-key-journey_unflip_evaluate > div,
+.st-key-journey_unflip_test > div,
+.st-key-journey_unflip_improve > div,
+.st-key-journey_unflip_interpret > div,
+.st-key-journey_unflip_question > div,
+.st-key-journey_flip_build [data-testid="stButton"],
+.st-key-journey_flip_why [data-testid="stButton"],
+.st-key-journey_flip_use [data-testid="stButton"],
+.st-key-journey_flip_evaluate [data-testid="stButton"],
+.st-key-journey_flip_test [data-testid="stButton"],
+.st-key-journey_flip_improve [data-testid="stButton"],
+.st-key-journey_flip_interpret [data-testid="stButton"],
+.st-key-journey_flip_question [data-testid="stButton"],
+.st-key-journey_unflip_build [data-testid="stButton"],
+.st-key-journey_unflip_why [data-testid="stButton"],
+.st-key-journey_unflip_use [data-testid="stButton"],
+.st-key-journey_unflip_evaluate [data-testid="stButton"],
+.st-key-journey_unflip_test [data-testid="stButton"],
+.st-key-journey_unflip_improve [data-testid="stButton"],
+.st-key-journey_unflip_interpret [data-testid="stButton"] ,
+.st-key-journey_unflip_question [data-testid="stButton"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.st-key-journey_flip_build button,
+.st-key-journey_flip_why button,
+.st-key-journey_flip_use button,
+.st-key-journey_flip_evaluate button,
+.st-key-journey_flip_test button,
+.st-key-journey_flip_improve button,
+.st-key-journey_flip_interpret button,
+.st-key-journey_flip_question button,
+.st-key-journey_unflip_build button,
+.st-key-journey_unflip_why button,
+.st-key-journey_unflip_use button,
+.st-key-journey_unflip_evaluate button,
+.st-key-journey_unflip_test button,
+.st-key-journey_unflip_improve button,
+.st-key-journey_unflip_interpret button ,
+.st-key-journey_unflip_question button {
+  position: absolute !important;
+  inset: 0 !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  cursor: pointer !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.001) !important;
+  color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+/* Back: visible lesson CTA above the unflip hit area */
+.st-key-journey_explore_build,
+.st-key-journey_explore_why,
+.st-key-journey_explore_use,
+.st-key-journey_explore_evaluate,
+.st-key-journey_explore_test,
+.st-key-journey_explore_improve,
+.st-key-journey_explore_interpret ,
+.st-key-journey_explore_question {
+  position: relative !important;
+  z-index: 30 !important;
+  margin-top: 0.15rem !important;
+  width: fit-content !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+.st-key-journey_explore_build > div,
+.st-key-journey_explore_why > div,
+.st-key-journey_explore_use > div,
+.st-key-journey_explore_evaluate > div,
+.st-key-journey_explore_test > div,
+.st-key-journey_explore_improve > div,
+.st-key-journey_explore_interpret > div,
+.st-key-journey_explore_question > div,
+.st-key-journey_explore_build [data-testid="stButton"],
+.st-key-journey_explore_why [data-testid="stButton"],
+.st-key-journey_explore_use [data-testid="stButton"],
+.st-key-journey_explore_evaluate [data-testid="stButton"],
+.st-key-journey_explore_test [data-testid="stButton"],
+.st-key-journey_explore_improve [data-testid="stButton"],
+.st-key-journey_explore_interpret [data-testid="stButton"] ,
+.st-key-journey_explore_question [data-testid="stButton"] {
+  position: relative !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+.st-key-journey_explore_build button,
+.st-key-journey_explore_why button,
+.st-key-journey_explore_use button,
+.st-key-journey_explore_evaluate button,
+.st-key-journey_explore_test button,
+.st-key-journey_explore_improve button,
+.st-key-journey_explore_interpret button ,
+.st-key-journey_explore_question button {
+  position: relative !important;
+  inset: auto !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 2.25rem !important;
+  cursor: pointer !important;
+  background: #1D4ED8 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.st-key-journey_explore_build button p,
+.st-key-journey_explore_why button p,
+.st-key-journey_explore_use button p,
+.st-key-journey_explore_evaluate button p,
+.st-key-journey_explore_test button p,
+.st-key-journey_explore_improve button p,
+.st-key-journey_explore_interpret button p,
+.st-key-journey_explore_question button p,
+.st-key-journey_explore_build button span,
+.st-key-journey_explore_why button span,
+.st-key-journey_explore_use button span,
+.st-key-journey_explore_evaluate button span,
+.st-key-journey_explore_test button span,
+.st-key-journey_explore_improve button span,
+.st-key-journey_explore_interpret button span ,
+.st-key-journey_explore_question button span {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+.st-key-journey_explore_build button:hover,
+.st-key-journey_explore_why button:hover,
+.st-key-journey_explore_use button:hover,
+.st-key-journey_explore_evaluate button:hover,
+.st-key-journey_explore_test button:hover,
+.st-key-journey_explore_improve button:hover,
+.st-key-journey_explore_interpret button:hover ,
+.st-key-journey_explore_question button:hover {
+  background: #1E40AF !important;
+  color: #FFFFFF !important;
+}
+.journey-arrow {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; min-height: 14rem;
+  font-size: 1.45rem; font-weight: 700; color: #94A3B8;
+  user-select: none;
+}
+.journey-arrow-down {
+  min-height: 1.35rem; height: 1.35rem; margin: 0.15rem 0;
+  font-size: 1.35rem; color: #94A3B8;
+}
+.journey-arrow-left { color: #94A3B8; }
+@media (prefers-reduced-motion: reduce) {
+  .st-key-journey_card_build:has(.journey-is-back),
+  .st-key-journey_card_use:has(.journey-is-back),
+  .st-key-journey_card_evaluate:has(.journey-is-back),
+  .st-key-journey_card_test:has(.journey-is-back),
+  .st-key-journey_card_improve:has(.journey-is-back),
+  .st-key-journey_card_interpret:has(.journey-is-back) {
+    animation: none !important;
+  }
+}
+@media (max-width: 900px) {
+  .journey-arrow-right, .journey-arrow-left { min-height: 1.6rem; }
+  .journey-hero h1 { font-size: 1.2rem; }
+  .st-key-journey_card_build,
+  .st-key-journey_card_use,
+  .st-key-journey_card_evaluate,
+  .st-key-journey_card_test,
+  .st-key-journey_card_improve,
+  .st-key-journey_card_interpret { min-height: 0 !important; }
+}
 </style>
 """
 
@@ -1672,7 +2187,7 @@ def render_main_nav() -> str:
     """Main lab tabs. Load Dataset lives on each statistical tab's status row."""
     _ensure_app_data_drawer_state()
     if "main_lab_tab" not in st.session_state:
-        st.session_state.main_lab_tab = "fitting"
+        st.session_state.main_lab_tab = "journey"
     nav = st.container(
         key="main_nav",
         horizontal=True,
@@ -1696,12 +2211,12 @@ def render_main_nav() -> str:
         active = "sampling"
         st.session_state.main_lab_tab = active
     if active not in MAIN_LAB_TAB_LABELS:
-        active = "fitting"
+        active = "journey"
         st.session_state.main_lab_tab = active
     return str(active)
 
 
-def _render_dataset_status_row(status_html: str) -> None:
+def _render_dataset_status_row(status_html: str, *, show_summary: bool = True) -> None:
     """Active dataset heading (left) and Load Dataset (right) on one row."""
     row = st.container(
         key="dataset_status_row",
@@ -1711,7 +2226,8 @@ def _render_dataset_status_row(status_html: str) -> None:
         wrap=False,
     )
     with row:
-        st.markdown(status_html, unsafe_allow_html=True)
+        if show_summary:
+            st.markdown(status_html, unsafe_allow_html=True)
         open_drawer = _app_data_drawer_open()
         if st.button(
             "Hide" if open_drawer else "Load Dataset",
@@ -4028,6 +4544,10 @@ def _snap_r2_experiment_to_ols(
     st.session_state.r2_exp_beta = float(np.clip(beta, b0, b1))
 
 
+def _reveal_r2_experiment_ols() -> None:
+    st.session_state.r2_exp_reveal_ols = True
+
+
 def _reset_fitting_line(view, away_from_ols: bool = True) -> None:
     ols = ols_fit(view.x, view.y)
     (a0, a1, _), (b0, b1, _) = view.slider_bounds()
@@ -4061,6 +4581,156 @@ def _reset_fitting_line(view, away_from_ols: bool = True) -> None:
         _queue_fitting_sliders(ols.alpha, ols.beta)
     _clear_fitting_student_selection()
     st.session_state.fit_line_token = _fitting_view_token(_fitting_source())
+
+
+# The bottom "Using the model" (PREDICT / EXPLAIN) section is hidden from the
+# BUILD lesson — its functions below stay intact for the future USE lesson.
+FIT_BUILD_SHOW_USE_SECTION = False
+
+
+def _render_use_predict_explain(view, *, alpha: float, beta: float, current_r2: float) -> None:
+    """PREDICT + EXPLAIN panels (reused verbatim from the former BUILD 'Using the model' section)."""
+    predict_x = _active_fitting_prediction_x()
+    selected = st.session_state.fit_selected
+    with st.container(key="fit_model_use"):
+        st.markdown(
+            '<p class="fit-use-title">Using the model</p>',
+            unsafe_allow_html=True,
+        )
+        predict_col, explain_col = st.columns(2, gap="small")
+        with predict_col:
+            with st.container(key="fit_use_predict"):
+                st.markdown(
+                    '<p class="fit-use-lab predict">Predict — What outcome can I expect?</p>',
+                    unsafe_allow_html=True,
+                )
+                pred_row = st.container(
+                    horizontal=True, vertical_alignment="center", gap="small", wrap=True
+                )
+                with pred_row:
+                    st.markdown(
+                        f'<p class="fit-predict-key">X: {view.x_axis}</p>',
+                        unsafe_allow_html=True,
+                    )
+                    if "fit_predict_input" not in st.session_state:
+                        st.session_state.fit_predict_input = ""
+                    st.text_input(
+                        view.x_axis,
+                        placeholder="Enter X",
+                        key="fit_predict_input",
+                        label_visibility="collapsed",
+                        width=120,
+                    )
+                    st.button(
+                        "Predict",
+                        key="fit_predict_btn",
+                        type="primary",
+                        width=88,
+                        on_click=_commit_fitting_prediction,
+                    )
+                if predict_x is not None:
+                    predict_y = float(alpha) + float(beta) * float(predict_x)
+                    sign = "−" if beta < 0 else "+"
+                    slope_abs = abs(float(beta))
+                    x_obs = np.asarray(view.x, dtype=np.float64)
+                    extrapolating = bool(x_obs.size) and (
+                        float(predict_x) < float(np.min(x_obs)) - 1e-12
+                        or float(predict_x) > float(np.max(x_obs)) + 1e-12
+                    )
+                    warn = (
+                        '<p class="fit-predict-warn">'
+                        "Extrapolation: this prediction is outside the observed data. "
+                        "The relationship may not continue."
+                        "</p>"
+                        if extrapolating
+                        else ""
+                    )
+                    st.markdown(
+                        '<div class="fit-predict-result">'
+                        f'<p class="fit-predict-yhat">Ŷ: Predicted {view.y_axis.lower()} '
+                        f"= <b>{predict_y:.2f}</b></p>"
+                        f'<p class="fit-predict-eq">'
+                        f"Ŷ = {alpha:.3f} {sign} {slope_abs:.3f} × {predict_x:.3f} "
+                        f"= <b>{predict_y:.2f}</b>"
+                        "</p>"
+                        f"{warn}"
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
+        with explain_col:
+            with st.container(key="fit_use_explain"):
+                st.markdown(
+                    '<p class="fit-use-lab explain">Compare with reality</p>',
+                    unsafe_allow_html=True,
+                )
+                if view.n <= 0:
+                    st.markdown(
+                        '<p class="fit-explain-copy">Draw a sample to compare an observation.</p>',
+                        unsafe_allow_html=True,
+                    )
+                elif (
+                    selected is None
+                    or not (0 <= int(selected) < view.n)
+                ):
+                    st.markdown(
+                        '<p class="fit-explain-copy">'
+                        "Click any point to compare it with the model's prediction."
+                        "</p>",
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    idx = int(selected)
+                    obs_n = idx + 1
+                    pick_row = st.container(
+                        horizontal=True, vertical_alignment="center", gap="small"
+                    )
+                    with pick_row:
+                        st.markdown(
+                            f'<p class="fit-explain-student">Observation {obs_n}</p>',
+                            unsafe_allow_html=True,
+                        )
+                        st.button(
+                            "×",
+                            key="fit_clear_student",
+                            width=40,
+                            help="Clear observation selection",
+                            on_click=_clear_fitting_student_selection,
+                        )
+                    y_i = float(view.y[idx])
+                    y_hat_i = float(alpha) + float(beta) * float(view.x[idx])
+                    resid_i = y_i - y_hat_i
+                    st.markdown(
+                        '<div class="fit-explain-vals">'
+                        f'<span class="y"><span class="k">Actual Y</span>'
+                        f'<span class="v">{y_i:.2f}</span></span>'
+                        f'<span class="yhat"><span class="k">Predicted Ŷ</span>'
+                        f'<span class="v">{y_hat_i:.2f}</span></span>'
+                        f'<span class="mean"><span class="k">Residual</span>'
+                        f'<span class="v">{resid_i:+.2f}</span></span>'
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
+
+
+
+
+def _activate_fit_try_line(view) -> None:
+    """BUILD lesson: reveal an imperfect candidate line and its controls."""
+    _reset_fitting_line(view, away_from_ols=True)
+    _apply_pending_fitting_sliders()
+    st.session_state.fit_show_residuals = True
+    st.session_state.fit_try_line_active = True
+
+
+def _restart_fit_try_line(view) -> None:
+    """BUILD lesson: 'Try again' — runs as an on_click callback so the
+    pending slider values are applied before the sliders are re-created
+    (avoids StreamlitWidgetAlreadyInstantiatedError)."""
+    _reset_fitting_line(view, away_from_ols=True)
+    _apply_pending_fitting_sliders()
+    for key in ("fit_sse_path", "fit_r2_path", "fit_sse_range", "fit_r2_range", "fit_sse_before"):
+        st.session_state.pop(key, None)
+    st.session_state.fit_restart_consumed = True
 
 
 def _observation_index_from_chart_event(event) -> int | None:
@@ -4168,10 +4838,8 @@ def _r2_variation_bar_html(*, explained_frac: float) -> str:
         return ""
     pct = max(0.0, min(100.0, 100.0 * float(explained_frac)))
     unexplained_pct = max(0.0, 100.0 - pct)
-    explained_label = f"Explained {pct:.1f}%" if pct >= 12 else f"{pct:.0f}%"
-    unexplained_label = (
-        f"Unexplained {unexplained_pct:.1f}%" if unexplained_pct >= 12 else f"{unexplained_pct:.0f}%"
-    )
+    explained_label = f"Explained {pct:.1f}%"
+    unexplained_label = f"Unexplained {unexplained_pct:.1f}%"
     return (
         '<div class="fit-r2-bar" role="img" '
         f'aria-label="Explained {pct:.1f} percent, unexplained {unexplained_pct:.1f} percent">'
@@ -4228,17 +4896,9 @@ def _fit_metric_label_html(code: str) -> str:
     )
 
 
-def _fit_r2_range_label_html(r2_start: float, r2_end: float) -> str:
-    """Initial → final R² percentages for the current sample (under R² ↑)."""
-    visible = f"{_format_r2_pct(r2_start)} → {_format_r2_pct(r2_end)}"
-    return f'<p class="fit-metric-r2-range">{visible}</p>'
-
-
-def _fit_r2_range_spacer_html() -> str:
-    """Invisible placeholder matching the R² range-line height."""
-    return (
-        '<p class="fit-metric-r2-range fit-metric-r2-spacer">0.0% → 0.0%</p>'
-    )
+def _fit_metric_value_html(text: str) -> str:
+    """Live numeric value shown under an SSR/R² mini-chart label."""
+    return f'<p class="fit-metric-value">{text}</p>'
 
 
 _FIT_METRIC_WIDTH = 75
@@ -4297,12 +4957,16 @@ def _mount_fit_metric_toolbar(
     sse_range: tuple[float, float],
     r2_range: tuple[float, float],
     x_max: int,
-    r2_start: float,
-    r2_end: float,
-    show_r2_range: bool,
+    sse_display: str,
+    r2_display: str,
     animating: bool,
 ) -> tuple:
-    """Mount SSR/R² side by side inside one shared bordered box."""
+    """Mount SSR/R² side by side inside one shared bordered box.
+
+    ``sse_display``/``r2_display`` are the live numeric values for the
+    current frame (while animating) or the current slider position —
+    always shown, so the box reads clearly at every moment.
+    """
     with metrics_col:
         with st.container(key="fit_metrics_box"):
             sse_col, r2_col = st.columns([1, 1], gap="small")
@@ -4310,20 +4974,13 @@ def _mount_fit_metric_toolbar(
                 st.markdown(
                     _fit_metric_label_html("SSR"), unsafe_allow_html=True
                 )
-                # Match R² range-line height so both curves start on the same row.
-                st.markdown(_fit_r2_range_spacer_html(), unsafe_allow_html=True)
+                st.markdown(_fit_metric_value_html(sse_display), unsafe_allow_html=True)
                 sse_slot = st.empty()
             with r2_col:
                 st.markdown(
                     _fit_metric_label_html("R²"), unsafe_allow_html=True
                 )
-                if show_r2_range:
-                    st.markdown(
-                        _fit_r2_range_label_html(r2_start, r2_end),
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    st.markdown(_fit_r2_range_spacer_html(), unsafe_allow_html=True)
+                st.markdown(_fit_metric_value_html(r2_display), unsafe_allow_html=True)
                 r2_slot = st.empty()
     if not animating:
         _paint_fit_metric_pair(
@@ -4336,6 +4993,52 @@ def _mount_fit_metric_toolbar(
             r2_slot=r2_slot,
         )
     return sse_slot, r2_slot
+
+
+# Lessons (fit_lab_panel values) that have R code to show via the shared toggle.
+FIT_RCODE_LESSONS = ("fit", "std")
+
+
+def _toggle_fit_rcode_panel() -> None:
+    st.session_state.fit_rcode_open = not st.session_state.get("fit_rcode_open", False)
+
+
+def _render_std_r_code_panel() -> None:
+    """Compact R-code block for the Standardisation lesson (reused code gen)."""
+    pred_a = st.session_state.get("fit_std_pred_a")
+    if pred_a not in STD_PREDICTOR_KEYS:
+        pred_a = "hours_studied"
+    label_a = STD_PREDICTOR_META[pred_a][0]
+    with st.container(key="fit_r_panel"):
+        st.markdown(
+            f'<p class="fit-r-line-note">Predictor: {label_a}</p>',
+            unsafe_allow_html=True,
+        )
+        st.code(
+            r_standardisation_commands(predictor=pred_a, response="exam_score"),
+            language="r",
+            wrap_lines=True,
+        )
+
+
+def _render_fit_rcode_slot(view, ols, lab_panel: str) -> None:
+    """Compact, default-closed R-code panel shared by every SLR lesson."""
+    if lab_panel not in FIT_RCODE_LESSONS:
+        return
+    if not st.session_state.get("fit_rcode_open", False):
+        return
+    if lab_panel == "fit":
+        _render_r_code_panel(
+            view,
+            ols,
+            alpha=float(st.session_state.get("fit_alpha", ols.alpha)),
+            beta=float(st.session_state.get("fit_beta", ols.beta)),
+            lm_run=bool(st.session_state.get("fit_found", False)),
+        )
+    elif lab_panel == "std":
+        if standardisation_student_frame(view) is None:
+            return
+        _render_std_r_code_panel()
 
 
 def _render_r_code_panel(view, ols, *, alpha: float, beta: float, lm_run: bool) -> None:
@@ -4402,6 +5105,260 @@ R2_LESSON_STEPS = (
 )
 
 
+FIT_WHY_STEPS = (0, 1, 2, 3)
+FIT_WHY_ANIM_SECONDS = 0.7
+
+FIT_WHY_POINTS = (
+    ("Represent reality", "Describe how we think variables are related."),
+    ("Simplify complexity", "Express those relationships through a mathematical model."),
+    ("Make and evaluate predictions", "Compare what the model predicts with what we observe."),
+)
+
+
+def _advance_fit_why_step() -> None:
+    step = int(st.session_state.get("fit_why_step", 0))
+    st.session_state.fit_why_step = min(step + 1, FIT_WHY_STEPS[-1])
+
+
+def _replay_fit_why_step() -> None:
+    st.session_state.fit_why_step = 0
+
+
+def _fit_why_residual_index(sample) -> int:
+    """Pick the observation with the largest residual — a clearly visible gap."""
+    y_hat = sample.alpha + sample.beta * sample.hours
+    residuals = np.abs(sample.scores - y_hat)
+    return int(np.argmax(residuals))
+
+
+def _fit_why_step_figure(sample, step: int, *, x_range, y_range):
+    from src.statistical_journey import BLUE, FONT, INK, ORANGE, _ols_line, _scatter_cloud, rgba
+
+    traces: list = []
+    annotations: list = []
+    if step >= 1:
+        traces.append(_scatter_cloud(sample, opacity=0.85))
+    if step >= 2:
+        traces.append(_ols_line(sample, color=ORANGE))
+    if step >= 3:
+        i = _fit_why_residual_index(sample)
+        xi = float(sample.hours[i])
+        yi = float(sample.scores[i])
+        y_hat_i = float(sample.alpha + sample.beta * xi)
+        traces.append(
+            go.Scatter(
+                x=[xi, xi],
+                y=[yi, y_hat_i],
+                mode="lines",
+                line=dict(color=rgba(ORANGE, 0.9), width=2, dash="dot"),
+                hoverinfo="skip",
+            )
+        )
+        traces.append(
+            go.Scatter(
+                x=[xi],
+                y=[yi],
+                mode="markers",
+                marker=dict(size=11, color=BLUE, line=dict(width=2, color="white")),
+                hoverinfo="skip",
+            )
+        )
+        traces.append(
+            go.Scatter(
+                x=[xi],
+                y=[y_hat_i],
+                mode="markers",
+                marker=dict(size=10, color=ORANGE, symbol="diamond"),
+                hoverinfo="skip",
+            )
+        )
+        annotations.extend(
+            [
+                dict(
+                    x=xi, y=yi, text="Observed", showarrow=False,
+                    xanchor="left", yanchor="middle", xshift=10,
+                    font=dict(family=FONT, size=10, color=BLUE),
+                ),
+                dict(
+                    x=xi, y=y_hat_i, text="Predicted", showarrow=False,
+                    xanchor="left", yanchor="middle", xshift=10,
+                    font=dict(family=FONT, size=10, color=ORANGE),
+                ),
+                dict(
+                    x=xi, y=(yi + y_hat_i) / 2, text="Residual", showarrow=False,
+                    xanchor="right", yanchor="middle", xshift=-8,
+                    font=dict(family=FONT, size=10, color=INK),
+                ),
+            ]
+        )
+    fig = go.Figure(traces)
+    fig.update_layout(
+        height=380,
+        margin=dict(l=36, r=10, t=4, b=28),
+        plot_bgcolor="white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family=FONT, color=INK, size=10),
+        showlegend=False,
+        annotations=annotations,
+        xaxis=dict(
+            visible=True, showgrid=True, gridcolor="#EEF2F7", zeroline=False,
+            showline=True, linecolor="#CBD5E1", ticks="outside", tickcolor="#CBD5E1",
+            fixedrange=True,
+        ),
+        yaxis=dict(
+            visible=True, showgrid=True, gridcolor="#EEF2F7", zeroline=False,
+            showline=True, linecolor="#CBD5E1", ticks="outside", tickcolor="#CBD5E1",
+            fixedrange=True,
+        ),
+        transition=dict(duration=int(FIT_WHY_ANIM_SECONDS * 1000), easing="cubic-in-out"),
+    )
+    fig.update_xaxes(range=x_range)
+    fig.update_yaxes(range=y_range)
+    return fig
+
+
+def render_why_model_subtab() -> None:
+    """Guided four-step lesson: why we need a statistical model at all."""
+    from src.statistical_journey import build_journey_sample
+
+    st.markdown(
+        tipify('<p class="fit-r2-heading">Why do we need a statistical model?</p>'),
+        unsafe_allow_html=True,
+    )
+
+    step = int(st.session_state.get("fit_why_step", 0))
+    if step not in FIT_WHY_STEPS:
+        step = 0
+    active_idx = step - 1  # -1 at step 0 (intro); 0..2 for the three concepts.
+
+    parts = ['<div class="fit-why-lesson"><div class="points">']
+    for idx, (lab, txt) in enumerate(FIT_WHY_POINTS):
+        cls = "point active" if idx == active_idx else "point"
+        parts.append(f'<div class="{cls}"><p class="lab">{lab}</p><p class="txt">{txt}</p></div>')
+    parts.append("</div></div>")
+    st.markdown(tipify("".join(parts)), unsafe_allow_html=True)
+
+    sample = build_journey_sample()
+
+    # Fixed axes across all steps — the chart's size and framing never change.
+    x = sample.hours
+    line_y = sample.alpha + sample.beta * np.array([float(x.min()), float(x.max())])
+    y_min = min(float(sample.scores.min()), float(line_y.min()))
+    y_max = max(float(sample.scores.max()), float(line_y.max()))
+    pad_x = (float(x.max()) - float(x.min())) * 0.06
+    pad_y = (y_max - y_min) * 0.08
+    x_range = [float(x.min()) - pad_x, float(x.max()) + pad_x]
+    y_range = [y_min - pad_y, y_max + pad_y]
+
+    fig = _fit_why_step_figure(sample, step, x_range=x_range, y_range=y_range)
+    st.plotly_chart(
+        fig,
+        width="stretch",
+        config=FIT_MINI_PLOTLY_CONFIG,
+        key="fit_why_mini_chart",
+    )
+
+    # Fixed-height slot for the equation/caption — reserved on every step so
+    # the Start/Next/Replay button never shifts vertically.
+    if step >= 2:
+        from src.statistical_journey import ORANGE
+
+        with st.container(key="fit_why_eq_slot"):
+            _l, mid, _r = st.columns([1, 2, 1])
+            with mid:
+                st.latex(rf"\color{{{ORANGE}}}{{\hat{{y}} = \hat{{\alpha}} + \hat{{\beta}}x}}")
+            st.markdown(
+                '<p class="fit-why-eq-caption">One line summarizes the relationship '
+                "between all these observations.</p>",
+                unsafe_allow_html=True,
+            )
+    else:
+        with st.container(key="fit_why_eq_slot_empty"):
+            st.markdown("&nbsp;", unsafe_allow_html=True)
+
+    # Pause for the chart's own transition before offering the next step.
+    just_advanced = st.session_state.pop("fit_why_just_advanced", False)
+    if just_advanced and step > 0:
+        time.sleep(FIT_WHY_ANIM_SECONDS)
+
+    if step >= FIT_WHY_STEPS[-1]:
+        st.button(
+            "Replay animation ↺", key="fit_why_replay_btn", on_click=_replay_fit_why_step
+        )
+    else:
+        st.button(
+            "Start →" if step == 0 else "Next →",
+            key="fit_why_next_btn",
+            type="primary",
+            on_click=_advance_fit_why_step,
+        )
+        st.session_state.fit_why_just_advanced = True
+
+
+def render_use_model_subtab(view) -> None:
+    """USE lesson: apply the fitted model — explain, predict, compare with reality."""
+    st.markdown(
+        tipify('<p class="fit-r2-heading">What can we do with our model?</p>'),
+        unsafe_allow_html=True,
+    )
+
+    ols = ols_fit(view.x, view.y)
+    alpha, beta = float(ols.alpha), float(ols.beta)
+    sst = total_sum_of_squares(view.y)
+    current_r2 = r_squared(float(ols.sse), sst)
+
+    sign = "−" if beta < 0 else "+"
+    st.markdown(
+        tipify(
+            '<div class="fit-r2-lesson">'
+            "<h3>Interpret the Model</h3>"
+            f"<p>Each additional {view.x_axis.lower()} is associated with "
+            f"approximately <b>{abs(beta):.2f}</b> additional predicted "
+            f"{view.y_axis.lower()} points.</p>"
+            f'<p class="formula">Ŷ = {alpha:.3f} {sign} {abs(beta):.3f} × '
+            f"{view.x_axis}</p>"
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
+
+    # Reuse the same chart key/nonce/selection machinery as Fit the line's
+    # scatter — the two tabs are mutually exclusive per run, so sharing the
+    # key is safe and keeps click-to-select working without new code.
+    predict_x = _active_fitting_prediction_x()
+    st.session_state.fit_chart_x = np.asarray(view.x, dtype=np.float64)
+    st.session_state.fit_chart_y = np.asarray(view.y, dtype=np.float64)
+    if "fit_scatter_nonce" not in st.session_state:
+        st.session_state.fit_scatter_nonce = 0
+    event = st.plotly_chart(
+        fitting_scatter(
+            hours=view.x,
+            scores=view.y,
+            alpha=alpha,
+            beta=beta,
+            show_residuals=False,
+            selected_index=st.session_state.get("fit_selected"),
+            height=FIT_CHART_HEIGHT,
+            x_title=view.x_axis,
+            y_title=view.y_axis,
+            prediction_x=predict_x,
+            prediction_alpha=alpha if predict_x is not None else None,
+            prediction_beta=beta if predict_x is not None else None,
+        ),
+        width="stretch",
+        config=PLOTLY_CONFIG,
+        key=f"fit_scatter_{int(st.session_state.fit_scatter_nonce)}",
+        on_select=_on_fit_scatter_select,
+        selection_mode="points",
+    )
+    if _apply_fitting_chart_selection(
+        _observation_index_from_chart_event(event), n=int(view.n)
+    ):
+        st.rerun()
+
+    _render_use_predict_explain(view, alpha=alpha, beta=beta, current_r2=current_r2)
+
+
 def _r2_lesson_step_label(key: str) -> str:
     return {
         "baseline": "1 · Baseline",
@@ -4414,7 +5371,7 @@ def _r2_lesson_step_label(key: str) -> str:
 def render_understanding_r2_subtab(view) -> None:
     """Progressive R² lesson using the current fitting sample."""
     st.markdown(
-        tipify('<p class="fit-r2-heading">Understanding R²</p>'),
+        tipify('<p class="fit-r2-heading">How much does our model improve predictions?</p>'),
         unsafe_allow_html=True,
     )
     ols = ols_fit(view.x, view.y)
@@ -4455,6 +5412,8 @@ def render_understanding_r2_subtab(view) -> None:
     ols_alpha = ols_beta = None
     residual_about = None
     regression_name = "Regression"
+    mean_trace_name = None
+    regression_residual_color = "rgba(234, 88, 12, 0.75)"
 
     if step == "baseline":
         chart_title = "Baseline: horizontal prediction at ȳ"
@@ -4465,7 +5424,12 @@ def render_understanding_r2_subtab(view) -> None:
     elif step == "predictor":
         chart_title = "Add the predictor: regression vs mean"
         reg_alpha, reg_beta = float(ols.alpha), float(ols.beta)
-        regression_name = "OLS regression"
+        regression_name = "Regression prediction"
+        mean_trace_name = (
+            f"Mean-only prediction (ȳ = {y_bar:.2f})"
+            if np.isfinite(y_bar)
+            else "Mean-only prediction"
+        )
         resid_mode = st.radio(
             "Residuals",
             options=["off", "mean", "regression"],
@@ -4485,9 +5449,19 @@ def render_understanding_r2_subtab(view) -> None:
         show_ols_resid = st.toggle(
             "Show residuals from OLS", key="r2_show_ols_resid", value=False
         )
+        if show_ols_resid:
+            st.caption(
+                "The orange lines show the prediction errors that remain "
+                "after fitting the regression."
+            )
         residual_about = "regression" if show_ols_resid else None
     else:
-        chart_title = "Experiment: mean, your line, and OLS"
+        reveal_ols = bool(st.session_state.get("r2_exp_reveal_ols", False))
+        chart_title = (
+            "Experiment: mean, your line, and OLS"
+            if reveal_ols
+            else "Experiment: mean and your line"
+        )
         exp_row = st.container(
             horizontal=True, vertical_alignment="bottom", gap="small", wrap=True
         )
@@ -4508,6 +5482,14 @@ def render_understanding_r2_subtab(view) -> None:
                 key="r2_exp_beta",
                 width=200,
             )
+            if not reveal_ols:
+                st.button(
+                    "Reveal OLS optimum",
+                    key="r2_reveal_ols",
+                    type="primary",
+                    width=150,
+                    on_click=_reveal_r2_experiment_ols,
+                )
             st.button(
                 "Snap to OLS",
                 key="r2_snap_ols",
@@ -4515,13 +5497,20 @@ def render_understanding_r2_subtab(view) -> None:
                 help=tip_title("OLS"),
                 on_click=_snap_r2_experiment_to_ols,
                 args=(float(ols.alpha), float(ols.beta), float(a0), float(a1), float(b0), float(b1)),
+                disabled=not reveal_ols,
             )
             show_exp_resid = st.toggle(
                 "Show residuals from your line", key="r2_exp_resid"
             )
         reg_alpha, reg_beta = float(exp_alpha), float(exp_beta)
         regression_name = "Your line"
-        ols_alpha, ols_beta = float(ols.alpha), float(ols.beta)
+        # Distinct from the orange OLS reference line so residuals read
+        # unambiguously as belonging to the blue adjustable line.
+        regression_residual_color = "rgba(29, 78, 216, 0.55)"
+        if reveal_ols:
+            ols_alpha, ols_beta = float(ols.alpha), float(ols.beta)
+        else:
+            ols_alpha, ols_beta = None, None
         residual_about = "regression" if show_exp_resid else None
 
     st.plotly_chart(
@@ -4539,6 +5528,8 @@ def render_understanding_r2_subtab(view) -> None:
             ols_alpha=ols_alpha,
             ols_beta=ols_beta,
             residual_about=residual_about,
+            mean_trace_name=mean_trace_name,
+            regression_residual_color=regression_residual_color,
         ),
         width="stretch",
         config=PLOTLY_CONFIG,
@@ -4550,30 +5541,23 @@ def render_understanding_r2_subtab(view) -> None:
     ols_r2 = r_squared(ols_sse, sst)
 
     if step == "baseline":
-        y_bar_label = f"{y_bar:.2f}" if np.isfinite(y_bar) else "—"
         st.markdown(
             tipify(
                 '<div class="fit-r2-lesson">'
-                "<h3>1. The baseline — predicting without a predictor</h3>"
-                f"<p>Imagine we know nothing about each student’s "
-                f"{view.x_axis.lower()}.</p>"
-                f"<p>Our best prediction for every student is simply the average "
-                f"{view.y_axis.lower()}: <b>ȳ = {y_bar_label}</b> "
-                "(the dashed horizontal line).</p>"
-                f"<p>But students don’t all score {y_bar_label}.</p>"
-                "<p>The grey vertical lines show the difference between each student’s "
-                "actual score and our prediction. These are our prediction errors "
-                "(residuals from the mean).</p>"
-                "<p>To measure total variation we <b>square</b> each residual and add them. "
-                "Signed errors can cancel (e.g. +5 and −5); squaring prevents cancellation "
-                "and penalises large misses more:</p>"
-                "<p>Residual 5 → squared error 25 &nbsp;·&nbsp; "
-                "Residual 10 → squared error 100</p>"
-                f'<p class="formula">SS Total = Σ(yᵢ − ȳ)² = <b>{_format_sse(sst)}</b></p>'
-                f"<p>SS Total is the squared-error benchmark when we predict everyone by ȳ.</p>"
-                "<p><b>The question now becomes:</b><br>"
-                f"Can knowing {view.x_axis.lower()} help us predict "
-                f"their {view.y_axis.lower()} more accurately?</p>"
+                "<h3>1. Baseline — predicting without X</h3>"
+                f"<p>Without knowing {view.x_axis}, our best prediction for "
+                "everyone is the mean of "
+                f"{view.y_axis} (the dashed horizontal line).</p>"
+                "<p>But observations differ from that mean. The vertical lines "
+                "show these prediction errors.</p>"
+                "<p>We square each error and add them together to measure "
+                "total variation:</p>"
+                f'<p class="formula">SST = Σ(yᵢ − ȳ)² = <b>{_format_sse(sst)}</b></p>'
+                '<div class="takeaway">'
+                '<p class="lab">Key takeaway</p>'
+                "<p>SST is our starting benchmark. Can knowing "
+                f"{view.x_axis.lower()} help us make better predictions?</p>"
+                "</div>"
                 "</div>"
             ),
             unsafe_allow_html=True,
@@ -4584,26 +5568,33 @@ def render_understanding_r2_subtab(view) -> None:
             if np.isfinite(sst) and np.isfinite(ols_sse)
             else float("nan")
         )
+        pct_reduction = (
+            100.0 * eliminated / float(sst)
+            if np.isfinite(eliminated) and sst > 0
+            else float("nan")
+        )
+        pct_label = f"{pct_reduction:.1f}%" if np.isfinite(pct_reduction) else "—"
         st.markdown(
             tipify(
                 '<div class="fit-r2-lesson">'
-                "<h3>2. Add the predictor</h3>"
-                "<p>Two ways to predict the same outcomes (both lines stay on the chart):</p>"
-                f"<p><b>Mean baseline (dashed ȳ):</b> predict every "
-                f"{view.y_axis.lower()} with the sample mean — ignore X. "
-                f"Squared error = SS Total = <b>{_format_sse(sst)}</b>.</p>"
-                f"<p><b>Regression line (solid):</b> predict with "
-                f"ŷᵢ = α̂ + β̂ xᵢ = {ols.alpha:.3f} "
-                f"{'−' if ols.beta < 0 else '+'} {abs(float(ols.beta)):.3f} × xᵢ. "
-                f"Squared error left over = SSR = "
-                f"<b>{_format_sse(ols_sse)}</b>.</p>"
-                f'<p class="formula">Squared error eliminated = SS Total − SSR '
-                f"= <b>{_format_sse(eliminated)}</b></p>"
-                "<p>Toggle residuals above to compare gaps to the mean versus to the line.</p>"
-                f'<div class="metrics"><span>SS Total = <b>{_format_sse(sst)}</b></span>'
-                f"<span>SSR = <b>{_format_sse(ols_sse)}</b></span>"
-                f"<span>SSR / SS Total = "
-                f"<b>{(ols_sse / sst) if sst > 0 else float('nan'):.3f}</b></span></div>"
+                f"<h3>Does knowing {view.x_axis} improve our predictions?</h3>"
+                '<div class="compare">'
+                '<div class="col">'
+                f"<p class=\"h\">Without {view.x_axis}</p>"
+                "<p>We predict every outcome using the sample mean.</p>"
+                f'<p class="formula">SST = <b>{_format_sse(sst)}</b></p>'
+                "</div>"
+                '<div class="col">'
+                f"<p class=\"h\">With {view.x_axis}</p>"
+                "<p>We use the regression line to predict each outcome.</p>"
+                f'<p class="formula">SSR = <b>{_format_sse(ols_sse)}</b></p>'
+                "</div>"
+                "</div>"
+                '<div class="result">'
+                f"<p class=\"big\">Using {view.x_axis} reduces total squared "
+                f"prediction error by <b>{pct_label}</b> compared with "
+                "predicting the mean.</p>"
+                "</div>"
                 "</div>"
             ),
             unsafe_allow_html=True,
@@ -4611,35 +5602,71 @@ def render_understanding_r2_subtab(view) -> None:
     elif step == "explained":
         explained_frac = (ols_ssr / sst) if sst > 0 and np.isfinite(ols_ssr) else float("nan")
         bar = _r2_variation_bar_html(explained_frac=explained_frac)
+        r2_pct = _format_r2_pct(ols_r2)
         st.markdown(
             tipify(
                 '<div class="fit-r2-lesson">'
-                "<h3>3. What did we explain?</h3>"
-                "<p>The dashed mean line is the no-predictor baseline. The solid OLS line "
-                "uses X. For OLS with an intercept, the squared errors decompose exactly:</p>"
-                f'<p class="formula">SS Total = SS Model + SSR &nbsp;→&nbsp; '
-                f"{_format_sse(sst)} = {_format_sse(ols_ssr)} + {_format_sse(ols_sse)}</p>"
-                f'<p class="formula">SS Model = Σ(ŷᵢ − ȳ)² = <b>{_format_sse(ols_ssr)}</b></p>'
-                "<p><b>SS Total</b> = squared error if we predict everyone by ȳ.&nbsp; "
-                "<b>SS Model</b> = how much of that squared error the regression removes.&nbsp; "
-                "<b>SSR</b> = squared error still left after using the line.</p>"
+                "<h3>What is R²?</h3>"
+                f"<p>R² measures how much of the variation in {view.y_axis} our "
+                "regression explains, compared with predicting everyone using "
+                "the mean.</p>"
+                '<div class="metrics">'
+                f"<span>Total variation (SST) = <b>{_format_sse(sst)}</b></span>"
+                f"<span>Unexplained (SSR) = <b>{_format_sse(ols_sse)}</b></span>"
+                f"<span>Explained (SST − SSR) = <b>{_format_sse(ols_ssr)}</b></span>"
+                "</div>"
+                f'<p class="formula">R² = (SST − SSR) / SST = <b>{r2_pct}</b></p>'
+                "<p>Because SST is fixed for a given sample, minimising SSR "
+                "also maximises R². This is why OLS produces the highest "
+                "possible R² among straight-line models fitted with an "
+                "intercept.</p>"
                 f"{bar}"
-                f'<p class="formula">R² = SS Model / SS Total = 1 − SSR / SS Total '
-                f"= <b>{_format_r_squared(ols_r2)}</b></p>"
-                "<p><b>Why this formula?</b> SSR / SS Total is the fraction of the "
-                "baseline variation that remains unexplained. Subtracting it from 1 gives "
-                "the fraction removed by the regression.</p>"
-                '<p class="note">R² measures in-sample fit for this sample — not causation, and '
-                "not a guarantee of accuracy on new data.</p>"
+                '<div class="takeaway">'
+                '<p class="lab">Key takeaway</p>'
+                f"<p>Our model explains <b>{r2_pct}</b> of the variation in "
+                f"{view.y_axis.lower()} in this sample.</p>"
+                "</div>"
+                '<p class="note">R² does not establish causation or guarantee '
+                "accurate predictions on new data.</p>"
                 "</div>"
             ),
             unsafe_allow_html=True,
         )
+        with st.expander("Show the mathematics", expanded=False):
+            with st.container(key="fit_r2_math"):
+                st.markdown(
+                    '<p class="fit-r2-math-heading">Decomposing total variation</p>',
+                    unsafe_allow_html=True,
+                )
+                st.latex(
+                    r"\begin{gathered}"
+                    r"\small{SST = SS_{Model} + SSR} \\"
+                    rf"\small{{{_format_sse(sst)} = {_format_sse(ols_ssr)} + {_format_sse(ols_sse)}}}"
+                    r"\end{gathered}"
+                )
+                st.latex(
+                    rf"\small{{SS_{{Model}} = \sum (\hat{{y}}_i - \bar{{y}})^2 = {_format_sse(ols_ssr)}}}"
+                )
+                st.markdown(
+                    '<p class="fit-r2-math-heading">Why the R² formula works</p>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    tipify(
+                        "<p>SSR / SST is the proportion of total variation that "
+                        "remains unexplained.</p>"
+                    ),
+                    unsafe_allow_html=True,
+                )
+                st.latex(r"\small{R^2 = 1 - \dfrac{SSR}{SST}}")
+                st.markdown(
+                    "<p>Therefore, R² measures the proportion explained by the "
+                    "regression.</p>",
+                    unsafe_allow_html=True,
+                )
     else:
         cand_sse = sum_of_squared_errors(view.x, view.y, reg_alpha, reg_beta)
         cand_r2 = r_squared(cand_sse, sst)
-        cand_ssr = regression_sum_of_squares(view.x, view.y, reg_alpha, reg_beta)
-        decomp_gap = abs((cand_ssr + cand_sse) - sst) if np.isfinite(sst) else float("nan")
         mean_sse = float(sst)  # predicting ȳ → SSR = SS Total
         mean_r2 = 0.0 if np.isfinite(sst) and sst > 0 else float("nan")
         warn = ""
@@ -4648,59 +5675,59 @@ def render_understanding_r2_subtab(view) -> None:
                 '<p class="fit-r2-warn">Your line has <b>negative R²</b>: it predicts worse than '
                 "simply using the sample mean. OLS never does this for a line with an intercept.</p>"
             )
-        decomp_note = (
-            '<p class="note">For a manually chosen line, report fit as '
-            "<b>1 − SSR / SS Total</b>. Do <em>not</em> assume "
-            "SS Total = SS Model + SSR — that identity holds for "
-            f"OLS with an intercept (here the gap is {_format_sse(decomp_gap)}).</p>"
-            if decomp_gap > 1e-4 * max(sst, 1.0)
-            else (
-                '<p class="note">Your line is close enough to OLS that '
-                "SS Model + SSR ≈ SS Total. "
-                "In general the exact decomposition is guaranteed only for OLS with an intercept.</p>"
-            )
+        cards = (
+            '<div class="fit-r2-card">'
+            '<p class="lab">Mean only</p>'
+            f'<p class="val">SSR = <b>{_format_sse(mean_sse)}</b><br>'
+            f"R² = <b>{_format_r_squared(mean_r2)}</b></p>"
+            "</div>"
+            '<div class="fit-r2-card">'
+            '<p class="lab">Your line</p>'
+            f'<p class="val">SSR = <b>{_format_sse(cand_sse)}</b><br>'
+            f"R² = <b>{_format_r_squared(cand_r2)}</b></p>"
+            "</div>"
         )
+        takeaway_html = ""
+        if reveal_ols:
+            cards += (
+                '<div class="fit-r2-card best">'
+                '<p class="lab">OLS optimum</p>'
+                f'<p class="val">SSR = <b>{_format_sse(ols_sse)}</b><br>'
+                f"R² = <b>{_format_r_squared(ols_r2)}</b></p>"
+                "</div>"
+            )
+            takeaway_html = (
+                '<div class="takeaway">'
+                '<p class="lab">Key takeaway</p>'
+                "<p>You cannot beat OLS on this sample. Among straight lines "
+                "with an intercept, OLS minimises SSR and maximises R².</p>"
+                "</div>"
+            )
         st.markdown(
             tipify(
                 '<div class="fit-r2-lesson">'
                 "<h3>4. Experiment on this sample</h3>"
-                "<p>Compare three predictors of the same outcomes: the mean-only baseline, "
-                "your adjustable line, and the OLS line. OLS maximises R² by minimising "
-                "SSR.</p>"
-                '<div class="fit-r2-compare">'
-                '<div class="fit-r2-card">'
-                '<p class="lab">Mean only</p>'
-                f'<p class="val">SSR = <b>{_format_sse(mean_sse)}</b><br>'
-                f"R² = <b>{_format_r_squared(mean_r2)}</b></p>"
-                "</div>"
-                '<div class="fit-r2-card">'
-                '<p class="lab">Your line</p>'
-                f'<p class="val">SSR = <b>{_format_sse(cand_sse)}</b><br>'
-                f"R² = <b>{_format_r_squared(cand_r2)}</b><br>"
-                f"<span style='color:#64748B'>SS Model* = {_format_sse(cand_ssr)}</span></p>"
-                "</div>"
-                '<div class="fit-r2-card best">'
-                '<p class="lab">OLS (best R²)</p>'
-                f'<p class="val">SSR = <b>{_format_sse(ols_sse)}</b><br>'
-                f"R² = <b>{_format_r_squared(ols_r2)}</b><br>"
-                f"<span style='color:#64748B'>SS Model = {_format_sse(ols_ssr)}</span></p>"
-                "</div>"
-                "</div>"
-                '<div class="fit-r2-conclusion">'
-                '<p class="q">Why does OLS produce the highest R²?</p>'
-                "<p class=\"a\">OLS finds the line that minimises SSR. "
-                "Since SS Total is fixed for a given sample, "
-                "minimising SSR also maximises R².</p>"
-                '<p class="formula">R² = 1 − SSR / SS Total</p>'
-                '<p class="takeaway">OLS minimises SSR ⇔ OLS maximises R²</p>'
-                "</div>"
+                "<p>Adjust your line's intercept and slope, and compare it "
+                "with the mean-only baseline. Reveal OLS to see the best "
+                "possible fit.</p>"
+                f'<div class="fit-r2-compare">{cards}</div>'
+                f"{takeaway_html}"
                 f'<div class="metrics"><span>SS Total = <b>{_format_sse(sst)}</b> '
                 "(fixed for this sample)</span></div>"
-                f"{decomp_note}{warn}"
+                f"{warn}"
                 "</div>"
             ),
             unsafe_allow_html=True,
         )
+
+    st.button(
+        "Want to compare predictors measured in different units? "
+        "Explore Standardisation →",
+        key="r2_goto_standardisation",
+        type="tertiary",
+        on_click=_rout_goto_fit_panel,
+        args=("std",),
+    )
 
 
 def _std_z_axis_range(values: np.ndarray) -> tuple[float, float, list[int]]:
@@ -4772,7 +5799,7 @@ def _std_compact_scatter(
         beta=float(beta),
         show_residuals=False,
         show_coefficients=False,
-        height=168,
+        height=180,
         x_title=x_title,
         y_title=y_title,
         title=title,
@@ -4840,7 +5867,8 @@ def _std_dual_z_overlay(
     zx0, zx1, zx_ticks = _std_z_axis_range(z_all)
     zy0, zy1, zy_ticks = _std_z_axis_range(zy)
     fig.update_xaxes(
-        title_text="z(predictor)",
+        title_text="Predictor (standard deviations from mean)",
+        title_font=dict(size=10),
         range=[zx0, zx1],
         tickmode="array",
         tickvals=zx_ticks,
@@ -4850,7 +5878,8 @@ def _std_dual_z_overlay(
         zerolinewidth=1.4,
     )
     fig.update_yaxes(
-        title_text="z(Exam score)",
+        title_text="Exam score (standard deviations)",
+        title_font=dict(size=10),
         range=[zy0, zy1],
         tickmode="array",
         tickvals=zy_ticks,
@@ -4955,24 +5984,14 @@ def render_standardisation_subtab(view) -> None:
     label_of = {key: STD_PREDICTOR_META[key][0] for key in STD_PREDICTOR_KEYS}
     unit_of = {key: STD_PREDICTOR_META[key][1] for key in STD_PREDICTOR_KEYS}
 
-    pick_a, pick_b = st.columns(2, gap="small")
-    with pick_a:
-        pred_a = st.selectbox(
-            "Predictor A",
-            options=list(STD_PREDICTOR_KEYS),
-            format_func=lambda key: label_of[key],
-            key="fit_std_pred_a",
-        )
+    # Resolve the current predictor pair from session state before the
+    # selector widgets render, so the conclusion can sit directly below
+    # the introduction.
+    pred_a = st.session_state.fit_std_pred_a
     options_b = [key for key in STD_PREDICTOR_KEYS if key != pred_a]
     if st.session_state.get("fit_std_pred_b") not in options_b:
         st.session_state.fit_std_pred_b = options_b[0]
-    with pick_b:
-        pred_b = st.selectbox(
-            "Predictor B",
-            options=options_b,
-            format_func=lambda key: label_of[key],
-            key="fit_std_pred_b",
-        )
+    pred_b = st.session_state.fit_std_pred_b
 
     scores = np.asarray(sample["exam_score"], dtype=np.float64)
     x_a = np.asarray(sample[pred_a], dtype=np.float64)
@@ -4991,11 +6010,36 @@ def render_standardisation_subtab(view) -> None:
     r2_a = r_squared(float(ols_a.sse), float(sst))
     r2_b = r_squared(float(ols_b.sse), float(sst))
 
+    dir_a = "increase" if beta_star_a >= 0 else "decrease"
+    dir_b = "increase" if beta_star_b >= 0 else "decrease"
+    st.markdown(
+        tipify(
+            '<p class="fit-std-insight">'
+            f"A 1-SD increase in {label_a} is associated with a "
+            f"<b>{abs(beta_star_a):.3f}-SD {dir_a}</b> in exam score, versus "
+            f"<b>{abs(beta_star_b):.3f} SD</b> for {label_b}."
+            "</p>"
+            '<p class="fit-std-note">'
+            "These are two separate simple regressions — each predictor "
+            "considered on its own — not independent effects estimated "
+            "together. They describe unadjusted associations, not effects "
+            "controlling for the other predictor."
+            "</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+
     left, right = st.columns(2, gap="medium")
     with left:
         st.markdown(
             '<p class="fit-std-col-lab">Original units</p>',
             unsafe_allow_html=True,
+        )
+        st.selectbox(
+            "Predictor A",
+            options=list(STD_PREDICTOR_KEYS),
+            format_func=lambda key: label_of[key],
+            key="fit_std_pred_a",
         )
         _std_compact_scatter(
             x=x_a,
@@ -5016,6 +6060,12 @@ def render_standardisation_subtab(view) -> None:
                 "</p>"
             ),
             unsafe_allow_html=True,
+        )
+        st.selectbox(
+            "Predictor B",
+            options=options_b,
+            format_func=lambda key: label_of[key],
+            key="fit_std_pred_b",
         )
         _std_compact_scatter(
             x=x_b,
@@ -5055,10 +6105,6 @@ def render_standardisation_subtab(view) -> None:
         )
         st.markdown(
             tipify(
-                '<p class="fit-std-slope" style="margin-top:0.05rem;">'
-                "Each slope now measures the predicted change in "
-                "exam score (SD units) for a 1 SD increase in its predictor."
-                "</p>"
                 '<p class="fit-std-slope">'
                 f"<b>{label_a}</b> · β* = <b>{_format_coef(float(ols_za.beta))}</b> "
                 f"| R² = <b>{_format_r_squared(r2_a)}</b><br>"
@@ -5068,60 +6114,6 @@ def render_standardisation_subtab(view) -> None:
             ),
             unsafe_allow_html=True,
         )
-
-    insight = _std_comparison_insight(
-        key_a=pred_a,
-        key_b=pred_b,
-        star_a=float(ols_za.beta),
-        star_b=float(ols_zb.beta),
-    )
-    st.markdown(
-        tipify(f'<p class="fit-std-insight">{insight}</p>'),
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<p class="fit-std-note">Standardisation changes coefficient values, not R².</p>',
-        unsafe_allow_html=True,
-    )
-
-    # Concrete observation for the z-score walkthrough (near the sample median).
-    x_bar_a = float(np.mean(x_a))
-    example_i = int(np.argmin(np.abs(x_a - float(np.median(x_a)))))
-    x_obs = float(x_a[example_i])
-    z_obs = float(z_a[example_i])
-
-    form_l, form_r = st.columns(2, gap="small")
-    with form_l:
-        with st.container(border=False):
-            st.markdown(
-                '<div class="fit-std-formula-pane">'
-                '<p class="fit-std-col-lab">Standardising a value</p>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
-            st.latex(r"z = \dfrac{x - \overline{x}}{\mathrm{SD}(X)}")
-            st.latex(
-                rf"z = \dfrac{{{_format_coef(x_obs)} - {_format_coef(x_bar_a)}}}"
-                rf"{{{_format_coef(sx_a)}}} = {_format_coef(z_obs)}"
-            )
-            st.caption(f"One observation from {label_a} in the current sample.")
-    with form_r:
-        with st.container(border=False):
-            st.markdown(
-                '<div class="fit-std-formula-pane">'
-                '<p class="fit-std-col-lab">Standardising a regression slope</p>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
-            st.latex(
-                r"\beta^{*} = \hat{\beta}\,\dfrac{\mathrm{SD}(X)}{\mathrm{SD}(Y)}"
-            )
-            st.latex(
-                rf"\beta^{{*}} = {_format_coef(ols_a.beta)}\times"
-                rf"\dfrac{{{_format_coef(sx_a)}}}{{{_format_coef(sy)}}} ="
-                rf" {_format_coef(beta_star_a)}"
-            )
-            st.caption(f"Using {label_a} → Exam score.")
 
     st.markdown(
         tipify(
@@ -5134,14 +6126,334 @@ def render_standardisation_subtab(view) -> None:
         unsafe_allow_html=True,
     )
 
-    with st.expander("Two methods & R code", expanded=False):
+    # Concrete observation for the z-score walkthrough (near the sample median).
+    x_bar_a = float(np.mean(x_a))
+    example_i = int(np.argmin(np.abs(x_a - float(np.median(x_a)))))
+    x_obs = float(x_a[example_i])
+    z_obs = float(z_a[example_i])
+
+    with st.expander("How is standardisation calculated?", expanded=False):
+        form_l, form_r = st.columns(2, gap="small")
+        with form_l:
+            with st.container(border=False):
+                st.markdown(
+                    '<div class="fit-std-formula-pane">'
+                    '<p class="fit-std-col-lab">Standardising a value</p>'
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+                st.latex(r"z = \dfrac{x - \overline{x}}{\mathrm{SD}(X)}")
+                st.latex(
+                    rf"z = \dfrac{{{_format_coef(x_obs)} - {_format_coef(x_bar_a)}}}"
+                    rf"{{{_format_coef(sx_a)}}} = {_format_coef(z_obs)}"
+                )
+                st.caption(f"One observation from {label_a} in the current sample.")
+        with form_r:
+            with st.container(border=False):
+                st.markdown(
+                    '<div class="fit-std-formula-pane">'
+                    '<p class="fit-std-col-lab">Standardising a regression slope</p>'
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+                st.latex(
+                    r"\beta^{*} = \hat{\beta}\,\dfrac{\mathrm{SD}(X)}{\mathrm{SD}(Y)}"
+                )
+                st.latex(
+                    rf"\beta^{{*}} = {_format_coef(ols_a.beta)}\times"
+                    rf"\dfrac{{{_format_coef(sx_a)}}}{{{_format_coef(sy)}}} ="
+                    rf" {_format_coef(beta_star_a)}"
+                )
+                st.caption(f"Using {label_a} → Exam score.")
         st.caption(
             f"Both methods use {label_a} and yield β* = {_format_coef(beta_star_a)}."
         )
-        st.code(
-            r_standardisation_commands(predictor=pred_a, response="exam_score"),
-            language="r",
+
+
+def _rout_goto_ttest() -> None:
+    st.session_state.main_lab_tab = "sampling"
+    st.session_state.sampling_inference_sub = "ttest"
+
+
+def _rout_goto_fit_panel(panel: str) -> None:
+    st.session_state.fit_lab_panel = panel
+
+
+ROUT_FIELDS: tuple[tuple[str, str], ...] = (
+    ("formula", "1 · Formula"),
+    ("residuals_summary", "2 · Residuals summary"),
+    ("intercept", "3 · Intercept Estimate"),
+    ("slope", "4 · Slope Estimate"),
+    ("resid_se", "5 · Residual standard error"),
+    ("r2", "6 · Multiple R-squared"),
+    ("adj_r2", "7 · Adjusted R-squared"),
+    ("coef_tests", "8 · Std. Error / t value / Pr(>|t|)"),
+    ("f_stat", "9 · F-statistic & p-value"),
+)
+
+
+def _rout_console_html(
+    *,
+    all_lines: list[str],
+    highlight_idx: set[int],
+    overrides: dict[int, str] | None = None,
+) -> str:
+    """Render the console text as HTML, highlighting given line indices.
+
+    ``overrides`` supplies pre-built HTML for specific line indices (used
+    when a single console line needs its own partial highlight).
+    """
+    import html as html_mod
+
+    overrides = overrides or {}
+    out = []
+    for i, line in enumerate(all_lines):
+        if i in overrides:
+            out.append(overrides[i])
+            continue
+        esc = html_mod.escape(line) if line.strip() else " "
+        if i in highlight_idx:
+            out.append(f'<span class="hl">{esc}</span>')
+        else:
+            out.append(esc)
+    return '<pre class="fit-rout-console">' + "\n".join(out) + "</pre>"
+
+
+def render_r_output_subtab(view) -> None:
+    """Guided reading of summary(lm(...)) output, tied to existing lessons."""
+    from src.fitting_line import _r_format_float, _r_format_pval, _r_signif_stars
+
+    st.markdown(
+        tipify('<p class="fit-r2-heading">Understanding R Output</p>'),
+        unsafe_allow_html=True,
+    )
+
+    s = lm_summary_stats(view.x, view.y)
+    predictor, response = view.r_predictor, view.r_response
+
+    field_map = dict(ROUT_FIELDS)
+    field = st.session_state.get("rout_field", "formula")
+    if field not in field_map:
+        field = "formula"
+
+    prefix_lines = [
+        f"> model <- lm({response} ~ {predictor}, data = sample_data)",
+        "> summary(model)",
+        "",
+    ]
+    body_text = r_lm_summary_text(view.x, view.y, predictor=predictor, response=response)
+    body_lines = body_text.split("\n")
+    all_lines = prefix_lines + body_lines
+
+    def _line_indices(pred) -> set[int]:
+        return {i for i, l in enumerate(all_lines) if pred(l)}
+
+    resid_idx = next((i for i, l in enumerate(all_lines) if l == "Residuals:"), None)
+    r2_line_idx = next(
+        (i for i, l in enumerate(all_lines) if l.startswith("Multiple R-squared")), None
+    )
+
+    highlight_idx: set[int] = set()
+    if field == "formula":
+        highlight_idx = _line_indices(lambda l: l == "Call:" or l.startswith("lm(formula"))
+    elif field == "residuals_summary":
+        if resid_idx is not None:
+            highlight_idx = {resid_idx, resid_idx + 1, resid_idx + 2}
+    elif field == "intercept":
+        highlight_idx = _line_indices(lambda l: l.startswith("(Intercept)"))
+    elif field == "slope":
+        highlight_idx = _line_indices(lambda l: l.strip().startswith(predictor))
+    elif field == "resid_se":
+        highlight_idx = _line_indices(lambda l: l.startswith("Residual standard error"))
+    elif field == "coef_tests":
+        highlight_idx = _line_indices(
+            lambda l: l.startswith("(Intercept)")
+            or l.strip().startswith(predictor)
+            or l.strip().startswith("Estimate")
         )
+    elif field == "f_stat":
+        highlight_idx = _line_indices(lambda l: l.startswith("F-statistic"))
+
+    # R² / Adjusted R² share one console line — override it with an isolated
+    # highlight span so only the selected half lights up.
+    overrides: dict[int, str] = {}
+    if r2_line_idx is not None and field in ("r2", "adj_r2"):
+        import html as html_mod
+
+        r2_text = f"Multiple R-squared:  {_r_format_float(s['r2'], 4)}"
+        adj_text = f"Adjusted R-squared:  {_r_format_float(s['adj_r2'], 4)}"
+        if field == "r2":
+            overrides[r2_line_idx] = (
+                f'<span class="hl">{html_mod.escape(r2_text)}</span>,\t{html_mod.escape(adj_text)}'
+            )
+        else:
+            overrides[r2_line_idx] = (
+                f'{html_mod.escape(r2_text)},\t<span class="hl">{html_mod.escape(adj_text)}</span>'
+            )
+
+    console_html = _rout_console_html(
+        all_lines=all_lines, highlight_idx=highlight_idx, overrides=overrides
+    )
+
+    left_col, right_col = st.columns([55, 45], gap="medium")
+    with left_col:
+        st.markdown(console_html, unsafe_allow_html=True)
+
+    with right_col:
+        st.selectbox(
+            "Output field",
+            options=[key for key, _ in ROUT_FIELDS],
+            format_func=lambda k: field_map[k],
+            key="rout_field",
+            label_visibility="collapsed",
+        )
+
+        if field == "formula":
+            snippet = f"{response} ~ {predictor}"
+            st.markdown(
+                '<p class="fit-r2-math-heading">Formula</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                f"<p>The formula names what's predicted (the outcome) and what "
+                f"predicts it. Here <b>{response}</b> is the outcome and "
+                f"<b>{predictor}</b> is the predictor — the same X/Y you've "
+                "used throughout Simple Linear Regression.</p>"
+                '<p class="note">See this in: <b>Fit the line</b>.</p>',
+                unsafe_allow_html=True,
+            )
+        elif field == "residuals_summary":
+            snippet = "\n".join(all_lines[resid_idx : resid_idx + 3]) if resid_idx is not None else "—"
+            st.markdown(
+                '<p class="fit-r2-math-heading">Residuals summary</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                "<p>Five numbers summarising the residuals (observed minus "
+                "predicted): <b>Min</b> and <b>Max</b> are the largest "
+                "misses in each direction, <b>Median</b> is the typical "
+                "residual, and <b>1Q</b>/<b>3Q</b> (the 25th/75th "
+                "percentiles) show the middle spread. A roughly symmetric "
+                "set of residuals around 0 supports the straight-line "
+                "model.</p>"
+                '<p class="note">See this in: <b>Fit the line</b> — toggle '
+                "residuals to see them on the chart.</p>",
+                unsafe_allow_html=True,
+            )
+        elif field == "intercept":
+            snippet = f"(Intercept)  Estimate = {_r_format_float(s['alpha'])}"
+            st.markdown(
+                '<p class="fit-r2-math-heading">Intercept Estimate</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                f"<p>This is <b>α̂</b> — the predicted {response.lower()} when "
+                f"{predictor.lower()} = 0. It's the same α̂ you adjusted with "
+                "the slider in \"Fit the line\".</p>"
+                '<p class="note">See this in: <b>Fit the line</b>.</p>',
+                unsafe_allow_html=True,
+            )
+        elif field == "slope":
+            snippet = f"{predictor}  Estimate = {_r_format_float(s['beta'])}"
+            st.markdown(
+                '<p class="fit-r2-math-heading">Slope Estimate</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                f"<p>This is <b>β̂</b> — how much {response.lower()} changes "
+                f"for each one-unit increase in {predictor.lower()}. It's the "
+                "same β̂ from \"Fit the line\".</p>"
+                '<p class="note">See this in: <b>Fit the line</b>.</p>',
+                unsafe_allow_html=True,
+            )
+        elif field == "resid_se":
+            snippet = (
+                f"Residual standard error: {_r_format_float(s['sigma'], 3)} "
+                f"on {s['df']} degrees of freedom"
+            )
+            st.markdown(
+                '<p class="fit-r2-math-heading">Residual standard error</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                "<p>The typical size of a prediction error (residual), in "
+                f"the same units as {response.lower()}. It's a single-number "
+                "summary of how far observations fall from the line.</p>"
+                '<p class="note">See this in: <b>Fit the line</b>.</p>',
+                unsafe_allow_html=True,
+            )
+        elif field == "r2":
+            snippet = f"Multiple R-squared:  {_r_format_float(s['r2'], 4)}"
+            st.markdown(
+                '<p class="fit-r2-math-heading">Multiple R-squared</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                "<p>The proportion of variation in "
+                f"{response.lower()} explained by {predictor.lower()} — the "
+                "same R² from \"How Good Is the Model?\".</p>"
+                '<p class="note">See this in: <b>How Good Is the Model?</b></p>',
+                unsafe_allow_html=True,
+            )
+            st.button(
+                "Explore How Good Is the Model? →",
+                key="rout_goto_r2",
+                type="tertiary",
+                on_click=_rout_goto_fit_panel,
+                args=("r2",),
+            )
+        elif field == "adj_r2":
+            snippet = f"Adjusted R-squared:  {_r_format_float(s['adj_r2'], 4)}"
+            st.markdown(
+                '<p class="fit-r2-math-heading">Adjusted R-squared</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                "<p>R² adjusted to penalise adding predictors that don't "
+                "really help. With a single predictor it stays close to R², "
+                "but the distinction matters once more predictors are added "
+                "in Multiple Regression.</p>"
+                '<p class="note">See this in: <b>How Good Is the Model?</b></p>',
+                unsafe_allow_html=True,
+            )
+            st.button(
+                "Explore How Good Is the Model? →",
+                key="rout_goto_adj_r2",
+                type="tertiary",
+                on_click=_rout_goto_fit_panel,
+                args=("r2",),
+            )
+        elif field == "coef_tests":
+            name_w = max(len("(Intercept)"), len(predictor), 12)
+            snippet = (
+                f"{'':<{name_w}} {'Estimate':>10} {'Std. Error':>10} "
+                f"{'t value':>7} {'Pr(>|t|)':>10}\n"
+                f"{'(Intercept)':<{name_w}} {_r_format_float(s['alpha']):>10} "
+                f"{_r_format_float(s['se_alpha']):>10} {s['t_alpha']:>7.3f} "
+                f"{_r_format_pval(s['p_alpha']):>10} {_r_signif_stars(s['p_alpha'])}\n"
+                f"{predictor:<{name_w}} {_r_format_float(s['beta']):>10} "
+                f"{_r_format_float(s['se_beta']):>10} {s['t_beta']:>7.3f} "
+                f"{_r_format_pval(s['p_beta']):>10} {_r_signif_stars(s['p_beta'])}"
+            )
+            st.markdown(
+                '<p class="fit-r2-math-heading">Std. Error / t value / Pr(&gt;|t|)</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                "<p><b>Std. Error</b> measures the uncertainty in each "
+                "estimate. <b>t value</b> = Estimate / Std. Error. "
+                "<b>Pr(&gt;|t|)</b> is the p-value for testing whether the "
+                "true coefficient is zero.</p>"
+                '<p class="note">See this in: <b>Week 3 — The t-test: Is '
+                "the Slope Zero?</b> (Sampling &amp; Inference).</p>",
+                unsafe_allow_html=True,
+            )
+            st.button(
+                "Explore the t-test lesson →",
+                key="rout_goto_ttest",
+                type="tertiary",
+                on_click=_rout_goto_ttest,
+            )
+        elif field == "f_stat":
+            snippet = (
+                f"F-statistic: {_r_format_float(s['f_stat'], 1)} on 1 and "
+                f"{s['df']} DF,  p-value: {_r_format_pval(s['f_p'])}"
+            )
+            st.markdown(
+                '<p class="fit-r2-math-heading">F-statistic and p-value</p>'
+                f'<div class="fit-rout-snippet">{snippet}</div>'
+                "<p>The F-test checks whether the model as a whole explains "
+                "significantly more variation than the mean alone. With a "
+                "single predictor it carries the same information as the "
+                "slope's t-test above.</p>"
+                '<p class="note">See this in: <b>Week 4 — overall model '
+                "test</b>, covered in Multiple Regression (coming soon).</p>",
+                unsafe_allow_html=True,
+            )
 
 
 def _format_coef(value: float) -> str:
@@ -5195,29 +6507,9 @@ def render_fitting_tab() -> None:
             _ensure_fitting_xy("students")
         _save_fitting_persist()
 
-        with st.expander(
-            "What is linear regression?",
-            expanded=False,
-            type="compact",
-            key="fit_slr_intro",
-        ):
-            st.markdown(
-                '<div class="fit-slr-intro">'
-                '<div class="cols">'
-                '<div class="col"><p class="lab">Simple</p>'
-                "<p class=\"txt\">One predictor (X) to predict an outcome (Y).</p></div>"
-                '<div class="col"><p class="lab">Linear</p>'
-                "<p class=\"txt\">A straight-line relationship between X and Y.</p></div>"
-                '<div class="col"><p class="lab">Regression</p>'
-                "<p class=\"txt\">Use observed data to estimate the best-fitting line.</p></div>"
-                "</div>"
-                '<p class="eq">Ŷ = β̂<sub>0</sub> + β̂<sub>1</sub>X</p>'
-                '<p class="cap">One predictor. One straight line. Two estimated coefficients.</p>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-        _render_dataset_status_row(_fitting_dataset_status_html())
+        # Dataset header / Load Dataset are intentionally not shown in Simple
+        # Linear Regression lessons — dataset selection lives in the Dataset
+        # Library tab. These lessons stay fixed on Students, n = 200.
 
         dataset_key = st.session_state.fit_dataset_key
         x_name, y_name = _ensure_fitting_xy(dataset_key)
@@ -5234,7 +6526,10 @@ def render_fitting_tab() -> None:
             session=st.session_state,
             seed=st.session_state.fit_seed,
         )
-        _render_fitting_lab_sample_controls(source)
+        # Sampling controls (size slider / All observations / Draw New Sample)
+        # are intentionally not shown in Simple Linear Regression lessons —
+        # they stay fixed at the Students default (n = 200). The full
+        # sampling UI remains in Sampling & Inference.
 
         view = _ensure_fitting_observations(source)
         fingerprint_before = st.session_state.get("fit_view_fingerprint")
@@ -5277,25 +6572,51 @@ def render_fitting_tab() -> None:
         with st.container(key="fit_lab_tabs"):
             if "fit_lab_panel" not in st.session_state:
                 st.session_state.fit_lab_panel = "fit"
-            lab_panel = st.segmented_control(
-                "Lab panel",
-                options=["fit", "r2", "std"],
-                format_func=lambda key: {
-                    "fit": "Fit the line",
-                    "r2": "How Good Is the Model?",
-                    "std": "Standardisation",
-                }.get(key, key),
-                key="fit_lab_panel",
-                label_visibility="collapsed",
-                width="content",
-            )
-        if lab_panel not in ("fit", "r2", "std"):
-            lab_panel = "fit"
+            tabs_col, rcode_col = st.columns([5, 1], vertical_alignment="center")
+            with tabs_col:
+                lab_panel = st.segmented_control(
+                    "Lab panel",
+                    options=["why", "fit", "use", "r2", "std", "rout"],
+                    format_func=lambda key: {
+                        "why": "Why a Model?",
+                        "fit": "Fit the line",
+                        "use": "Using the Model",
+                        "r2": "How Good Is the Model?",
+                        "std": "Standardisation",
+                        "rout": "Understanding R Output",
+                    }.get(key, key),
+                    key="fit_lab_panel",
+                    label_visibility="collapsed",
+                    width="content",
+                )
+            if lab_panel not in ("why", "fit", "use", "r2", "std", "rout"):
+                lab_panel = "fit"
+            with rcode_col:
+                if lab_panel in FIT_RCODE_LESSONS:
+                    with st.container(key="fit_rcode_toggle_wrap"):
+                        st.button(
+                            "</> R code",
+                            key="fit_rcode_toggle",
+                            type="secondary",
+                            on_click=_toggle_fit_rcode_panel,
+                            help="Show or hide the R code for this lesson",
+                        )
+            if lab_panel in FIT_RCODE_LESSONS and st.session_state.get(
+                "fit_rcode_open", False
+            ):
+                with st.container(key="fit_rcode_slot"):
+                    _render_fit_rcode_slot(view, ols, lab_panel)
 
-        if lab_panel == "r2":
+        if lab_panel == "why":
+            render_why_model_subtab()
+        elif lab_panel == "use":
+            render_use_model_subtab(view)
+        elif lab_panel == "r2":
             render_understanding_r2_subtab(view)
         elif lab_panel == "std":
             render_standardisation_subtab(view)
+        elif lab_panel == "rout":
+            render_r_output_subtab(view)
         else:
             _render_fitting_line_subtab(
                 view,
@@ -5323,6 +6644,52 @@ def _render_fitting_line_subtab(
     b_step: float,
     fingerprint_before,
 ) -> None:
+    # 1. Research question + 2. OLS objective — always visible at the top.
+    st.markdown(
+        tipify(
+            f'<p class="fit-build-question">Can {view.x_axis} explain '
+            f"{view.y_axis}?</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        tipify(
+            '<p class="fit-build-objective">OLS finds the line that minimizes '
+            "the sum of squared residuals (SSR), thereby maximizing R².</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+    _l, mid, _r = st.columns([1, 2, 1])
+    with mid:
+        st.latex(r"\text{SSR} = \sum (y_i - \hat{y}_i)^2 \qquad R^2 = 1 - \dfrac{\text{SSR}}{\text{SST}}")
+
+    try_line_active = bool(st.session_state.get("fit_try_line_active", False))
+    if not try_line_active:
+        st.button(
+            "Fit a line →",
+            key="fit_try_line_btn",
+            type="primary",
+            on_click=_activate_fit_try_line,
+            args=(view,),
+        )
+        st.plotly_chart(
+            fitting_scatter(
+                hours=view.x,
+                scores=view.y,
+                alpha=float(ols.alpha),
+                beta=float(ols.beta),
+                show_residuals=False,
+                show_line=False,
+                height=FIT_CHART_HEIGHT,
+                x_title=view.x_axis,
+                y_title=view.y_axis,
+            ),
+            width="stretch",
+            config=PLOTLY_CONFIG,
+            key="fit_scatter_no_line",
+        )
+        return
+
     # Must run inside the fragment: clearing Predict X only reruns this panel.
     _sync_fitting_prediction_active()
     animating = bool(st.session_state.get("fit_animating"))
@@ -5349,34 +6716,78 @@ def _render_fitting_line_subtab(
     alpha_desc = "(OLS intercept)" if show_ols_labels else "(Your intercept)"
     beta_desc = "(OLS slope)" if show_ols_labels else "(Your slope)"
 
+    with st.container(key="fit_build_prompt_slot"):
+        if show_ols_labels:
+            sst_for_prompt = total_sum_of_squares(view.y)
+            sse_before = st.session_state.get("fit_sse_before")
+            if sse_before is None:
+                sse_before = float(ols.sse)
+            sse_before = float(sse_before)
+            r2_before = r_squared(sse_before, sst_for_prompt)
+            sse_after = float(ols.sse)
+            r2_after = r_squared(sse_after, sst_for_prompt)
+            st.markdown(
+                tipify(
+                    '<div class="fit-build-prompt success">'
+                    '<p class="title">OLS found the best-fitting line.</p>'
+                    '<p class="body">SSR decreased from '
+                    f"{_format_sse(sse_before)} to {_format_sse(sse_after)}, "
+                    "while R&sup2; increased from "
+                    f"{_format_r2_pct(r2_before)} to {_format_r2_pct(r2_after)}."
+                    "</p>"
+                    "</div>"
+                ),
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                tipify(
+                    '<div class="fit-build-prompt">'
+                    '<p class="title">Your turn: Find the best-fitting line</p>'
+                    '<p class="body">Adjust the intercept (α̂) and slope (β̂). '
+                    "Watch how SSR and R² change. Can you find the best fit "
+                    "before clicking Fit OLS?</p>"
+                    "</div>"
+                ),
+                unsafe_allow_html=True,
+            )
+
     # One toolbar: controls are siblings of the SAME st.columns().
     with st.container(key="fit_toolbar"):
         (
             col_run,
             col_resid,
             col_coefs,
-            col_rcode,
             col_alpha,
             col_beta,
             col_metrics,
             col_view,
         ) = st.columns(
-            [0.95, 0.75, 0.75, 0.85, 1.2, 1.2, 1.9, 0.7],
+            [0.95, 0.75, 0.75, 1.2, 1.2, 1.9, 0.7],
             gap="small",
             vertical_alignment="center",
         )
         with col_run:
-            find = st.button(
-                "Fit OLS",
-                type="primary",
-                key="fit_find",
-                width=75,
-                help=(
-                    "Fit the OLS regression with R's lm(). "
-                    f"{tip_title('OLS')}"
-                ),
-                disabled=animating,
-            )
+            if show_ols_labels:
+                find = st.button(
+                    "Try again",
+                    type="primary",
+                    key="fit_find",
+                    width=90,
+                    help="Start over with a new imperfect line.",
+                    disabled=animating,
+                    on_click=_restart_fit_try_line,
+                    args=(view,),
+                )
+            else:
+                find = st.button(
+                    "Fit OLS",
+                    type="primary",
+                    key="fit_find",
+                    width=90,
+                    help=f"Fit the OLS regression with R's lm(). {tip_title('OLS')}",
+                    disabled=animating,
+                )
         with col_resid:
             with st.container(key="fit_resid_wrap"):
                 st.markdown(
@@ -5399,16 +6810,6 @@ def _render_fitting_line_subtab(
                     key="fit_show_coefs",
                     label_visibility="collapsed",
                 )
-        with col_rcode:
-            with st.container(key="fit_rcode_wrap"):
-                with st.popover("R code", width=85):
-                    _render_r_code_panel(
-                        view,
-                        ols,
-                        alpha=float(st.session_state.get("fit_alpha", ols.alpha)),
-                        beta=float(st.session_state.get("fit_beta", ols.beta)),
-                        lm_run=bool(st.session_state.fit_found),
-                    )
         with col_alpha:
             with st.container(key="fit_alpha_wrap"):
                 st.markdown(
@@ -5445,7 +6846,11 @@ def _render_fitting_line_subtab(
                 )
 
         sst = total_sum_of_squares(view.y)
-        if find and not animating:
+        # "Try again" is handled entirely by its on_click callback (which runs
+        # before this rerun). Consume its one-shot marker so the leftover
+        # `find == True` from that click doesn't also start a Fit OLS animation.
+        just_restarted = bool(st.session_state.pop("fit_restart_consumed", False))
+        if find and not animating and not just_restarted:
             st.session_state.fit_sse_before = float(
                 sum_of_squared_errors(view.x, view.y, alpha, beta)
             )
@@ -5492,32 +6897,31 @@ def _render_fitting_line_subtab(
                 r2_path
             )
             paint_x_max = max(int(sse_path.size) - 1, 0)
-            r2_start = float(r2_path[0])
-            r2_end = float(r2_path[-1])
         else:
             sse_range = _FIT_METRIC_EMPTY_RANGE
             r2_range = _FIT_METRIC_EMPTY_RANGE
             paint_x_max = 0
-            r2_start = 0.0
-            r2_end = 0.0
 
         # Show curves while animating, or when hats match OLS (restore completed fit).
         # Off-OLS hats: blank minis (paths kept so returning to OLS restores them).
         if animating and has_metric_path and 0 <= anim_frame < sse_path.size:
             paint_sse = sse_path[: anim_frame + 1]
             paint_r2 = r2_path[: anim_frame + 1]
-            show_r2_range = False
+            live_sse = float(sse_path[anim_frame])
+            live_r2 = float(r2_path[anim_frame])
         elif has_metric_path and at_ols:
             paint_sse = sse_path
             paint_r2 = r2_path
-            show_r2_range = True
+            live_sse = float(current_sse)
+            live_r2 = float(current_r2)
         else:
             paint_sse = np.asarray([], dtype=np.float64)
             paint_r2 = np.asarray([], dtype=np.float64)
             paint_x_max = 0
             sse_range = _FIT_METRIC_EMPTY_RANGE
             r2_range = _FIT_METRIC_EMPTY_RANGE
-            show_r2_range = False
+            live_sse = float(current_sse)
+            live_r2 = float(current_r2)
 
         _mount_fit_metric_toolbar(
             col_metrics,
@@ -5526,9 +6930,8 @@ def _render_fitting_line_subtab(
             sse_range=sse_range,
             r2_range=r2_range,
             x_max=paint_x_max,
-            r2_start=r2_start,
-            r2_end=r2_end,
-            show_r2_range=show_r2_range,
+            sse_display=_format_sse(live_sse),
+            r2_display=_format_r2_pct(live_r2) if np.isfinite(live_r2) else "—",
             animating=False,
         )
         view_mode = st.session_state.get("fit_view_mode", "chart")
@@ -5581,7 +6984,9 @@ def _render_fitting_line_subtab(
                     alpha=float(step_alpha),
                     beta=float(step_beta),
                     show_residuals=show_residuals,
-                    selected_index=st.session_state.fit_selected,
+                    # No EXPLAIN panel on this page anymore (moved to Using
+                    # the Model) — don't draw its orphaned decomposition bars.
+                    selected_index=None,
                     height=FIT_CHART_HEIGHT,
                     x_title=view.x_axis,
                     y_title=view.y_axis,
@@ -5665,7 +7070,9 @@ def _render_fitting_line_subtab(
                     alpha=alpha,
                     beta=beta,
                     show_residuals=show_residuals,
-                    selected_index=st.session_state.fit_selected,
+                    # No EXPLAIN panel on this page anymore (moved to Using
+                    # the Model) — don't draw its orphaned decomposition bars.
+                    selected_index=None,
                     height=FIT_CHART_HEIGHT,
                     x_title=view.x_axis,
                     y_title=view.y_axis,
@@ -5693,182 +7100,28 @@ def _render_fitting_line_subtab(
         st.session_state.fit_selected = None
         st.session_state.fit_explain_pick = 0
 
-    with st.container(key="fit_model_use"):
-        st.markdown(
-            '<p class="fit-use-title">Using the model</p>',
-            unsafe_allow_html=True,
-        )
-        predict_col, explain_col = st.columns(2, gap="small")
-        with predict_col:
-            with st.container(key="fit_use_predict"):
-                st.markdown(
-                    '<p class="fit-use-lab predict">Predict — What outcome can I expect?</p>',
-                    unsafe_allow_html=True,
-                )
-                pred_row = st.container(
-                    horizontal=True, vertical_alignment="center", gap="small", wrap=True
-                )
-                with pred_row:
-                    st.markdown(
-                        f'<p class="fit-predict-key">X: {view.x_axis}</p>',
-                        unsafe_allow_html=True,
-                    )
-                    if "fit_predict_input" not in st.session_state:
-                        st.session_state.fit_predict_input = ""
-                    st.text_input(
-                        view.x_axis,
-                        placeholder="Enter X",
-                        key="fit_predict_input",
-                        label_visibility="collapsed",
-                        width=120,
-                    )
-                    st.button(
-                        "Predict",
-                        key="fit_predict_btn",
-                        type="primary",
-                        width=88,
-                        on_click=_commit_fitting_prediction,
-                    )
-                if predict_x is not None:
-                    predict_y = float(alpha) + float(beta) * float(predict_x)
-                    sign = "−" if beta < 0 else "+"
-                    slope_abs = abs(float(beta))
-                    x_obs = np.asarray(view.x, dtype=np.float64)
-                    extrapolating = bool(x_obs.size) and (
-                        float(predict_x) < float(np.min(x_obs)) - 1e-12
-                        or float(predict_x) > float(np.max(x_obs)) + 1e-12
-                    )
-                    warn = (
-                        '<p class="fit-predict-warn">'
-                        "Extrapolation: this prediction is outside the observed data. "
-                        "The relationship may not continue."
-                        "</p>"
-                        if extrapolating
-                        else ""
-                    )
-                    st.markdown(
-                        '<div class="fit-predict-result">'
-                        f'<p class="fit-predict-yhat">Ŷ: Predicted {view.y_axis.lower()} '
-                        f"= <b>{predict_y:.2f}</b></p>"
-                        f'<p class="fit-predict-eq">'
-                        f"Ŷ = {alpha:.3f} {sign} {slope_abs:.3f} × {predict_x:.3f} "
-                        f"= <b>{predict_y:.2f}</b>"
-                        "</p>"
-                        f"{warn}"
-                        "</div>",
-                        unsafe_allow_html=True,
-                    )
-        with explain_col:
-            with st.container(key="fit_use_explain"):
-                st.markdown(
-                    '<p class="fit-use-lab explain">Explain</p>',
-                    unsafe_allow_html=True,
-                )
-                if view.n <= 0:
-                    st.markdown(
-                        '<p class="fit-explain-copy">Draw a sample to explain an observation.</p>',
-                        unsafe_allow_html=True,
-                    )
-                elif (
-                    selected is None
-                    or not (0 <= int(selected) < view.n)
-                ):
-                    st.markdown(
-                        '<p class="fit-explain-copy">'
-                        "Click any point to see how the model explains its outcome."
-                        "</p>",
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    idx = int(selected)
-                    obs_n = idx + 1
-                    pick_row = st.container(
-                        horizontal=True, vertical_alignment="center", gap="small"
-                    )
-                    with pick_row:
-                        st.markdown(
-                            f'<p class="fit-explain-student">Observation {obs_n}</p>',
-                            unsafe_allow_html=True,
-                        )
-                        st.button(
-                            "×",
-                            key="fit_clear_student",
-                            width=40,
-                            help="Clear observation selection",
-                            on_click=_clear_fitting_student_selection,
-                        )
-                    y_i = float(view.y[idx])
-                    y_hat_i = float(alpha) + float(beta) * float(view.x[idx])
-                    total_dev = y_i - y_bar
-                    model_comp = y_hat_i - y_bar
-                    resid_i = y_i - y_hat_i
-                    st.markdown(
-                        '<div class="fit-explain-vals">'
-                        f'<span class="y"><span class="k">Actual Y</span>'
-                        f'<span class="v">{y_i:.2f}</span></span>'
-                        f'<span class="yhat"><span class="k">Predicted Ŷ</span>'
-                        f'<span class="v">{y_hat_i:.2f}</span></span>'
-                        f'<span class="mean"><span class="k">Sample mean Ȳ</span>'
-                        f'<span class="v">{y_bar:.2f}</span></span>'
-                        "</div>"
-                        '<div class="fit-explain-decomp">'
-                        '<p class="words">'
-                        '<span class="total">Total deviation</span> = '
-                        '<span class="model">Model component (blue)</span> + '
-                        '<span class="resid">Residual (orange)</span>'
-                        "</p>"
-                        f'<p class="nums">'
-                        f'<span class="total">{total_dev:+.2f}</span>'
-                        f'<span class="op">=</span>'
-                        f'<span class="model">{model_comp:+.2f}</span>'
-                        f'<span class="op">+</span>'
-                        f'<span class="resid">{resid_i:+.2f}</span>'
-                        "</p>"
-                        "</div>",
-                        unsafe_allow_html=True,
-                    )
-                with st.container(key="fit_explain_foot"):
-                    foot = st.container(
-                        horizontal=True,
-                        vertical_alignment="center",
-                        gap="small",
-                        wrap=True,
-                    )
-                    with foot:
-                        if not np.isfinite(current_r2):
-                            st.markdown(
-                                tipify(
-                                    '<p class="fit-explain-copy">R² undefined '
-                                    "(no variation in Y).</p>"
-                                ),
-                                unsafe_allow_html=True,
-                            )
-                        else:
-                            pct = 100.0 * float(current_r2)
-                            st.markdown(
-                                tipify(
-                                    f'<p class="fit-explain-r2line">'
-                                    f"R² = {pct:.1f}%</p>"
-                                ),
-                                unsafe_allow_html=True,
-                            )
-                            if current_r2 < 0:
-                                st.markdown(
-                                    tipify(
-                                        '<p class="fit-explain-warn">Worse than the sample mean.</p>'
-                                    ),
-                                    unsafe_allow_html=True,
-                                )
-                        st.button(
-                            "Understand R² →",
-                            key="fit_open_r2",
-                            width=140,
-                            help=tip_title("R²"),
-                            on_click=_open_understanding_r2,
-                        )
+    # SSR and R² — clearly visible, dynamically updated with the sliders.
+    if np.isfinite(current_r2):
+        r2_display = f"{100.0 * float(current_r2):.1f}%"
+    else:
+        r2_display = "—"
+    st.markdown(
+        tipify(
+            '<div class="fit-build-results">'
+            f'<div class="metric"><p class="k">SSR</p>'
+            f'<p class="v">{_format_sse(current_sse)}</p></div>'
+            f'<div class="metric"><p class="k">R²</p>'
+            f'<p class="v">{r2_display}</p></div>'
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
+
+    if FIT_BUILD_SHOW_USE_SECTION:
+        _render_use_predict_explain(view, alpha=float(alpha), beta=float(beta), current_r2=float(current_r2))
 
 def main() -> None:
-    st.set_page_config(page_title="Regression Lab", layout="wide")
+    st.set_page_config(page_title="StatsApp", layout="wide")
     st.markdown(CSS, unsafe_allow_html=True)
     from src.birthday_ines import mount_birthday_surprise
 
@@ -5897,8 +7150,16 @@ def main() -> None:
         st.warning("The student file hash does not match the metadata. The file may have changed.")
 
     active = render_main_nav()
-    if active == "fitting":
+    if active == "journey":
+        from src.statistical_journey import render_statistical_journey
+
+        render_statistical_journey()
+    elif active == "fitting":
         _render_lab_with_drawer("fitting", population, render_fitting_tab, rng=rng)
+    elif active == "correlation":
+        from src.correlation_causation import render_correlation_causation_tab
+
+        render_correlation_causation_tab()
     elif active == "sampling":
         render_sampling_inference_tab(population, rng)
     elif active == "library":

@@ -13,7 +13,6 @@ import streamlit as st
 PARIS = ZoneInfo("Europe/Paris")
 BIRTHDAY_LAST_DAY = date(2026, 10, 25)
 _PLAYED_KEY = "ines_bday_2026_played"
-_REPLAY_KEY = "ines_bday_2026_replay"
 
 
 def is_birthday_window_open(now: datetime | None = None) -> bool:
@@ -101,19 +100,6 @@ def _celebration_html() -> str:
   #ines-bday-overlay .ines-twenty { animation: none !important; }
   #ines-bday-overlay .ines-piece { display: none !important; }
 }
-.st-key-ines_bday_badge {
-  position: fixed !important; top: 0.45rem !important; right: 0.7rem !important;
-  z-index: 99990 !important;
-}
-.st-key-ines_bday_badge button {
-  min-width: 2.35rem !important; width: 2.35rem !important;
-  height: 2.35rem !important; padding: 0 !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(217, 119, 6, 0.45) !important;
-  background: linear-gradient(145deg, #FFF7ED, #FCE7F3 55%, #EDE9FE) !important;
-  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.22) !important;
-  font-size: 1.15rem !important;
-}
 </style>
 <div id="ines-bday-overlay" role="dialog" aria-label="Happy birthday Ines">
   <div class="ines-confetti" aria-hidden="true">
@@ -138,11 +124,6 @@ def _celebration_html() -> str:
 def mount_birthday_surprise() -> None:
     if not is_birthday_window_open():
         return
-    if st.session_state.pop(_REPLAY_KEY, False):
-        st.session_state[_PLAYED_KEY] = False
     if not st.session_state.get(_PLAYED_KEY, False):
         st.session_state[_PLAYED_KEY] = True
         st.markdown(_celebration_html(), unsafe_allow_html=True)
-    if st.button("🎂", key="ines_bday_badge", help="Replay birthday greeting"):
-        st.session_state[_REPLAY_KEY] = True
-        st.rerun()

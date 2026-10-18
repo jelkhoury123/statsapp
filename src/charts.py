@@ -2050,6 +2050,7 @@ def fitting_scatter(
     prediction_x: float | None = None,
     prediction_alpha: float | None = None,
     prediction_beta: float | None = None,
+    show_line: bool = True,
 ) -> go.Figure:
     """Candidate regression line fitted to a fixed set of observations."""
     fig = go.Figure()
@@ -2158,17 +2159,18 @@ def fitting_scatter(
         y1 = max(y1, pred_y + y_pad)
     # Solid line across the full displayed X-axis (includes padding past extremes).
     line_x = np.array([x0, x1])
-    fig.add_trace(
-        go.Scatter(
-            x=line_x,
-            y=alpha + beta * line_x,
-            mode="lines",
-            name="Regression line",
-            line=dict(color=BLUE, width=3.0),
-            hoverinfo="skip",
+    if show_line:
+        fig.add_trace(
+            go.Scatter(
+                x=line_x,
+                y=alpha + beta * line_x,
+                mode="lines",
+                name="Regression line",
+                line=dict(color=BLUE, width=3.0),
+                hoverinfo="skip",
+            )
         )
-    )
-    if extrapolating and pred_x is not None:
+    if show_line and extrapolating and pred_x is not None:
         if pred_x > x_obs_max and x1 > x_obs_max:
             fig.add_trace(
                 go.Scatter(
@@ -2441,6 +2443,8 @@ def r2_lesson_scatter(
     ols_alpha: float | None = None,
     ols_beta: float | None = None,
     residual_about: str | None = None,
+    mean_trace_name: str | None = None,
+    regression_residual_color: str = "rgba(234, 88, 12, 0.75)",
 ) -> go.Figure:
     """One large scatter for the R² lesson: mean line, candidate, optional OLS, residuals."""
     fig = go.Figure()
@@ -2482,7 +2486,7 @@ def r2_lesson_scatter(
         and n_points
     ):
         predicted = float(regression_alpha) + float(regression_beta) * x_values
-        _residual_segments(predicted, "Residuals from regression", "rgba(234, 88, 12, 0.75)")
+        _residual_segments(predicted, "Residuals from regression", regression_residual_color)
 
     use_webgl = n_points > 800
     scatter_cls = go.Scattergl if use_webgl else go.Scatter
@@ -2517,12 +2521,13 @@ def r2_lesson_scatter(
     line_x = np.array([x0, x1])
 
     if show_mean_line:
+        mean_name = mean_trace_name if mean_trace_name is not None else f"Mean ȳ = {y_bar:.2f}"
         fig.add_trace(
             go.Scatter(
                 x=line_x,
                 y=np.full(2, y_bar),
                 mode="lines",
-                name=f"Mean ȳ = {y_bar:.2f}",
+                name=mean_name,
                 line=dict(color=GREY, width=2.6, dash="dash"),
                 hovertemplate=f"ȳ = {y_bar:.3f}<extra></extra>",
             )
