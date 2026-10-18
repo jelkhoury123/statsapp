@@ -711,6 +711,11 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .dist-compare .est, .dist-calc .est { color: #1D4ED8; font-weight: 650; }
 .st-key-dist_step { margin: 0 0 0.1rem 0; }
 .dist-stat { display: flex; gap: 1.1rem; }
+.st-key-dist_beta .dist-stat {
+  justify-content: center; gap: 0; font-size: 0.86rem;
+}
+.st-key-dist_beta .dist-stat span { padding: 0 0.6rem; }
+.st-key-dist_beta .dist-stat span:not(:first-child) { border-left: 1px solid #D1D9E0; }
 .dist-stat.compare {
     display: block;
     height: auto;
@@ -809,7 +814,8 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .t-scale { margin: 0.05rem 0 0.05rem 0; font-size: 0.88rem; line-height: 1.2rem; color: #374151; text-align: center; }
 .st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.t-scale) { margin-bottom: 0 !important; }
 .st-key-dist_layout:has(.dist-step-one),
-.st-key-dist_layout:has(.dist-step-test) {
+.st-key-dist_layout:has(.dist-step-test),
+.st-key-dist_layout:has(.dist-step-repeated) {
     height: auto !important;
     max-height: none !important;
     overflow: visible;
@@ -1637,7 +1643,20 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .dist-intro { margin: 0 0 0.15rem 0; font-size: 1rem; font-weight: 700; color: #12263a; }
 .dist-calc { font-size: 0.92rem; line-height: 1.4rem; color: #374151; }
 .se-final { font-size: 1.65rem; font-weight: 780; color: #1D4ED8; }
+.dist-note-heading {
+  margin: 0.4rem 0 0.15rem 0; color: #12263a; font-weight: 700;
+  font-size: 0.96rem; line-height: 1.3rem;
+}
 .dist-note-line { margin: 0.2rem 0 0 0; color: #374151; font-size: 0.9rem; line-height: 1.3rem; }
+.dist-transition {
+  margin: 0.5rem 0 0 0; padding-top: 0.4rem; border-top: 1px solid #E2E8F0;
+  color: #64748B; font-style: italic; font-size: 0.86rem; line-height: 1.3rem;
+}
+.dist-takeaway {
+  margin: 0.4rem 0 0 0; padding: 0.3rem 0 0.3rem 0.6rem;
+  border-left: 2px solid #93C5FD; color: #1E293B; font-weight: 650;
+  font-size: 0.88rem; line-height: 1.3rem;
+}
 .dist-formula {
     margin: 0.45rem 0 0.15rem 0;
     padding: 0.55rem 0.7rem;
@@ -3524,7 +3543,19 @@ def _paint_scatter_only(population, experiment, cloud: str, *, suffix: str) -> N
         _DIST_SCATTER.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key=chart_key)
 
 
-def _paint_distributions(population, experiment, cloud: str, *, highlight: bool, suffix: str) -> None:
+_REPEATED_SAMPLING_AUTO_SHOW_THRESHOLD = 100
+
+
+def _repeated_sampling_auto_show(experiment) -> bool:
+    """Once enough samples have been drawn, reveal the normal curve + SE bands automatically."""
+    return int(experiment.n_repetitions) >= _REPEATED_SAMPLING_AUTO_SHOW_THRESHOLD and can_show_normal(
+        experiment.betas
+    )
+
+
+def _paint_distributions(
+    population, experiment, cloud: str, *, highlight: bool, suffix: str, show_normal: bool, show_2se: bool = False
+) -> None:
     """Step 1: scatter of lines (left) and sampling distribution of β̂ (right)."""
     scatter, latest_beta = _distribution_scatter_figure(population, experiment, cloud)
     chart_key = f"dist_scatter_{suffix}"
@@ -3542,11 +3573,12 @@ def _paint_distributions(population, experiment, cloud: str, *, highlight: bool,
         true_label="True β",
         mean_label=f"Mean {_BETA_HAT}",
         sd_label=f"SD({_BETA_HAT})",
-        show_normal=experiment.show_normals,
+        show_normal=show_normal,
         highlight=latest_beta if highlight else None,
         suffix=f"beta_{suffix}",
         decimals=3,
         height=_DIST_HIST_HEIGHT,
+        show_2se=show_2se,
     )
 
 
@@ -3566,6 +3598,7 @@ def _paint_histogram(
     suffix,
     decimals,
     height: int | None = None,
+    show_2se: bool = False,
 ) -> None:
     mean = estimate_mean(values)
     spread = estimate_sd(values)
@@ -3596,6 +3629,7 @@ def _paint_histogram(
         decimals=decimals,
         height=_DIST_HIST_HEIGHT if height is None else int(height),
         uirevision=f"dist-hist-{suffix}",
+        show_2se=show_2se,
     )
     stats = (
         '<p class="dist-stat">'
@@ -3627,7 +3661,8 @@ _ONE_LEGEND = None
 _DIST_SCATTER_HEIGHT = 515
 _DIST_HIST_HEIGHT = 480
 _ONE_SCATTER_HEIGHT = 460
-_ONE_BETA_HEIGHT = 460
+# Match Repeated Sampling's histogram height exactly for visual consistency.
+_ONE_BETA_HEIGHT = _DIST_HIST_HEIGHT
 _ONE_HIST_HEIGHT = 230
 
 
@@ -3713,8 +3748,11 @@ def _slope_calculation_html(error) -> str:
         f'<span class="se-key">SE({_BETA_HAT}) = s / √S<sub>xx</sub> = '
         f"{residual} / √{sxx_text} = "
         f'<span class="se-final">{result}</span></span></p>'
-        '<p class="dist-note-line">More residual noise increases uncertainty; '
-        "more spread in X reduces it.</p>"
+        '<p class="dist-note-line">More residual scatter → larger SE. '
+        "More spread in X → smaller SE.</p>"
+        '<p class="dist-takeaway">One sample gives us enough information to '
+        "estimate the uncertainty of its slope — without actually drawing "
+        "thousands of samples.</p>"
         "</div>"
     )
 
@@ -3751,8 +3789,25 @@ def _discovery_html(error, benchmark, experiment) -> str:
 
 _ONE_INTRO = (
     '<div class="dist-step-one"></div>'
-    '<p class="dist-intro">With thousands of samples we can see how much β̂ varies. '
-    "With one sample we can still estimate that same uncertainty.</p>"
+    '<p class="dist-intro">How can one sample reveal the uncertainty of '
+    "an estimate?</p>"
+)
+
+_ONE_SAMPLING_EXPLANATION = (
+    '<p class="dist-note-line">Imagine drawing thousands of different '
+    "samples from the same population.</p>"
+    '<p class="dist-note-line">Each sample would contain different '
+    "observations. Random variation would place some observations above "
+    "the regression line and others below it, producing a slightly "
+    "different estimated slope each time.</p>"
+    '<p class="dist-note-line">The more scattered the observations are '
+    "around the line, the more these estimated slopes can vary.</p>"
+    '<p class="dist-note-line">But the spread of X matters too: when '
+    "observations cover a wider range of X values, the slope can be "
+    "estimated more precisely.</p>"
+    '<p class="dist-note-line">By measuring these two things in just '
+    "ONE sample, we can estimate how much the slope would vary across "
+    "thousands of samples.</p>"
 )
 
 _ONE_LEFT_HEAD = (
@@ -3837,7 +3892,6 @@ def _paint_one_sample_scatter(population, one, cloud: str):
         show_residual_band=one.show_band,
     )
     st.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key="dist_scatter_one")
-    st.markdown(_slope_calculation_html(error), unsafe_allow_html=True)
     return error
 
 
@@ -3967,12 +4021,13 @@ def _render_null_slope(sample_size: int, draw: bool, true_beta: float) -> None:
 
 def render_sampling_inference_tab(population, rng: np.random.Generator) -> None:
     """Combined Sampling & Inference: One Sample plus the three distribution steps."""
+    if "sampling_inference_sub" not in st.session_state:
+        st.session_state.sampling_inference_sub = "one_sample"
     sub = st.segmented_control(
         "Sampling & Inference section",
         options=[key for key, _ in SAMPLING_INFERENCE_SUBTABS],
         format_func=lambda key: SAMPLING_INFERENCE_SUB_LABELS[key],
         key="sampling_inference_sub",
-        default="one_sample",
         label_visibility="collapsed",
         width="content",
     )
@@ -4008,11 +4063,12 @@ def _sampling_status_row(population, experiment) -> None:
 @st.fragment(key="dist_repeated")
 def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
     """Repeated sampling controls + charts (fragment-scoped to avoid page flash)."""
+    # Marker for CSS: let this step grow to its natural height (the added
+    # explanatory text is taller than the old fixed-viewport layout).
+    st.markdown('<div class="dist-step-repeated"></div>', unsafe_allow_html=True)
     global _DIST_SCATTER, _DIST_SCATTER_NOTE, _DIST_BETA
     experiment = _dist_experiment(population)
     pending_n = st.session_state.get("dist_sample_size", experiment.sample_size)
-    if int(pending_n) != int(experiment.sample_size):
-        st.session_state.dist_normals_toggle = False
     experiment = experiment_for_sample_size(
         experiment,
         int(pending_n),
@@ -4021,11 +4077,7 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
         population.alpha,
         population.beta,
     )
-    if "dist_normals_toggle" not in st.session_state:
-        st.session_state.dist_normals_toggle = bool(experiment.show_normals)
     _sampling_status_row(population, experiment)
-    curves_allowed = can_show_normal(experiment.alphas) or can_show_normal(experiment.betas)
-    curves_on = bool(st.session_state.dist_normals_toggle)
     added = 0
     frames: list = []
     toolbar = st.container(horizontal=True, vertical_alignment="bottom", gap="small", wrap=False)
@@ -4045,17 +4097,7 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
             added = 100
         if st.button("Draw 1,000", key="dist_draw_1000", width=118):
             added = 1000
-        reset = st.button(
-            "Reset",
-            key="dist_reset",
-            width=84,
-            on_click=lambda: st.session_state.update(dist_normals_toggle=False),
-        )
-        st.toggle(
-            "Normal curves",
-            key="dist_normals_toggle",
-            disabled=not curves_allowed and not curves_on,
-        )
+        reset = st.button("Reset", key="dist_reset", width=84)
     status = st.empty()
     if reset:
         experiment = new_experiment(
@@ -4066,11 +4108,6 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
             population.beta,
         )
         added = 0
-    else:
-        experiment = replace(
-            experiment,
-            show_normals=bool(st.session_state.dist_normals_toggle),
-        )
     if added:
         frames = animated_draws(
             experiment,
@@ -4104,17 +4141,29 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
             _DIST_SCATTER_NOTE.markdown('<p class="dist-sd">&nbsp;</p>', unsafe_allow_html=True)
             for index, snapshot in enumerate(snapshots):
                 status.markdown(_dist_status(snapshot), unsafe_allow_html=True)
+                auto_show = _repeated_sampling_auto_show(snapshot)
                 _paint_distributions(
                     population,
                     snapshot,
                     cloud,
                     highlight=index == len(snapshots) - 1,
                     suffix=str(index),
+                    show_normal=auto_show,
+                    show_2se=auto_show,
                 )
                 if index < len(snapshots) - 1:
                     time.sleep(_dist_pause(added, len(snapshots) - 1))
             time.sleep(0.35)
-            _paint_distributions(population, experiment, cloud, highlight=False, suffix="settled")
+            auto_show = _repeated_sampling_auto_show(experiment)
+            _paint_distributions(
+                population,
+                experiment,
+                cloud,
+                highlight=False,
+                suffix="settled",
+                show_normal=auto_show,
+                show_2se=auto_show,
+            )
         else:
             _DIST_SCATTER = None
             _DIST_BETA = None
@@ -4126,6 +4175,7 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
             with hist_col:
                 with st.container(key="dist_hists"):
                     with st.container(key="dist_beta"):
+                        auto_show = _repeated_sampling_auto_show(experiment)
                         _paint_histogram(
                             None,
                             values=experiment.betas,
@@ -4136,16 +4186,35 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
                             true_label="True β",
                             mean_label=f"Mean {_BETA_HAT}",
                             sd_label=f"SD({_BETA_HAT})",
-                            show_normal=experiment.show_normals,
+                            show_normal=auto_show,
                             highlight=None,
                             suffix="beta_live",
                             decimals=3,
                             height=_DIST_HIST_HEIGHT,
+                            show_2se=auto_show,
                         )
-    final_allowed = can_show_normal(experiment.alphas) or can_show_normal(experiment.betas)
-    if final_allowed and not curves_allowed and not curves_on:
-        st.rerun(scope="fragment")
     st.markdown('<p class="dist-note">&nbsp;</p>', unsafe_allow_html=True)
+    st.markdown(
+        tipify(
+            '<p class="dist-note-heading">Why do the estimates form a '
+            "bell curve?</p>"
+            "<p class=\"dist-note-line\">Every sample contains different "
+            f"students, producing a different estimated slope {_BETA_HAT}.</p>"
+            '<p class="dist-note-line">Across thousands of samples, these '
+            "estimates form an approximately normal distribution centered "
+            "on the true population slope β.</p>"
+            '<p class="dist-note-line">The width of this distribution '
+            "measures how much a slope estimate varies from sample to "
+            f"sample. This variability is its standard error.</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="dist-transition">But researchers usually have only one '
+        "sample. How can we estimate this uncertainty without repeating "
+        "the experiment thousands of times?</p>",
+        unsafe_allow_html=True,
+    )
 
 
 @st.fragment(key="dist_estimate_se")
@@ -4234,6 +4303,8 @@ def _render_estimate_se(population, rng: np.random.Generator) -> None:
             st.markdown(_ONE_LEFT_HEAD, unsafe_allow_html=True)
             with st.container(key="one_beta"):
                 _paint_one_sample_hist(population, experiment)
+    st.markdown(_ONE_SAMPLING_EXPLANATION, unsafe_allow_html=True)
+    st.markdown(_slope_calculation_html(error), unsafe_allow_html=True)
     st.markdown(_discovery_html(error, benchmark, experiment), unsafe_allow_html=True)
 
 

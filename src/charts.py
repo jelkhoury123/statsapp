@@ -1062,6 +1062,59 @@ def _add_se_value_label(
     )
 
 
+def _add_second_se_band(
+    fig: go.Figure,
+    mean: float | None,
+    standard_error: float | None,
+    x_range: tuple[float, float],
+) -> None:
+    """Lighter, wider band from mean − 2 SE to mean + 2 SE, behind the ±1 SE band."""
+    if mean is None or standard_error is None:
+        return
+    if not (np.isfinite(mean) and np.isfinite(standard_error) and standard_error > 0):
+        return
+    left = float(mean - 2.0 * standard_error)
+    right = float(mean + 2.0 * standard_error)
+    fig.add_shape(
+        type="rect",
+        x0=left,
+        x1=right,
+        y0=0,
+        y1=1,
+        yref="paper",
+        fillcolor="rgba(29, 78, 216, 0.12)",
+        line_width=0,
+        layer="below",
+    )
+    for edge in (left, right):
+        fig.add_vline(
+            x=edge,
+            line_color=BLUE,
+            line_width=1,
+            line_dash="dot",
+            opacity=0.6,
+        )
+    x0, x1 = x_range
+    visible_left = min(max(left, x0), x1)
+    visible_right = min(max(right, x0), x1)
+    if visible_right <= visible_left:
+        return
+    fig.add_annotation(
+        x=(visible_left + visible_right) / 2,
+        xref="x",
+        xanchor="center",
+        y=1,
+        yref="paper",
+        yanchor="top",
+        yshift=-30,
+        text="±2 SE ≈ 95% of estimates",
+        showarrow=False,
+        bgcolor="rgba(255,255,255,0.94)",
+        borderpad=3,
+        font=dict(size=10, color=BLUE, family=FONT),
+    )
+
+
 def _add_standard_error_band(
     fig: go.Figure,
     mean: float | None,
@@ -1143,6 +1196,7 @@ def sampling_histogram(
     decimals: int = 3,
     height: int = 280,
     se_label: str = "±1 SE",
+    show_2se: bool = False,
     uirevision: str | None = None,
 ) -> go.Figure:
     """Frequency histogram with the population coefficient and a ±1 SE band."""
@@ -1179,6 +1233,8 @@ def sampling_histogram(
             )
         )
     x_range = (float(edges[0]), float(edges[-1]))
+    if show_2se:
+        _add_second_se_band(fig, mean, standard_error, x_range)
     _add_standard_error_band(
         fig, mean, standard_error, x_range, float(population), decimals, se_label=se_label
     )
