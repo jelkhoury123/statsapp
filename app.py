@@ -129,6 +129,7 @@ from src.sampling_distributions import (
     can_show_normal,
     estimate_mean,
     estimate_sd,
+    expand_edges,
     experiment_for_sample_size,
     finite_estimates,
     new_experiment,
@@ -3825,6 +3826,36 @@ _ONE_RIGHT_HEAD = (
 )
 
 
+def _noise_scaled_one_sample(population, one, noise_level: float):
+    """Scale this sample's residuals around the population line by noise_level."""
+    if one.x is None or one.y is None or noise_level == 1.0:
+        return one
+    baseline = population.alpha + population.beta * one.x
+    adjusted_y = baseline + noise_level * (one.y - baseline)
+    return replace(one, y=adjusted_y)
+
+
+def _noise_scaled_experiment(experiment, noise_level: float):
+    """Scale the sampling distribution's spread around its own mean by noise_level."""
+    if experiment.n_repetitions < 2 or noise_level == 1.0:
+        return experiment
+    mean_alpha = estimate_mean(experiment.alphas)
+    mean_beta = estimate_mean(experiment.betas)
+    adjusted_alphas = (
+        experiment.alphas if mean_alpha is None else mean_alpha + noise_level * (experiment.alphas - mean_alpha)
+    )
+    adjusted_betas = (
+        experiment.betas if mean_beta is None else mean_beta + noise_level * (experiment.betas - mean_beta)
+    )
+    return replace(
+        experiment,
+        alphas=adjusted_alphas,
+        betas=adjusted_betas,
+        alpha_edges=expand_edges(experiment.alpha_edges, adjusted_alphas),
+        beta_edges=expand_edges(experiment.beta_edges, adjusted_betas),
+    )
+
+
 def _paint_one_sample_hist(population, experiment) -> None:
     mean = estimate_mean(experiment.betas)
     spread = estimate_sd(experiment.betas)
@@ -4252,6 +4283,15 @@ def _render_estimate_se(population, rng: np.random.Generator) -> None:
         draw_another = st.button("Draw another sample", key="dist_draw_another", width=168)
         st.toggle("Residuals", key="dist_show_residuals")
         st.toggle("Residual SD band", key="dist_show_band")
+        noise_level = st.slider(
+            "Residual noise",
+            min_value=0.25,
+            max_value=2.5,
+            value=1.0,
+            step=0.25,
+            key="dist_noise_level",
+            width=180,
+        )
     experiment = experiment_for_sample_size(
         experiment,
         int(sample_size),
@@ -4271,6 +4311,8 @@ def _render_estimate_se(population, rng: np.random.Generator) -> None:
     )
     st.session_state.dist_experiment = experiment
     st.session_state.dist_one_sample = one
+    display_one = _noise_scaled_one_sample(population, one, float(noise_level))
+    display_experiment = _noise_scaled_experiment(experiment, float(noise_level))
     cloud = population_cloud_image(
         population.hours_studied,
         population.exam_score,
@@ -4298,14 +4340,14 @@ def _render_estimate_se(population, rng: np.random.Generator) -> None:
         with chart_col:
             st.markdown(_ONE_RIGHT_HEAD, unsafe_allow_html=True)
             with st.container(key="one_scatter"):
-                error = _paint_one_sample_scatter(population, one, cloud)
+                error = _paint_one_sample_scatter(population, display_one, cloud)
         with hist_col:
             st.markdown(_ONE_LEFT_HEAD, unsafe_allow_html=True)
             with st.container(key="one_beta"):
-                _paint_one_sample_hist(population, experiment)
+                _paint_one_sample_hist(population, display_experiment)
     st.markdown(_ONE_SAMPLING_EXPLANATION, unsafe_allow_html=True)
     st.markdown(_slope_calculation_html(error), unsafe_allow_html=True)
-    st.markdown(_discovery_html(error, benchmark, experiment), unsafe_allow_html=True)
+    st.markdown(_discovery_html(error, benchmark, display_experiment), unsafe_allow_html=True)
 
 
 @st.fragment(key="dist_ttest")
