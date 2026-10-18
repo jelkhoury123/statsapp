@@ -129,7 +129,6 @@ from src.sampling_distributions import (
     can_show_normal,
     estimate_mean,
     estimate_sd,
-    expand_edges,
     experiment_for_sample_size,
     finite_estimates,
     new_experiment,
@@ -3749,11 +3748,9 @@ def _slope_calculation_html(error) -> str:
         f'<span class="se-key">SE({_BETA_HAT}) = s / √S<sub>xx</sub> = '
         f"{residual} / √{sxx_text} = "
         f'<span class="se-final">{result}</span></span></p>'
-        '<p class="dist-note-line">More residual scatter → larger SE. '
-        "More spread in X → smaller SE.</p>"
-        '<p class="dist-takeaway">One sample gives us enough information to '
-        "estimate the uncertainty of its slope — without actually drawing "
-        "thousands of samples.</p>"
+        '<p class="dist-takeaway">Using these two measurements from ONE '
+        "sample, we can estimate how much the slope would vary across "
+        "repeated samples.</p>"
         "</div>"
     )
 
@@ -3791,24 +3788,17 @@ def _discovery_html(error, benchmark, experiment) -> str:
 _ONE_INTRO = (
     '<div class="dist-step-one"></div>'
     '<p class="dist-intro">How can one sample reveal the uncertainty of '
-    "an estimate?</p>"
+    "its slope?</p>"
 )
 
 _ONE_SAMPLING_EXPLANATION = (
-    '<p class="dist-note-line">Imagine drawing thousands of different '
-    "samples from the same population.</p>"
-    '<p class="dist-note-line">Each sample would contain different '
-    "observations. Random variation would place some observations above "
-    "the regression line and others below it, producing a slightly "
-    "different estimated slope each time.</p>"
-    '<p class="dist-note-line">The more scattered the observations are '
-    "around the line, the more these estimated slopes can vary.</p>"
-    '<p class="dist-note-line">But the spread of X matters too: when '
-    "observations cover a wider range of X values, the slope can be "
-    "estimated more precisely.</p>"
-    '<p class="dist-note-line">By measuring these two things in just '
-    "ONE sample, we can estimate how much the slope would vary across "
-    "thousands of samples.</p>"
+    '<p class="dist-note-line">Two measurements give us the answer:</p>'
+    '<p class="dist-note-line"><b>1. Residual scatter (s)</b> — how far '
+    "observations fall from the regression line. More scatter → greater "
+    "uncertainty in the slope.</p>"
+    '<p class="dist-note-line"><b>2. Spread of X (S<sub>xx</sub>)</b> — how '
+    "widely the predictor values are distributed. More spread → greater "
+    "precision in the slope.</p>"
 )
 
 _ONE_LEFT_HEAD = (
@@ -3836,7 +3826,11 @@ def _noise_scaled_one_sample(population, one, noise_level: float):
 
 
 def _noise_scaled_experiment(experiment, noise_level: float):
-    """Scale the sampling distribution's spread around its own mean by noise_level."""
+    """Scale the sampling distribution's spread around its own mean by noise_level.
+
+    Bin edges are kept fixed (not expanded) so the histogram's axis stays
+    put as the slider moves, making the change in width visually obvious.
+    """
     if experiment.n_repetitions < 2 or noise_level == 1.0:
         return experiment
     mean_alpha = estimate_mean(experiment.alphas)
@@ -3847,13 +3841,7 @@ def _noise_scaled_experiment(experiment, noise_level: float):
     adjusted_betas = (
         experiment.betas if mean_beta is None else mean_beta + noise_level * (experiment.betas - mean_beta)
     )
-    return replace(
-        experiment,
-        alphas=adjusted_alphas,
-        betas=adjusted_betas,
-        alpha_edges=expand_edges(experiment.alpha_edges, adjusted_alphas),
-        beta_edges=expand_edges(experiment.beta_edges, adjusted_betas),
-    )
+    return replace(experiment, alphas=adjusted_alphas, betas=adjusted_betas)
 
 
 def _paint_one_sample_hist(population, experiment) -> None:
@@ -3946,6 +3934,52 @@ def _null_rng() -> np.random.Generator:
     return st.session_state.null_rng
 
 
+_TTEST_INTRO = (
+    '<div class="dist-step-test"></div>'
+    '<p class="dist-intro">Is the slope really different from zero?</p>'
+    '<p class="dist-note-line">Even if the true population slope β is zero, '
+    "random samples can produce nonzero estimated slopes.</p>"
+    '<p class="dist-note-line">The t-test asks: is our observed slope '
+    "unusually far from zero, given the uncertainty we estimated from one "
+    "sample?</p>"
+)
+
+
+def _ttest_steps_html(result) -> str:
+    beta = _dist_number(result.beta)
+    standard_error = _dist_number(result.standard_error)
+    statistic = _dist_number(result.t_statistic)
+    return (
+        '<div class="dist-calc">'
+        '<p class="dist-note-heading">1. Measure the distance from zero</p>'
+        f'<p class="dist-formula"><span class="se-key">t = {_BETA_HAT} / SE({_BETA_HAT}) = '
+        f"{beta} / {standard_error} = "
+        f'<span class="se-final">{statistic}</span></span></p>'
+        '<p class="dist-note-line">The t-statistic tells us how many estimated '
+        "standard errors our observed slope is from zero.</p>"
+        '<p class="dist-note-heading">2. Compare with the null distribution</p>'
+        "<p class=\"dist-note-line\">If β = 0, the t-statistic follows a "
+        "Student's t-distribution under the usual regression assumptions. It "
+        "resembles the normal bell curve, but accounts for the uncertainty in "
+        "our estimated SE.</p>"
+        f'<p class="dist-note-line">Degrees of freedom: df = n − 2 = {result.degrees_of_freedom}.</p>'
+        '<p class="dist-note-heading">3. Calculate the p-value</p>'
+        '<p class="dist-note-line">The p-value is the probability, assuming '
+        "β = 0, of obtaining a t-statistic at least as extreme as ours.</p>"
+        f'<p class="dist-note-line">Observed p-value: <b>{_p_text(result.p_value)}</b></p>'
+        "</div>"
+    )
+
+
+_TTEST_CONCLUSION_NOTE = (
+    '<p class="dist-note-line"><b>p &lt; 0.05</b>: Reject H₀ — evidence '
+    "the slope differs from zero.</p>"
+    '<p class="dist-note-line"><b>p ≥ 0.05</b>: Fail to reject H₀ — '
+    "insufficient evidence.</p>"
+    '<p class="dist-takeaway">Failing to reject H₀ does not prove β = 0.</p>'
+)
+
+
 def _t_result_html(result) -> str:
     beta = _dist_number(result.beta)
     standard_error = _dist_number(result.standard_error)
@@ -4001,7 +4035,6 @@ def _render_null_slope(sample_size: int, draw: bool, true_beta: float) -> None:
     result = slope_t_test(hours, scores)
     degrees = result.degrees_of_freedom if result.degrees_of_freedom > 0 else 1
     grid, density = t_density_curve(degrees, result.t_statistic, result.critical_value)
-    st.markdown('<div class="dist-step-test"></div>', unsafe_allow_html=True)
     chart_col, test_col = st.columns([52, 48], gap="small", vertical_alignment="top")
     with chart_col:
         st.plotly_chart(
@@ -4047,7 +4080,9 @@ def _render_null_slope(sample_size: int, draw: bool, true_beta: float) -> None:
             config=PLOTLY_CONFIG,
             key="null_t",
         )
+    st.markdown(_ttest_steps_html(result), unsafe_allow_html=True)
     st.markdown(_t_result_html(result), unsafe_allow_html=True)
+    st.markdown(_TTEST_CONCLUSION_NOTE, unsafe_allow_html=True)
 
 
 def render_sampling_inference_tab(population, rng: np.random.Generator) -> None:
@@ -4393,6 +4428,7 @@ def render_sampling_tab(
             st.markdown(_ONE_INTRO, unsafe_allow_html=True)
             _render_estimate_se(population, rng)
         elif step == "test":
+            st.markdown(_TTEST_INTRO, unsafe_allow_html=True)
             _render_ttest_sampling(population, rng)
         else:
             _render_repeated_sampling(population, rng)
