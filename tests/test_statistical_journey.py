@@ -64,7 +64,7 @@ def test_placeholder_cards_have_no_dead_lesson_link():
     for key in PLACEHOLDER_KEYS:
         fig = PLACEHOLDER_BUILDERS[key](sample)
         assert len(fig.data) >= 1
-        assert fig.layout.height == 195
+        assert fig.layout.height == 150
 
 
 def test_stage_metadata_covers_all_stages():
@@ -148,7 +148,7 @@ def test_all_mini_figures_build():
     for stage in STAGE_KEYS:
         fig = stage_figure(stage, sample)
         assert len(fig.data) >= 1
-        assert fig.layout.height == 195
+        assert fig.layout.height == 150
 
 
 def test_homepage_has_flip_controls():

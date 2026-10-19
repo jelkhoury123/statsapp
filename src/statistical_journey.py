@@ -18,7 +18,7 @@ from src.stat_tips import tipify
 
 JOURNEY_SEED = 20261018
 SAMPLE_N = 28
-MINI_HEIGHT = 195
+MINI_HEIGHT = 150
 MINI_CONFIG = {
     "displaylogo": False,
     "displayModeBar": False,
@@ -119,7 +119,7 @@ STAGE_META = {
         "concepts": ("Sampling variability", "Standard error", "Repeated samples"),
     },
     "test": {
-        "title": "TEST",
+        "title": "T-TEST",
         "question": "Is the slope significantly different from zero?",
         "lesson": ("ttest", {}),
         "link": "Explore lesson →",
@@ -608,17 +608,34 @@ def _render_placeholder_card(stage: str, sample: JourneySample) -> None:
     )
 
 
+def _render_arrow(kind: str = "right") -> None:
+    symbol = {"right": "→", "down": "↓"}[kind]
+    st.markdown(
+        f'<div class="journey-arrow journey-arrow-{kind}">{symbol}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def _render_grid(sample: JourneySample) -> None:
-    """Nine equally sized cards, three per row, in GRID_ORDER."""
-    for start in range(0, len(GRID_ORDER), 3):
-        cols = st.columns(3, gap="medium")
-        for col, stage in zip(cols, GRID_ORDER[start : start + 3]):
+    """Nine equally sized cards, three per row, in GRID_ORDER, with progress arrows."""
+    n_rows = len(GRID_ORDER) // 3
+    for row in range(n_rows):
+        stages = GRID_ORDER[row * 3 : row * 3 + 3]
+        cols = st.columns([1.0, 0.1, 1.0, 0.1, 1.0], gap="medium")
+        for col, stage in zip((cols[0], cols[2], cols[4]), stages):
             with col:
                 with st.container(key=f"journey_card_{stage}"):
                     if stage in PLACEHOLDER_KEYS:
                         _render_placeholder_card(stage, sample)
                     else:
                         _render_stage_card(stage, sample, phase=_PHASE_BY_STAGE[stage])
+        for col in (cols[1], cols[3]):
+            with col:
+                _render_arrow("right")
+        if row < n_rows - 1:
+            _, _, down_col, _, _ = st.columns([1.0, 0.1, 1.0, 0.1, 1.0], gap="medium")
+            with down_col:
+                _render_arrow("down")
 
 
 def _mount_card_click_bridge() -> None:

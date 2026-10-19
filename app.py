@@ -1795,7 +1795,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   position: relative !important;
   margin: 0 !important;
   padding: 0.55rem 0.65rem 0.45rem !important;
-  min-height: 16.5rem !important;
+  min-height: 13.8rem !important;
   height: 100% !important;
   border-radius: 12px !important;
   border: 1px solid #E2E8F0 !important;
@@ -1810,7 +1810,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   position: relative !important;
   margin: 0 !important;
   padding: 0.55rem 0.65rem 0.45rem !important;
-  min-height: 16.5rem !important;
+  min-height: 13.8rem !important;
   height: 100% !important;
   border-radius: 12px !important;
   border: 1px dashed #CBD5E1 !important;
