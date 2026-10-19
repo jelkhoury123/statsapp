@@ -45,11 +45,12 @@ def test_grid_reading_order():
         "question",
         "use",
         "multiple_regression",
+        "f_tests",
     )
     assert GRID_ORDER == (
         "why", "build", "evaluate",
         "use", "question", "sampling_se",
-        "test", "multiple_regression", "f_tests",
+        "multiple_regression", "test", "f_tests",
     )
     assert len(GRID_ORDER) == 9
     assert set(GRID_ORDER) == set(STAGE_KEYS) | set(PLACEHOLDER_KEYS)
@@ -76,7 +77,7 @@ def test_stage_metadata_covers_all_stages():
         assert meta["back"]
         assert 2 <= len(meta["concepts"]) <= 3
         assert all(isinstance(term, str) and term for term in meta["concepts"])
-        assert meta["lesson"][0] in {"fitting", "sampling", "correlation", "ttest", "multiple_regression"}
+        assert meta["lesson"][0] in {"fitting", "sampling", "correlation", "ttest", "multiple_regression", "f_tests"}
         assert "takeaway" not in meta
 
 

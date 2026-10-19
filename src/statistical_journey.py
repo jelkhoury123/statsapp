@@ -34,37 +34,35 @@ MINI_CONFIG_3D = {
 }
 
 # The eight implemented lessons (clickable cards).
-STAGE_KEYS = ("why", "build", "evaluate", "sampling_se", "test", "question", "use", "multiple_regression")
+STAGE_KEYS = (
+    "why", "build", "evaluate", "sampling_se", "test", "question", "use",
+    "multiple_regression", "f_tests",
+)
 # "improve" is reserved content for a future Part II journey.
 
-# One coming-soon card left, presentational only — no lesson behind it yet.
-PLACEHOLDER_KEYS = ("f_tests",)
-PLACEHOLDER_META = {
-    "f_tests": {
-        "title": "F-TESTS",
-        "question": "Does adding predictors improve the model?",
-    },
-}
+# No placeholder cards left — reserved for future "coming soon" content.
+PLACEHOLDER_KEYS: tuple[str, ...] = ()
+PLACEHOLDER_META: dict[str, dict] = {}
 
 # Logical reading order of the homepage's 3×3 grid.
 GRID_ORDER = (
     "why", "build", "evaluate",
     "use", "question", "sampling_se",
-    "test", "multiple_regression", "f_tests",
+    "multiple_regression", "test", "f_tests",
 )
 # Visual rows (left → right on screen) — row 2 is displayed in reverse so the
 # zigzag reads: row1 L→R, down at column 3, row2 R→L, down at column 1, row3 L→R.
 VISUAL_ROWS = (
     ("why", "build", "evaluate"),
     ("sampling_se", "question", "use"),
-    ("test", "multiple_regression", "f_tests"),
+    ("multiple_regression", "test", "f_tests"),
 )
 VISUAL_ROW_ARROWS = ("right", "left", "right")
 # Color phase per real stage (background tint + title color — see app.py CSS).
 _PHASE_BY_STAGE = {
     "why": "build", "build": "build", "evaluate": "build", "use": "build",
     "sampling_se": "eval", "test": "eval", "question": "eval",
-    "multiple_regression": "build",
+    "multiple_regression": "build", "f_tests": "eval",
 }
 
 STAGE_META = {
@@ -179,6 +177,19 @@ STAGE_META = {
             "while holding the other constant."
         ),
         "concepts": ("Multiple predictors", "Regression plane", "Holding constant"),
+    },
+    "f_tests": {
+        "title": "THE F-TEST",
+        "question": "Does adding predictors genuinely improve our model?",
+        "lesson": ("f_tests", {"ft_sub": "why"}),
+        "link": "Explore the F-test",
+        "back": (
+            "Adding predictors always improves or preserves the fit of a "
+            "regression model. The F-test helps determine whether that "
+            "improvement is statistically significant or could be "
+            "explained by sampling noise."
+        ),
+        "concepts": ("Nested models", "F-statistic", "Statistical significance"),
     },
 }
 
@@ -537,9 +548,7 @@ def mini_f_tests(sample: JourneySample) -> go.Figure:
     return _base_layout(fig)
 
 
-PLACEHOLDER_BUILDERS = {
-    "f_tests": mini_f_tests,
-}
+PLACEHOLDER_BUILDERS: dict = {}
 
 
 MINI_BUILDERS = {
@@ -549,6 +558,7 @@ MINI_BUILDERS = {
     "evaluate": mini_evaluate,
     "test": mini_test,
     "improve": mini_improve,
+    "f_tests": mini_f_tests,
     "question": mini_question,
     "sampling_se": mini_sampling_se,
     "multiple_regression": mini_multiple_regression,
@@ -639,7 +649,7 @@ def _render_card_back(stage: str, *, phase: str) -> None:
         unsafe_allow_html=True,
     )
     st.button(
-        "Explore lesson →",
+        meta["link"],
         key=f"journey_explore_{stage}",
         type="primary",
         on_click=open_lesson,

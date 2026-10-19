@@ -34,6 +34,9 @@ from src.data_drawer import (
 from src.student_table import student_table
 from src.charts import (
     BLUE,
+    FONT,
+    GREY,
+    INK,
     ORANGE,
     coefficient_histogram,
     distribution_scatter,
@@ -149,8 +152,9 @@ MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
     ("fitting", "Simple Linear Regression"),
     ("correlation", "Correlation & Causation"),
     ("sampling", "Sampling & Standard Error"),
-    ("ttest", "The t-test"),
     ("multiple_regression", "Multiple Regression"),
+    ("ttest", "The t-test"),
+    ("f_tests", "The F-test"),
     ("library", "Dataset Library"),
 )
 MAIN_LAB_TAB_LABELS = dict(MAIN_LAB_TABS)
@@ -1776,6 +1780,47 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .mr-bar-fill.m1 { background: #1D4ED8; }
 .mr-bar-fill.m2 { background: #EA580C; }
 .mr-bar-value { flex: 0 0 auto; width: 2.6rem; text-align: right; font-size: 0.8rem; color: #374151; }
+.mr-model-card-lg {
+    margin: 0; padding: 1.1rem 1.3rem; background: #F8FAFC;
+    border: 1px solid #E2E8F0; border-radius: 12px;
+}
+.mr-model-card-lg .mr-model-name { margin: 0 0 0.3rem 0; font-size: 1.0rem; font-weight: 750; color: #12263a; }
+.mr-model-card-lg .mr-model-eq { margin: 0 0 0.9rem 0; font-size: 0.92rem; color: #52606D; }
+.mr-metric-row { display: flex; gap: 1.4rem; }
+.mr-metric-tile { flex: 1 1 0; }
+.mr-metric-tile .mr-metric-label {
+    margin: 0; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: #94A3B8;
+}
+.mr-metric-tile .mr-metric-value { margin: 0.1rem 0 0 0; font-size: 1.9rem; font-weight: 800; color: #12263a; line-height: 1.1; }
+.mr-metric-tile.accent .mr-metric-value { color: #EA580C; }
+.mr-sse-compare { margin: 1.2rem 0 0.3rem 0; }
+.mr-sse-compare-label { margin: 0 0 0.3rem 0; font-size: 0.8rem; font-weight: 650; color: #52606D; }
+.mr-sse-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.3rem 0; }
+.mr-sse-tag { flex: 0 0 auto; width: 5.5rem; font-size: 0.82rem; font-weight: 650; color: #374151; }
+.mr-sse-track { flex: 1 1 auto; height: 1.3rem; background: #E2E8F0; border-radius: 6px; overflow: hidden; }
+.mr-sse-fill { height: 100%; border-radius: 6px; }
+.mr-sse-fill.m1 { background: #1D4ED8; }
+.mr-sse-fill.m2 { background: #EA580C; }
+.mr-sse-val { flex: 0 0 auto; width: 5.5rem; text-align: right; font-size: 0.82rem; font-weight: 700; color: #12263a; }
+.mr-insight-banner {
+    margin: 1.1rem 0 0.2rem 0; padding: 0.9rem 1.2rem;
+    background: linear-gradient(135deg, #FFF1E8 0%, #FFF7ED 100%);
+    border: 1px solid #FDBA74; border-radius: 12px;
+    font-size: 1.05rem; font-weight: 700; color: #9A3412; text-align: center;
+}
+.mr-panel-lg {
+    margin: 0; padding: 1.1rem 1.3rem; background: #F8FAFC;
+    border: 1px solid #E2E8F0; border-radius: 12px; min-height: 100%;
+}
+.mr-panel-lg .mr-panel-title {
+    margin: 0 0 0.5rem 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: #94A3B8;
+}
+.mr-panel-lg .mr-panel-sub { margin: 0 0 0.6rem 0; font-size: 0.86rem; color: #52606D; }
+.mr-panel-lg .mr-panel-calc { margin: 0.2rem 0; font-size: 0.92rem; color: #374151; }
+.mr-panel-lg .mr-panel-result { margin: 0.5rem 0 0 0; font-size: 1.7rem; font-weight: 800; color: #12263a; }
+.mr-panel-arrow { text-align: center; font-size: 1.4rem; color: #94A3B8; margin: 0.3rem 0; }
 .se-ingredients {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1866,6 +1911,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se,
 .st-key-journey_card_improve,
 .st-key-journey_card_interpret ,
+.st-key-journey_card_f_tests,
 .st-key-journey_card_question {
   position: relative !important;
   margin: 0 !important;
@@ -1880,17 +1926,6 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   transform-style: preserve-3d;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
-.st-key-journey_card_f_tests {
-  position: relative !important;
-  margin: 0 !important;
-  padding: 0.55rem 0.65rem 0.45rem !important;
-  min-height: 13.8rem !important;
-  height: 100% !important;
-  border-radius: 12px !important;
-  border: 1px dashed #CBD5E1 !important;
-  background: #F8FAFC !important;
-  cursor: default !important;
-}
 .st-key-journey_card_build:hover,
 .st-key-journey_card_why:hover,
 .st-key-journey_card_use:hover,
@@ -1900,6 +1935,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se:hover,
 .st-key-journey_card_improve:hover,
 .st-key-journey_card_interpret:hover ,
+.st-key-journey_card_f_tests:hover,
 .st-key-journey_card_question:hover {
   border-color: #93C5FD !important;
   box-shadow: 0 5px 16px rgba(29, 78, 216, 0.12);
@@ -1914,6 +1950,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se:has(.journey-is-front),
 .st-key-journey_card_improve:has(.journey-is-front),
 .st-key-journey_card_interpret:has(.journey-is-front) ,
+.st-key-journey_card_f_tests:has(.journey-is-front),
 .st-key-journey_card_question:has(.journey-is-front) {
   background: linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 100%) !important;
 }
@@ -1929,6 +1966,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
 .st-key-journey_card_interpret:has(.journey-is-back) ,
+.st-key-journey_card_f_tests:has(.journey-is-back),
 .st-key-journey_card_question:has(.journey-is-back) {
   background: linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 100%) !important;
   border-color: #FDBA74 !important;
@@ -1944,6 +1982,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se:has(.journey-is-front),
 .st-key-journey_card_improve:has(.journey-is-front),
 .st-key-journey_card_interpret:has(.journey-is-front) ,
+.st-key-journey_card_f_tests:has(.journey-is-front),
 .st-key-journey_card_question:has(.journey-is-front) {
   background: linear-gradient(180deg, #FFFFFF 0%, #FFFAF5 100%) !important;
 }
@@ -1960,6 +1999,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
 .st-key-journey_card_interpret:has(.journey-is-back) ,
+.st-key-journey_card_f_tests:has(.journey-is-back),
 .st-key-journey_card_question:has(.journey-is-back) {
   animation: journeyFlipIn 0.35s ease;
 }
@@ -2014,6 +2054,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
 .st-key-journey_card_interpret:has(.journey-is-back) ,
+.st-key-journey_card_f_tests:has(.journey-is-back),
 .st-key-journey_card_question:has(.journey-is-back) {
   overflow: hidden !important;
   display: flex !important;
@@ -2028,6 +2069,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se:has(.journey-is-back) .st-key-journey_explore_sampling_se,
 .st-key-journey_card_improve:has(.journey-is-back) .st-key-journey_explore_improve,
 .st-key-journey_card_interpret:has(.journey-is-back) .st-key-journey_explore_interpret ,
+.st-key-journey_card_f_tests:has(.journey-is-back) .st-key-journey_explore_f_tests,
 .st-key-journey_card_question:has(.journey-is-back) .st-key-journey_explore_question {
   margin-top: auto !important;
 }
@@ -2041,6 +2083,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se .stPlotlyChart,
 .st-key-journey_card_improve .stPlotlyChart,
 .st-key-journey_card_interpret .stPlotlyChart,
+.st-key-journey_card_f_tests .stPlotlyChart,
 .st-key-journey_card_question .stPlotlyChart,
 .st-key-journey_card_build .js-plotly-plot,
 .st-key-journey_card_why .js-plotly-plot,
@@ -2051,6 +2094,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se .js-plotly-plot,
 .st-key-journey_card_improve .js-plotly-plot,
 .st-key-journey_card_interpret .js-plotly-plot,
+.st-key-journey_card_f_tests .js-plotly-plot,
 .st-key-journey_card_question .js-plotly-plot,
 .st-key-journey_card_build iframe,
 .st-key-journey_card_why iframe,
@@ -2061,6 +2105,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_sampling_se iframe,
 .st-key-journey_card_improve iframe,
 .st-key-journey_card_interpret iframe ,
+.st-key-journey_card_f_tests iframe,
 .st-key-journey_card_question iframe {
   pointer-events: none !important;
 }
@@ -2074,6 +2119,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_sampling_se,
 .st-key-journey_flip_improve,
 .st-key-journey_flip_interpret,
+.st-key-journey_flip_f_tests,
 .st-key-journey_flip_question,
 .st-key-journey_unflip_build,
 .st-key-journey_unflip_why,
@@ -2084,6 +2130,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_sampling_se,
 .st-key-journey_unflip_improve,
 .st-key-journey_unflip_interpret ,
+.st-key-journey_unflip_f_tests,
 .st-key-journey_unflip_question {
   position: absolute !important;
   inset: 0 !important;
@@ -2103,6 +2150,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_sampling_se > div,
 .st-key-journey_flip_improve > div,
 .st-key-journey_flip_interpret > div,
+.st-key-journey_flip_f_tests > div,
 .st-key-journey_flip_question > div,
 .st-key-journey_unflip_build > div,
 .st-key-journey_unflip_why > div,
@@ -2113,6 +2161,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_sampling_se > div,
 .st-key-journey_unflip_improve > div,
 .st-key-journey_unflip_interpret > div,
+.st-key-journey_unflip_f_tests > div,
 .st-key-journey_unflip_question > div,
 .st-key-journey_flip_build [data-testid="stButton"],
 .st-key-journey_flip_why [data-testid="stButton"],
@@ -2123,6 +2172,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_sampling_se [data-testid="stButton"],
 .st-key-journey_flip_improve [data-testid="stButton"],
 .st-key-journey_flip_interpret [data-testid="stButton"],
+.st-key-journey_flip_f_tests [data-testid="stButton"],
 .st-key-journey_flip_question [data-testid="stButton"],
 .st-key-journey_unflip_build [data-testid="stButton"],
 .st-key-journey_unflip_why [data-testid="stButton"],
@@ -2133,6 +2183,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_sampling_se [data-testid="stButton"],
 .st-key-journey_unflip_improve [data-testid="stButton"],
 .st-key-journey_unflip_interpret [data-testid="stButton"] ,
+.st-key-journey_unflip_f_tests [data-testid="stButton"],
 .st-key-journey_unflip_question [data-testid="stButton"] {
   position: absolute !important;
   inset: 0 !important;
@@ -2151,6 +2202,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_sampling_se button,
 .st-key-journey_flip_improve button,
 .st-key-journey_flip_interpret button,
+.st-key-journey_flip_f_tests button,
 .st-key-journey_flip_question button,
 .st-key-journey_unflip_build button,
 .st-key-journey_unflip_why button,
@@ -2161,6 +2213,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_sampling_se button,
 .st-key-journey_unflip_improve button,
 .st-key-journey_unflip_interpret button ,
+.st-key-journey_unflip_f_tests button,
 .st-key-journey_unflip_question button {
   position: absolute !important;
   inset: 0 !important;
@@ -2187,6 +2240,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_sampling_se,
 .st-key-journey_explore_improve,
 .st-key-journey_explore_interpret ,
+.st-key-journey_explore_f_tests,
 .st-key-journey_explore_question {
   position: relative !important;
   z-index: 30 !important;
@@ -2204,6 +2258,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_sampling_se > div,
 .st-key-journey_explore_improve > div,
 .st-key-journey_explore_interpret > div,
+.st-key-journey_explore_f_tests > div,
 .st-key-journey_explore_question > div,
 .st-key-journey_explore_build [data-testid="stButton"],
 .st-key-journey_explore_why [data-testid="stButton"],
@@ -2214,6 +2269,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_sampling_se [data-testid="stButton"],
 .st-key-journey_explore_improve [data-testid="stButton"],
 .st-key-journey_explore_interpret [data-testid="stButton"] ,
+.st-key-journey_explore_f_tests [data-testid="stButton"],
 .st-key-journey_explore_question [data-testid="stButton"] {
   position: relative !important;
   inset: auto !important;
@@ -2230,6 +2286,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_sampling_se button,
 .st-key-journey_explore_improve button,
 .st-key-journey_explore_interpret button ,
+.st-key-journey_explore_f_tests button,
 .st-key-journey_explore_question button {
   position: relative !important;
   inset: auto !important;
@@ -2254,6 +2311,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_sampling_se button p,
 .st-key-journey_explore_improve button p,
 .st-key-journey_explore_interpret button p,
+.st-key-journey_explore_f_tests button p,
 .st-key-journey_explore_question button p,
 .st-key-journey_explore_build button span,
 .st-key-journey_explore_why button span,
@@ -2264,6 +2322,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_sampling_se button span,
 .st-key-journey_explore_improve button span,
 .st-key-journey_explore_interpret button span ,
+.st-key-journey_explore_f_tests button span,
 .st-key-journey_explore_question button span {
   color: #FFFFFF !important;
   font-weight: 600 !important;
@@ -2277,6 +2336,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_sampling_se button:hover,
 .st-key-journey_explore_improve button:hover,
 .st-key-journey_explore_interpret button:hover ,
+.st-key-journey_explore_f_tests button:hover,
 .st-key-journey_explore_question button:hover {
   background: #1E40AF !important;
   color: #FFFFFF !important;
@@ -4323,11 +4383,699 @@ def render_sampling_inference_tab(population, rng: np.random.Generator) -> None:
         _dataset_overlay_dialog("sampling", population, rng=rng)
 
 
+TTEST_SUBTABS: tuple[tuple[str, str], ...] = (
+    ("why", "Why a t-test?"),
+    ("build", "Building the t-statistic"),
+    ("dist", "The t-distribution"),
+    ("interpret", "Interpreting the Result"),
+)
+TTEST_SUBTAB_LABELS = dict(TTEST_SUBTABS)
+
+
+def _render_ttest_placeholder(title: str) -> None:
+    st.markdown(
+        f'<p class="mr-note"><b>{title}</b> — coming in a later phase.</p>',
+        unsafe_allow_html=True,
+    )
+
+
+_TTEST_WHY_CASES: tuple[tuple[str, str], ...] = (
+    ("simple", "Simple Regression"),
+    ("multiple", "Multiple Regression"),
+)
+
+
+def _render_ttest_why_case_a() -> None:
+    st.markdown(
+        '<p class="mr-note"><b>Does studying more predict higher exam '
+        "scores?</b></p>"
+        '<p class="mr-stat">Score = α + β₁ × Hours + ε &nbsp;·&nbsp; '
+        "H₀: β₁ = 0 &nbsp;·&nbsp; H₁: β₁ ≠ 0</p>",
+        unsafe_allow_html=True,
+    )
+    toolbar = st.container(horizontal=True, vertical_alignment="bottom", gap="small", wrap=False)
+    with toolbar:
+        true_beta = st.slider(
+            "True population slope (β₁)", 0.0, 2.0, 0.0, step=0.1,
+            key="ttest_why_true_beta", width=240,
+        )
+        draw = st.button("Draw a random sample", key="ttest_why_draw_a", width=170)
+
+    null_pop = null_population(true_beta)
+    stored = st.session_state.get("ttest_why_sample_a")
+    if draw or not isinstance(stored, tuple) or stored[0] != true_beta:
+        hours, scores = draw_null_sample(null_pop, 100, _null_rng())
+        st.session_state.ttest_why_sample_a = (true_beta, hours, scores)
+    else:
+        _, hours, scores = stored
+    fitted = fit_ols(hours, scores)
+
+    st.plotly_chart(
+        null_slope_scatter(
+            sample_x=hours, sample_y=scores,
+            sample_alpha=None if fitted.degenerate else fitted.alpha,
+            sample_beta=None if fitted.degenerate else fitted.beta,
+            population_alpha=null_pop.alpha, population_beta=null_pop.beta,
+            height=320,
+        ),
+        width="stretch", config=PLOTLY_CONFIG, key="ttest_why_scatter_a",
+    )
+    beta_hat_text = "—" if fitted.degenerate else f"{fitted.beta:.3f}"
+    if abs(true_beta) < 1e-9:
+        explanation = (
+            '<p class="mr-note">Even when the true population slope is '
+            "zero, random samples usually produce nonzero estimated slopes "
+            "because of sampling noise.</p>"
+        )
+    else:
+        explanation = (
+            f'<p class="mr-note">The true population slope is β₁ = '
+            f"{true_beta:.3f}. Our sample produces β̂₁ = {beta_hat_text}. "
+            "Sampling noise explains why the estimate differs from the "
+            "true population slope.</p>"
+        )
+    st.markdown(
+        f'<p class="mr-delta-badge">β̂₁ = {beta_hat_text}</p>' + explanation,
+        unsafe_allow_html=True,
+    )
+
+
+_TTEST_WHY_SCENARIOS: tuple[tuple[str, str], ...] = (
+    ("weak", "Attendance adds little"),
+    ("strong", "Attendance adds substantially"),
+)
+
+
+def _render_ttest_why_case_b(population) -> None:
+    from src.correlation_causation import fit_multiple
+    from src.multiple_regression import (
+        PLOTLY_CONFIG as MR_PLOTLY_CONFIG,
+        _HOLD_HOURS_REFERENCE,
+        _plane_value_range,
+        _slice_figure,
+        _strong_attendance_exam_scores,
+        mr_sample,
+    )
+
+    st.markdown(
+        '<p class="mr-note"><b>Does attendance help predict exam scores '
+        "after accounting for study hours?</b></p>"
+        '<p class="mr-stat">Score = α + β₁ × Hours + β₂ × Attendance + ε '
+        "&nbsp;·&nbsp; H₀: β₂ = 0 &nbsp;·&nbsp; H₁: β₂ ≠ 0</p>",
+        unsafe_allow_html=True,
+    )
+
+    scenario = st.segmented_control(
+        "Scenario",
+        options=[key for key, _ in _TTEST_WHY_SCENARIOS],
+        format_func=lambda k: dict(_TTEST_WHY_SCENARIOS)[k],
+        key="ttest_why_case_b_scenario",
+        label_visibility="collapsed",
+        default="weak",
+    )
+    if scenario not in dict(_TTEST_WHY_SCENARIOS):
+        scenario = "weak"
+
+    sample = mr_sample(population)
+    y = _strong_attendance_exam_scores(sample) if scenario == "strong" else sample.exam_score
+    fit = fit_multiple(y, {"hours": sample.hours_studied, "attendance": sample.attendance})
+    alpha, beta1, beta2 = fit.intercept, fit.coefs[0], fit.coefs[1]
+
+    # Fixed Y range shared by BOTH scenarios (not just the selected one), so
+    # the slope's visible steepness is comparable when switching between them.
+    weak_fit = fit_multiple(
+        sample.exam_score, {"hours": sample.hours_studied, "attendance": sample.attendance}
+    )
+    strong_fit = fit_multiple(
+        _strong_attendance_exam_scores(sample), {"hours": sample.hours_studied, "attendance": sample.attendance}
+    )
+    weak_range = _plane_value_range(weak_fit.intercept, *weak_fit.coefs, (0.0, 10.0), (40.0, 100.0))
+    strong_range = _plane_value_range(strong_fit.intercept, *strong_fit.coefs, (0.0, 10.0), (40.0, 100.0))
+    y_range = (min(weak_range[0], strong_range[0]), max(weak_range[1], strong_range[1]))
+
+    st.markdown(
+        f'<p class="mr-delta-badge">β̂₂ (attendance) = {beta2:.3f}</p>'
+        '<p class="mr-note">We hold study hours at 5 per week and vary '
+        "attendance. The slope shows how predicted exam scores change with "
+        "attendance, after controlling for study hours.</p>",
+        unsafe_allow_html=True,
+    )
+    st.plotly_chart(
+        _slice_figure(
+            sample, alpha, beta1, beta2, vary="attendance",
+            hold_value=_HOLD_HOURS_REFERENCE, reference_hold=_HOLD_HOURS_REFERENCE,
+            y_range=y_range, height=280,
+        ),
+        width="stretch", config=MR_PLOTLY_CONFIG, key="ttest_why_slice_b",
+    )
+    st.markdown(
+        '<p class="mr-note">This coefficient estimates the relationship '
+        "between attendance and exam scores after accounting for study "
+        "hours.</p>"
+        '<p class="mr-sub">But how certain are we that the population '
+        "coefficient differs from zero?</p>",
+        unsafe_allow_html=True,
+    )
+
+
+def _render_ttest_why(population) -> None:
+    case = st.segmented_control(
+        "Case",
+        options=[key for key, _ in _TTEST_WHY_CASES],
+        format_func=lambda k: dict(_TTEST_WHY_CASES)[k],
+        key="ttest_why_case",
+        label_visibility="collapsed",
+        default="simple",
+    )
+    if case not in dict(_TTEST_WHY_CASES):
+        case = "simple"
+    if case == "simple":
+        _render_ttest_why_case_a()
+    else:
+        _render_ttest_why_case_b(population)
+    st.markdown(
+        '<p class="mr-sub">Both cases lead to the same question: how large '
+        "is our estimated coefficient compared with the uncertainty "
+        "surrounding that estimate? The <b>t-statistic</b> answers this.</p>",
+        unsafe_allow_html=True,
+    )
+
+
+def _t_fraction_html(numerator: float, denominator: float, result: float) -> str:
+    """Vertical numerator/denominator fraction — same visual style as the F-test lesson."""
+    return (
+        '<div style="display:flex;align-items:center;justify-content:center;'
+        'gap:0.6rem;margin:0.6rem 0;font-size:1.1rem;color:#12263a;">'
+        '<span style="font-weight:700;">t</span><span>=</span>'
+        '<div style="display:inline-flex;flex-direction:column;align-items:center;'
+        'line-height:1.5;">'
+        f'<span style="padding:0 0.3rem;">{numerator:.3f}</span>'
+        '<span style="border-top:1.5px solid #374151;width:100%;"></span>'
+        f'<span style="padding:0 0.3rem;">{denominator:.3f}</span>'
+        "</div>"
+        "<span>=</span>"
+        f'<span style="font-weight:800;color:#EA580C;font-size:1.3rem;">{result:.3f}</span>'
+        "</div>"
+    )
+
+
+_TTEST_BUILD_INTUITION = (
+    '<p class="mr-note">β̂ measures the estimated relationship. SE measures '
+    "the uncertainty surrounding that estimate. t measures how many "
+    "standard errors β̂ is from zero.</p>"
+)
+
+
+def _render_ttest_build_case_a() -> None:
+    st.markdown(_TTEST_BUILD_INTUITION, unsafe_allow_html=True)
+
+    true_beta = float(st.session_state.get("ttest_why_true_beta", 0.0))
+    stored = st.session_state.get("ttest_why_sample_a")
+    if isinstance(stored, tuple) and stored[0] == true_beta:
+        _, hours, scores = stored
+    else:
+        null_pop = null_population(true_beta)
+        hours, scores = draw_null_sample(null_pop, 100, _null_rng())
+        st.session_state.ttest_why_sample_a = (true_beta, hours, scores)
+
+    result = slope_t_test(hours, scores)
+    if result.beta is None or not result.standard_error:
+        st.markdown(
+            '<p class="mr-note">Not enough variation in this sample to '
+            "compute a standard error.</p>",
+            unsafe_allow_html=True,
+        )
+        return
+
+    left, right = st.columns(2, gap="medium")
+    with left:
+        st.markdown(
+            f'<p class="mr-coef-card"><b>β̂₁</b><br>{result.beta:.3f}</p>',
+            unsafe_allow_html=True,
+        )
+    with right:
+        st.markdown(
+            f'<p class="mr-coef-card"><b>SE(β̂₁)</b><br>{result.standard_error:.3f}</p>',
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        _t_fraction_html(result.beta, result.standard_error, result.t_statistic),
+        unsafe_allow_html=True,
+    )
+
+
+def _attendance_coef_se(sample, scenario: str) -> tuple[float, float]:
+    """Attendance coefficient and its standard error from the full OLS fit
+    (hours + attendance). Same OLS variance formula used in the F-test lesson."""
+    from src.multiple_regression import _strong_attendance_exam_scores
+
+    y = _strong_attendance_exam_scores(sample) if scenario == "strong" else sample.exam_score
+    n = sample.n
+    x = np.column_stack([np.ones(n), sample.hours_studied, sample.attendance])
+    beta, *_ = np.linalg.lstsq(x, y, rcond=None)
+    resid = y - x @ beta
+    df_residual = n - x.shape[1]
+    sigma2 = float(resid @ resid) / df_residual
+    xtx_inv = np.linalg.inv(x.T @ x)
+    se = float(np.sqrt(sigma2 * xtx_inv[2, 2]))
+    return float(beta[2]), se
+
+
+def _render_ttest_build_case_b(population) -> None:
+    from src.multiple_regression import mr_sample
+
+    st.markdown(_TTEST_BUILD_INTUITION, unsafe_allow_html=True)
+
+    scenario = st.segmented_control(
+        "Scenario",
+        options=[key for key, _ in _TTEST_WHY_SCENARIOS],
+        format_func=lambda k: dict(_TTEST_WHY_SCENARIOS)[k],
+        key="ttest_why_case_b_scenario",
+        label_visibility="collapsed",
+        default="weak",
+    )
+    if scenario not in dict(_TTEST_WHY_SCENARIOS):
+        scenario = "weak"
+
+    sample = mr_sample(population)
+    beta2, se2 = _attendance_coef_se(sample, scenario)
+    t_stat = beta2 / se2
+
+    left, right = st.columns(2, gap="medium")
+    with left:
+        st.markdown(
+            f'<p class="mr-coef-card"><b>β̂₂ (attendance)</b><br>{beta2:.3f}</p>',
+            unsafe_allow_html=True,
+        )
+    with right:
+        st.markdown(
+            f'<p class="mr-coef-card"><b>SE(β̂₂)</b><br>{se2:.3f}</p>',
+            unsafe_allow_html=True,
+        )
+    st.markdown(_t_fraction_html(beta2, se2, t_stat), unsafe_allow_html=True)
+
+
+def _render_ttest_build(population) -> None:
+    case = st.segmented_control(
+        "Case",
+        options=[key for key, _ in _TTEST_WHY_CASES],
+        format_func=lambda k: dict(_TTEST_WHY_CASES)[k],
+        key="ttest_why_case",
+        label_visibility="collapsed",
+        default="simple",
+    )
+    if case not in dict(_TTEST_WHY_CASES):
+        case = "simple"
+    if case == "simple":
+        _render_ttest_build_case_a()
+    else:
+        _render_ttest_build_case_b(population)
+
+
+_T_DIST_ALPHA_OPTIONS: tuple[float, ...] = (0.01, 0.05, 0.10)
+_T_DIST_X_MAX = 6.0
+
+
+def _t_distribution_figure(*, df: int, t_stat: float, critical: float, height: int = 420) -> go.Figure:
+    """Two-sided Student's t under H0: rejection tails, observed t, p-value area.
+
+    Same visual language as the F-test lesson's F-distribution chart
+    (solid rejection fill, hatched p-value area, dashed critical lines,
+    off-scale arrow), but symmetric on both tails.
+    """
+    from scipy.stats import t as student_t
+
+    grid = np.linspace(-_T_DIST_X_MAX, _T_DIST_X_MAX, 500)
+    density = student_t.pdf(grid, df)
+    peak = float(np.max(density)) if density.size else 1.0
+    fig = go.Figure()
+
+    if critical <= _T_DIST_X_MAX:
+        for mask in (grid <= -critical, grid >= critical):
+            fig.add_trace(
+                go.Scatter(
+                    x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
+                    line=dict(width=0), fillcolor="rgba(220,38,38,0.28)",
+                    hoverinfo="skip", showlegend=False,
+                )
+            )
+
+    abs_t = abs(t_stat)
+    if 0 < abs_t <= _T_DIST_X_MAX:
+        for mask in (grid <= -abs_t, grid >= abs_t):
+            fig.add_trace(
+                go.Scatter(
+                    x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
+                    line=dict(width=0), fillcolor="rgba(29,78,216,0.0)",
+                    fillpattern=dict(shape="/", fgcolor="rgba(29,78,216,0.45)", size=6, solidity=0.25),
+                    hoverinfo="skip", showlegend=False,
+                )
+            )
+
+    fig.add_trace(
+        go.Scatter(
+            x=grid, y=density, mode="lines", name="t distribution",
+            line=dict(color=INK, width=2.4),
+            hovertemplate="t %{x:.2f}<br>Density %{y:.3f}<extra></extra>",
+        )
+    )
+
+    if critical <= _T_DIST_X_MAX:
+        for edge in (-critical, critical):
+            fig.add_vline(x=edge, line_color=GREY, line_width=1.4, line_dash="dash")
+        fig.add_annotation(
+            x=critical, y=peak * 0.9, text=f"Critical t = ±{critical:.3f}",
+            showarrow=False, xanchor="left", xshift=6,
+            font=dict(size=11, color="#52606D", family=FONT),
+        )
+        tail_x = min(critical + 0.9, _T_DIST_X_MAX - 0.3)
+        fig.add_annotation(
+            x=tail_x, y=0, yshift=14,
+            text="Rejection region<br>(α/2 in each tail)",
+            showarrow=False, xanchor="center",
+            font=dict(size=10, color="#991B1B", family=FONT),
+        )
+
+    if abs_t <= _T_DIST_X_MAX:
+        fig.add_vline(x=t_stat, line_color=BLUE, line_width=2.4)
+        fig.add_annotation(
+            x=t_stat, y=peak * 1.04, text=f"Observed t = {t_stat:.3f}",
+            showarrow=False,
+            xanchor="left" if t_stat < _T_DIST_X_MAX * 0.8 else "right",
+            xshift=6 if t_stat < _T_DIST_X_MAX * 0.8 else -6,
+            bgcolor="rgba(255,255,255,0.88)", borderpad=2,
+            font=dict(size=12, color=BLUE, family=FONT),
+        )
+    else:
+        edge_x = _T_DIST_X_MAX if t_stat > 0 else -_T_DIST_X_MAX
+        fig.add_annotation(
+            x=edge_x, y=peak * 0.55, ax=edge_x * 0.82, ay=peak * 0.55,
+            xref="x", yref="y", axref="x", ayref="y",
+            text=f"Observed t = {t_stat:.3f} (off scale)",
+            showarrow=True, arrowhead=2, arrowcolor=BLUE,
+            font=dict(size=12, color=BLUE, family=FONT),
+            xanchor="right" if t_stat > 0 else "left",
+        )
+
+    fig.update_xaxes(title_text="t statistic", range=[-_T_DIST_X_MAX, _T_DIST_X_MAX])
+    fig.update_yaxes(title_text="Density", rangemode="tozero")
+    fig.update_layout(
+        template="plotly_white", height=height, margin=dict(l=50, r=20, t=30, b=40),
+        font=dict(family=FONT, color=INK, size=12), showlegend=False,
+    )
+    return fig
+
+
+def _render_ttest_dist_body(*, t_stat: float, df: int, beta_label: str) -> None:
+    from scipy.stats import t as student_t
+
+    st.markdown(
+        '<p class="mr-note">This distribution describes the t-statistics we '
+        "would expect across repeated samples if H₀ were true — it is "
+        "<b>two-sided</b>, since the estimate could fall far from zero in "
+        "either direction.</p>",
+        unsafe_allow_html=True,
+    )
+    alpha = st.radio(
+        "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS, index=1,
+        format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
+    )
+    critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
+    p_value = 2.0 * float(student_t.sf(abs(t_stat), df))
+
+    st.plotly_chart(
+        _t_distribution_figure(df=df, t_stat=t_stat, critical=critical),
+        width="stretch", config=PLOTLY_CONFIG, key="ttest_dist_chart",
+    )
+    st.markdown(
+        f'<p class="mr-stat">{beta_label}: t = <b>{t_stat:.3f}</b> &nbsp;·&nbsp; '
+        f"df = n − p − 1 = <b>{df}</b> &nbsp;·&nbsp; "
+        f"two-sided p = <b>{_p_text(p_value)}</b></p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="mr-note">Red areas show the rejection thresholds chosen '
+        "using α. Blue hatched areas represent the p-value: the "
+        "probability, under H₀, of a result at least this extreme in "
+        "either direction.</p>",
+        unsafe_allow_html=True,
+    )
+
+
+def _render_ttest_dist(population) -> None:
+    case = st.segmented_control(
+        "Case",
+        options=[key for key, _ in _TTEST_WHY_CASES],
+        format_func=lambda k: dict(_TTEST_WHY_CASES)[k],
+        key="ttest_why_case",
+        label_visibility="collapsed",
+        default="simple",
+    )
+    if case not in dict(_TTEST_WHY_CASES):
+        case = "simple"
+
+    if case == "simple":
+        true_beta = float(st.session_state.get("ttest_why_true_beta", 0.0))
+        stored = st.session_state.get("ttest_why_sample_a")
+        if isinstance(stored, tuple) and stored[0] == true_beta:
+            _, hours, scores = stored
+        else:
+            null_pop = null_population(true_beta)
+            hours, scores = draw_null_sample(null_pop, 100, _null_rng())
+            st.session_state.ttest_why_sample_a = (true_beta, hours, scores)
+        result = slope_t_test(hours, scores)
+        if result.t_statistic is None or not result.degrees_of_freedom:
+            st.markdown(
+                '<p class="mr-note">Not enough variation in this sample to '
+                "compute a t-statistic.</p>",
+                unsafe_allow_html=True,
+            )
+            return
+        _render_ttest_dist_body(
+            t_stat=result.t_statistic, df=result.degrees_of_freedom, beta_label="β̂₁"
+        )
+    else:
+        from src.multiple_regression import mr_sample
+
+        scenario = st.segmented_control(
+            "Scenario",
+            options=[key for key, _ in _TTEST_WHY_SCENARIOS],
+            format_func=lambda k: dict(_TTEST_WHY_SCENARIOS)[k],
+            key="ttest_why_case_b_scenario",
+            label_visibility="collapsed",
+            default="weak",
+        )
+        if scenario not in dict(_TTEST_WHY_SCENARIOS):
+            scenario = "weak"
+        sample = mr_sample(population)
+        beta2, se2 = _attendance_coef_se(sample, scenario)
+        df = int(sample.n) - 3
+        _render_ttest_dist_body(t_stat=beta2 / se2, df=df, beta_label="β̂₂")
+
+
+def _ols_full_stats(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
+    """Coefficients, SEs, t-values and two-sided p-values for an OLS fit."""
+    from scipy.stats import t as student_t
+
+    beta, *_ = np.linalg.lstsq(x, y, rcond=None)
+    resid = y - x @ beta
+    df_residual = int(x.shape[0] - x.shape[1])
+    sigma2 = float(resid @ resid) / df_residual
+    xtx_inv = np.linalg.inv(x.T @ x)
+    se = np.sqrt(np.diag(xtx_inv) * sigma2)
+    tvals = beta / se
+    pvals = 2.0 * student_t.sf(np.abs(tvals), df_residual)
+    return beta, se, tvals, pvals, df_residual
+
+
+def _ttest_significance_stars(p: float) -> str:
+    if p < 0.001:
+        return "***"
+    if p < 0.01:
+        return "**"
+    if p < 0.05:
+        return "*"
+    if p < 0.1:
+        return "."
+    return ""
+
+
+def _render_pr_t_expander() -> None:
+    with st.expander("What is Pr(>|t|)?"):
+        st.markdown(
+            '<p class="mr-stat">The two-sided p-value: the probability, '
+            "under H₀, of observing a t-statistic at least this far from "
+            "zero in either direction.</p>",
+            unsafe_allow_html=True,
+        )
+
+
+def _p_vs_alpha_line(p: float, alpha: float, decision: str) -> str:
+    comparator = "&lt;" if p < alpha else "&ge;"
+    p_text = _p_text(p)
+    # "< 0.0001" already carries its own comparator — write "p < 0.0001 < α",
+    # never the malformed "p = < 0.0001".
+    p_clause = f"p {p_text}" if p_text.startswith("<") else f"p = <b>{p_text}</b>"
+    return (
+        f'<p class="mr-stat">{p_clause} {comparator} α = '
+        f"<b>{alpha:.2f}</b> &nbsp;→&nbsp; <b>{decision}</b></p>"
+    )
+
+
+def _render_ttest_interpret_case_a() -> None:
+    st.markdown(
+        '<p class="mr-note">H₀: β₁ = 0 &nbsp;·&nbsp; H₁: β₁ ≠ 0</p>',
+        unsafe_allow_html=True,
+    )
+    true_beta = float(st.session_state.get("ttest_why_true_beta", 0.0))
+    stored = st.session_state.get("ttest_why_sample_a")
+    if isinstance(stored, tuple) and stored[0] == true_beta:
+        _, hours, scores = stored
+    else:
+        null_pop = null_population(true_beta)
+        hours, scores = draw_null_sample(null_pop, 100, _null_rng())
+        st.session_state.ttest_why_sample_a = (true_beta, hours, scores)
+
+    x = np.column_stack([np.ones(hours.size), hours])
+    beta, se, tvals, pvals, df = _ols_full_stats(x, scores)
+    row_names = ["(Intercept)", "hours"]
+    tested = 1
+
+    st.code("model <- lm(score ~ hours, data = students)\nsummary(model)", language="r")
+    lines = ["Coefficients:", "            Estimate Std. Error t value Pr(>|t|)"]
+    for i, name in enumerate(row_names):
+        lines.append(
+            f"{name:<11} {beta[i]:8.3f} {se[i]:10.3f} {tvals[i]:7.3f}  "
+            f"{_p_text(pvals[i])} {_ttest_significance_stars(pvals[i])}"
+        )
+    st.code("\n".join(lines), language=None)
+    _render_pr_t_expander()
+
+    p_hours = float(pvals[tested])
+    alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
+    reject = p_hours < alpha
+    st.markdown(
+        f'<p class="mr-stat">β̂₁ = <b>{beta[tested]:.3f}</b> &nbsp;·&nbsp; '
+        f"SE = <b>{se[tested]:.3f}</b> &nbsp;·&nbsp; t = <b>{tvals[tested]:.3f}</b> "
+        f"&nbsp;·&nbsp; Pr(&gt;|t|) = <b>{_p_text(p_hours)}</b></p>",
+        unsafe_allow_html=True,
+    )
+    decision = "Reject H₀" if reject else "Do not reject H₀"
+    conclusion = (
+        "the data provide statistically significant evidence that hours "
+        "studied is associated with exam scores." if reject else
+        "we lack sufficient evidence that hours studied is associated "
+        "with exam scores."
+    )
+    st.markdown(_p_vs_alpha_line(p_hours, alpha, decision), unsafe_allow_html=True)
+    st.markdown(f'<p class="mr-delta-badge">{decision}. {conclusion[0].upper()}{conclusion[1:]}</p>', unsafe_allow_html=True)
+
+
+def _render_ttest_interpret_case_b(population) -> None:
+    from src.multiple_regression import _strong_attendance_exam_scores, mr_sample
+
+    st.markdown(
+        '<p class="mr-note">H₀: β₂ = 0 &nbsp;·&nbsp; H₁: β₂ ≠ 0</p>',
+        unsafe_allow_html=True,
+    )
+    scenario = st.segmented_control(
+        "Scenario",
+        options=[key for key, _ in _TTEST_WHY_SCENARIOS],
+        format_func=lambda k: dict(_TTEST_WHY_SCENARIOS)[k],
+        key="ttest_why_case_b_scenario",
+        label_visibility="collapsed",
+        default="weak",
+    )
+    if scenario not in dict(_TTEST_WHY_SCENARIOS):
+        scenario = "weak"
+
+    sample = mr_sample(population)
+    y = _strong_attendance_exam_scores(sample) if scenario == "strong" else sample.exam_score
+    x = np.column_stack([np.ones(sample.n), sample.hours_studied, sample.attendance])
+    beta, se, tvals, pvals, df = _ols_full_stats(x, y)
+    row_names = ["(Intercept)", "hours", "attendance"]
+    tested = 2
+
+    st.code(
+        "model <- lm(score ~ hours + attendance, data = students)\nsummary(model)",
+        language="r",
+    )
+    lines = ["Coefficients:", "            Estimate Std. Error t value Pr(>|t|)"]
+    for i, name in enumerate(row_names):
+        lines.append(
+            f"{name:<11} {beta[i]:8.3f} {se[i]:10.3f} {tvals[i]:7.3f}  "
+            f"{_p_text(pvals[i])} {_ttest_significance_stars(pvals[i])}"
+        )
+    st.code("\n".join(lines), language=None)
+    _render_pr_t_expander()
+
+    p_att = float(pvals[tested])
+    alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
+    reject = p_att < alpha
+    st.markdown(
+        f'<p class="mr-stat">β̂₂ = <b>{beta[tested]:.3f}</b> &nbsp;·&nbsp; '
+        f"SE = <b>{se[tested]:.3f}</b> &nbsp;·&nbsp; t = <b>{tvals[tested]:.3f}</b> "
+        f"&nbsp;·&nbsp; Pr(&gt;|t|) = <b>{_p_text(p_att)}</b></p>",
+        unsafe_allow_html=True,
+    )
+    decision = "Reject H₀" if reject else "Do not reject H₀"
+    conclusion = (
+        "the data provide statistically significant evidence that "
+        "attendance is associated with exam scores, after accounting for "
+        "hours studied." if reject else
+        "we lack sufficient evidence that attendance is associated with "
+        "exam scores, after accounting for hours studied."
+    )
+    st.markdown(_p_vs_alpha_line(p_att, alpha, decision), unsafe_allow_html=True)
+    st.markdown(f'<p class="mr-delta-badge">{decision}. {conclusion[0].upper()}{conclusion[1:]}</p>', unsafe_allow_html=True)
+
+
+def _render_ttest_interpret(population) -> None:
+    case = st.segmented_control(
+        "Case",
+        options=[key for key, _ in _TTEST_WHY_CASES],
+        format_func=lambda k: dict(_TTEST_WHY_CASES)[k],
+        key="ttest_why_case",
+        label_visibility="collapsed",
+        default="simple",
+    )
+    if case not in dict(_TTEST_WHY_CASES):
+        case = "simple"
+    if case == "simple":
+        _render_ttest_interpret_case_a()
+    else:
+        _render_ttest_interpret_case_b(population)
+    st.markdown(
+        '<p class="mr-compare">Statistical significance does not establish '
+        "causality or practical importance.</p>",
+        unsafe_allow_html=True,
+    )
+
+
 def render_ttest_lesson(population, rng: np.random.Generator) -> None:
-    """The t-test as a standalone lesson, reusing the existing implementation."""
-    render_sampling_tab(population, rng, step="test")
-    if _app_data_drawer_open():
-        _dataset_overlay_dialog("ttest", population, rng=rng)
+    """The t-test lesson. All four subtabs are implemented."""
+    del rng
+    if "ttest_sub" not in st.session_state:
+        st.session_state.ttest_sub = "why"
+    sub = st.segmented_control(
+        "t-test section",
+        options=[key for key, _ in TTEST_SUBTABS],
+        format_func=lambda key: TTEST_SUBTAB_LABELS[key],
+        key="ttest_sub",
+        label_visibility="collapsed",
+        width="content",
+    )
+    if sub not in TTEST_SUBTAB_LABELS:
+        sub = "why"
+
+    if sub == "why":
+        _render_ttest_why(population)
+    elif sub == "build":
+        _render_ttest_build(population)
+    elif sub == "dist":
+        _render_ttest_dist(population)
+    elif sub == "interpret":
+        _render_ttest_interpret(population)
 
 
 def _sampling_status_row(population, experiment) -> None:
@@ -7538,6 +8286,10 @@ def main() -> None:
         from src.multiple_regression import render_multiple_regression_tab
 
         render_multiple_regression_tab(population)
+    elif active == "f_tests":
+        from src.f_tests import render_f_test_tab
+
+        render_f_test_tab(population)
     elif active == "correlation":
         from src.correlation_causation import render_correlation_causation_tab
 
