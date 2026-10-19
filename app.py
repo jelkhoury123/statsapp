@@ -1821,6 +1821,19 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .mr-panel-lg .mr-panel-calc { margin: 0.2rem 0; font-size: 0.92rem; color: #374151; }
 .mr-panel-lg .mr-panel-result { margin: 0.5rem 0 0 0; font-size: 1.7rem; font-weight: 800; color: #12263a; }
 .mr-panel-arrow { text-align: center; font-size: 1.4rem; color: #94A3B8; margin: 0.3rem 0; }
+.mr-df-explainer {
+    margin: 0.9rem 0 0 0; padding: 0.8rem 1rem; background: #EFF6FF;
+    border: 1px solid #BFDBFE; border-radius: 10px;
+}
+.mr-df-explainer .mr-df-title { margin: 0 0 0.5rem 0; font-size: 0.86rem; font-weight: 750; color: #1E3A8A; }
+.mr-df-chain {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem;
+    margin: 0 0 0.5rem 0; font-size: 0.86rem; color: #374151;
+}
+.mr-df-chain span { padding: 0.15rem 0.5rem; background: #FFFFFF; border: 1px solid #DBEAFE; border-radius: 6px; }
+.mr-df-chain span.result { font-weight: 750; color: #1E3A8A; background: #DBEAFE; border-color: #93C5FD; }
+.mr-df-explainer .mr-df-note { margin: 0.25rem 0; font-size: 0.82rem; color: #52606D; line-height: 1.3rem; }
+.mr-df-explainer .mr-df-note b { color: #1E3A8A; }
 .se-ingredients {
     display: grid;
     grid-template-columns: 1fr 1fr;
