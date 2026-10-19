@@ -142,11 +142,14 @@ from src.sampling_distributions import (
 SAMPLE_SIZES = [10, 20, 30, 50, 100, 200, 500, 1000, 5000]
 
 # Main lab navigation (keys are stable; labels match the former st.tabs titles).
+# "journey" is HOME; "fitting" through "ttest" are LESSONS, in the same order
+# as their Statistical Journey cards; "library" is a separate utility.
 MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
     ("journey", "The Statistical Journey"),
     ("fitting", "Simple Linear Regression"),
     ("correlation", "Correlation & Causation"),
-    ("sampling", "Sampling & Inference"),
+    ("sampling", "Sampling & Standard Error"),
+    ("ttest", "The t-test"),
     ("library", "Dataset Library"),
 )
 MAIN_LAB_TAB_LABELS = dict(MAIN_LAB_TABS)
@@ -155,7 +158,6 @@ SAMPLING_INFERENCE_SUBTABS: tuple[tuple[str, str], ...] = (
     ("one_sample", "One Sample"),
     ("repeated", "Repeated Sampling"),
     ("estimate_se", "Estimate SE from One Sample"),
-    ("ttest", "The t-test: Is the Slope Zero?"),
 )
 SAMPLING_INFERENCE_SUB_LABELS = dict(SAMPLING_INFERENCE_SUBTABS)
 
@@ -211,6 +213,29 @@ CSS = """
   padding-left: 0.5rem !important;
   padding-right: 0.5rem !important;
   font-size: 0.82rem !important;
+}
+/* LEVEL 1 — parent: "The Statistical Journey", clearly distinct from the
+   lesson row below it (larger, bolder, its own background strip). */
+.st-key-main_nav_home {
+  margin: 0 0 0.35rem 0 !important;
+  padding: 0.3rem 0.4rem !important;
+  border-radius: 10px !important;
+  background: #F1F5F9 !important;
+}
+.st-key-main_nav_home button {
+  font-size: 0.98rem !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.01em !important;
+}
+.st-key-main_nav_home [data-testid="stBaseButton-primary"] {
+  background: #1D4ED8 !important;
+}
+/* LEVEL 2 — children: the lesson row, visually subordinate to the parent
+   above it (smaller, indented, with a connecting rule on the left). */
+.st-key-main_nav {
+  margin: 0 0 0.3rem 1.1rem !important;
+  padding-left: 0.6rem !important;
+  border-left: 2px solid #E2E8F0 !important;
 }
 .st-key-dataset_status_row {
   margin: 0 0 0.2rem 0 !important;
@@ -689,6 +714,12 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     white-space: nowrap;
 }
 .dist-sd strong { color: #12263a; font-weight: 650; }
+.dist-hint {
+    margin: 0.1rem 0 0.2rem 0;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #6B7280;
+}
 .dist-calc, .dist-compare {
     margin: 0;
     font-size: 0.88rem;
@@ -778,13 +809,13 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.one-col-head) {
     margin-bottom: 0 !important;
 }
-.one-col-head { margin: 0 0 0.1rem 0; }
+.one-col-head { margin: 0; }
 .one-col-head .title { margin: 0; font-size: 0.95rem; font-weight: 750; color: #12263a; }
 .one-col-head .sub { margin: 0.05rem 0 0 0; font-size: 0.82rem; color: #52606D; line-height: 1.2rem; }
-.se-discover { margin: 0.25rem 0 0 0; }
-.se-discover .kicker { margin: 0 0 0.25rem 0; font-size: 0.82rem; font-weight: 750; letter-spacing: 0.04em; color: #12263a; }
+.se-discover { margin: 0.1rem 0 0 0; }
+.se-discover .kicker { margin: 0 0 0.15rem 0; font-size: 0.82rem; font-weight: 750; letter-spacing: 0.04em; color: #12263a; }
 .se-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem; }
-.se-card { border: 1px solid #E6EAF0; border-radius: 8px; padding: 0.4rem 0.55rem; background: #F8FAFC; }
+.se-card { border: 1px solid #E6EAF0; border-radius: 8px; padding: 0.3rem 0.55rem; background: #F8FAFC; }
 .se-card .lab { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; color: #52606D; line-height: 1.15rem; }
 .se-card .val { display: block; margin-top: 0.1rem; font-size: 1.35rem; font-weight: 780; font-variant-numeric: tabular-nums; }
 .se-card.bench .val { color: #EA580C; }
@@ -798,7 +829,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .se-bar-fill.bench { background: #EA580C; }
 .se-bar-fill.ref { background: #6B7280; }
 .se-bar-fill.est { background: #1D4ED8; }
-.se-error { margin: 0.28rem 0 0 0; font-size: 0.95rem; font-weight: 700; color: #12263a; }
+.se-error { margin: 0.15rem 0 0 0; font-size: 0.95rem; font-weight: 700; color: #12263a; }
 .se-close { margin: 0.1rem 0 0 0; font-size: 0.88rem; line-height: 1.25rem; color: #374151; }
 .dist-intro-sub { margin: 0.05rem 0 0.15rem 0; font-size: 0.9rem; line-height: 1.25rem; color: #52606D; }
 .t-panel { margin: 0.15rem 0 0 0; color: #1F2933; }
@@ -1658,12 +1689,12 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   font-size: 0.88rem; line-height: 1.3rem;
 }
 .dist-formula {
-    margin: 0.45rem 0 0.15rem 0;
-    padding: 0.55rem 0.7rem;
-    font-size: 1.15rem;
+    margin: 0.1rem 0 0.05rem 0;
+    padding: 0.3rem 0.7rem;
+    font-size: 1.05rem;
     font-weight: 750;
     color: #12263a;
-    line-height: 1.5rem;
+    line-height: 1.3rem;
     background: #EFF6FF;
     border: 1px solid #BFDBFE;
     border-left: 4px solid #1D4ED8;
@@ -1671,6 +1702,16 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     white-space: nowrap;
 }
 .dist-formula .se-key { font-weight: 780; }
+.se-ingredients {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 0.8rem;
+    margin: 0.05rem 0 0 0;
+}
+.se-ingredient { font-size: 0.86rem; line-height: 1.2rem; color: #374151; }
+.se-ingredient .ing-title { margin: 0; font-weight: 700; color: #12263a; font-size: 0.88rem; }
+.se-ingredient .ing-desc { margin: 0.05rem 0; font-size: 0.78rem; color: #52606D; line-height: 1.15rem; }
+.se-ingredient .ing-value { margin: 0; font-size: 0.86rem; }
 .se-table { width: 100%; border-collapse: collapse; margin: 0.35rem 0 0.1rem 0; font-size: 0.92rem; }
 .se-table caption { caption-side: top; text-align: left; font-weight: 750; color: #12263a; font-size: 1rem; padding-bottom: 0.25rem; }
 .se-table th, .se-table td { padding: 0.22rem 0.75rem; text-align: right; border-bottom: 1px solid #e6eaf0; }
@@ -1747,6 +1788,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use,
 .st-key-journey_card_evaluate,
 .st-key-journey_card_test,
+.st-key-journey_card_sampling_se,
 .st-key-journey_card_improve,
 .st-key-journey_card_interpret ,
 .st-key-journey_card_question {
@@ -1763,11 +1805,24 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   transform-style: preserve-3d;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
+.st-key-journey_card_multiple_regression,
+.st-key-journey_card_f_tests {
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0.55rem 0.65rem 0.45rem !important;
+  min-height: 16.5rem !important;
+  height: 100% !important;
+  border-radius: 12px !important;
+  border: 1px dashed #CBD5E1 !important;
+  background: #F8FAFC !important;
+  cursor: default !important;
+}
 .st-key-journey_card_build:hover,
 .st-key-journey_card_why:hover,
 .st-key-journey_card_use:hover,
 .st-key-journey_card_evaluate:hover,
 .st-key-journey_card_test:hover,
+.st-key-journey_card_sampling_se:hover,
 .st-key-journey_card_improve:hover,
 .st-key-journey_card_interpret:hover ,
 .st-key-journey_card_question:hover {
@@ -1780,6 +1835,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use:has(.journey-is-front),
 .st-key-journey_card_evaluate:has(.journey-is-front),
 .st-key-journey_card_test:has(.journey-is-front),
+.st-key-journey_card_sampling_se:has(.journey-is-front),
 .st-key-journey_card_improve:has(.journey-is-front),
 .st-key-journey_card_interpret:has(.journey-is-front) ,
 .st-key-journey_card_question:has(.journey-is-front) {
@@ -1793,6 +1849,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   border-color: #93C5FD !important;
 }
 .st-key-journey_card_test:has(.journey-is-back),
+.st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
 .st-key-journey_card_interpret:has(.journey-is-back) ,
 .st-key-journey_card_question:has(.journey-is-back) {
@@ -1806,6 +1863,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   background: linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 100%) !important;
 }
 .st-key-journey_card_test:has(.journey-is-front),
+.st-key-journey_card_sampling_se:has(.journey-is-front),
 .st-key-journey_card_improve:has(.journey-is-front),
 .st-key-journey_card_interpret:has(.journey-is-front) ,
 .st-key-journey_card_question:has(.journey-is-front) {
@@ -1820,6 +1878,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use:has(.journey-is-back),
 .st-key-journey_card_evaluate:has(.journey-is-back),
 .st-key-journey_card_test:has(.journey-is-back),
+.st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
 .st-key-journey_card_interpret:has(.journey-is-back) ,
 .st-key-journey_card_question:has(.journey-is-back) {
@@ -1833,6 +1892,14 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 }
 .journey-phase-build .journey-stage-title { color: #1E3A8A; }
 .journey-phase-eval .journey-stage-title { color: #9A3412; }
+.journey-phase-soon .journey-stage-title { color: #64748B; }
+.journey-soon-badge {
+  display: inline-block;
+  margin-top: 0.3rem;
+  padding: 0.12rem 0.5rem;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+  color: #64748B; background: #E2E8F0; border-radius: 999px;
+}
 .journey-stage-q {
   margin: 0 0 0.2rem 0;
   font-size: 0.92rem; font-weight: 650; color: #1F2933; line-height: 1.2rem;
@@ -1859,6 +1926,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use:has(.journey-is-back),
 .st-key-journey_card_evaluate:has(.journey-is-back),
 .st-key-journey_card_test:has(.journey-is-back),
+.st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
 .st-key-journey_card_interpret:has(.journey-is-back) ,
 .st-key-journey_card_question:has(.journey-is-back) {
@@ -1871,6 +1939,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use:has(.journey-is-back) .st-key-journey_explore_use,
 .st-key-journey_card_evaluate:has(.journey-is-back) .st-key-journey_explore_evaluate,
 .st-key-journey_card_test:has(.journey-is-back) .st-key-journey_explore_test,
+.st-key-journey_card_sampling_se:has(.journey-is-back) .st-key-journey_explore_sampling_se,
 .st-key-journey_card_improve:has(.journey-is-back) .st-key-journey_explore_improve,
 .st-key-journey_card_interpret:has(.journey-is-back) .st-key-journey_explore_interpret ,
 .st-key-journey_card_question:has(.journey-is-back) .st-key-journey_explore_question {
@@ -1882,6 +1951,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use .stPlotlyChart,
 .st-key-journey_card_evaluate .stPlotlyChart,
 .st-key-journey_card_test .stPlotlyChart,
+.st-key-journey_card_sampling_se .stPlotlyChart,
 .st-key-journey_card_improve .stPlotlyChart,
 .st-key-journey_card_interpret .stPlotlyChart,
 .st-key-journey_card_question .stPlotlyChart,
@@ -1890,6 +1960,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use .js-plotly-plot,
 .st-key-journey_card_evaluate .js-plotly-plot,
 .st-key-journey_card_test .js-plotly-plot,
+.st-key-journey_card_sampling_se .js-plotly-plot,
 .st-key-journey_card_improve .js-plotly-plot,
 .st-key-journey_card_interpret .js-plotly-plot,
 .st-key-journey_card_question .js-plotly-plot,
@@ -1898,6 +1969,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_use iframe,
 .st-key-journey_card_evaluate iframe,
 .st-key-journey_card_test iframe,
+.st-key-journey_card_sampling_se iframe,
 .st-key-journey_card_improve iframe,
 .st-key-journey_card_interpret iframe ,
 .st-key-journey_card_question iframe {
@@ -1909,6 +1981,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_use,
 .st-key-journey_flip_evaluate,
 .st-key-journey_flip_test,
+.st-key-journey_flip_sampling_se,
 .st-key-journey_flip_improve,
 .st-key-journey_flip_interpret,
 .st-key-journey_flip_question,
@@ -1917,6 +1990,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_use,
 .st-key-journey_unflip_evaluate,
 .st-key-journey_unflip_test,
+.st-key-journey_unflip_sampling_se,
 .st-key-journey_unflip_improve,
 .st-key-journey_unflip_interpret ,
 .st-key-journey_unflip_question {
@@ -1934,6 +2008,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_use > div,
 .st-key-journey_flip_evaluate > div,
 .st-key-journey_flip_test > div,
+.st-key-journey_flip_sampling_se > div,
 .st-key-journey_flip_improve > div,
 .st-key-journey_flip_interpret > div,
 .st-key-journey_flip_question > div,
@@ -1942,6 +2017,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_use > div,
 .st-key-journey_unflip_evaluate > div,
 .st-key-journey_unflip_test > div,
+.st-key-journey_unflip_sampling_se > div,
 .st-key-journey_unflip_improve > div,
 .st-key-journey_unflip_interpret > div,
 .st-key-journey_unflip_question > div,
@@ -1950,6 +2026,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_use [data-testid="stButton"],
 .st-key-journey_flip_evaluate [data-testid="stButton"],
 .st-key-journey_flip_test [data-testid="stButton"],
+.st-key-journey_flip_sampling_se [data-testid="stButton"],
 .st-key-journey_flip_improve [data-testid="stButton"],
 .st-key-journey_flip_interpret [data-testid="stButton"],
 .st-key-journey_flip_question [data-testid="stButton"],
@@ -1958,6 +2035,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_use [data-testid="stButton"],
 .st-key-journey_unflip_evaluate [data-testid="stButton"],
 .st-key-journey_unflip_test [data-testid="stButton"],
+.st-key-journey_unflip_sampling_se [data-testid="stButton"],
 .st-key-journey_unflip_improve [data-testid="stButton"],
 .st-key-journey_unflip_interpret [data-testid="stButton"] ,
 .st-key-journey_unflip_question [data-testid="stButton"] {
@@ -1974,6 +2052,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_use button,
 .st-key-journey_flip_evaluate button,
 .st-key-journey_flip_test button,
+.st-key-journey_flip_sampling_se button,
 .st-key-journey_flip_improve button,
 .st-key-journey_flip_interpret button,
 .st-key-journey_flip_question button,
@@ -1982,6 +2061,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_use button,
 .st-key-journey_unflip_evaluate button,
 .st-key-journey_unflip_test button,
+.st-key-journey_unflip_sampling_se button,
 .st-key-journey_unflip_improve button,
 .st-key-journey_unflip_interpret button ,
 .st-key-journey_unflip_question button {
@@ -2006,6 +2086,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_use,
 .st-key-journey_explore_evaluate,
 .st-key-journey_explore_test,
+.st-key-journey_explore_sampling_se,
 .st-key-journey_explore_improve,
 .st-key-journey_explore_interpret ,
 .st-key-journey_explore_question {
@@ -2021,6 +2102,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_use > div,
 .st-key-journey_explore_evaluate > div,
 .st-key-journey_explore_test > div,
+.st-key-journey_explore_sampling_se > div,
 .st-key-journey_explore_improve > div,
 .st-key-journey_explore_interpret > div,
 .st-key-journey_explore_question > div,
@@ -2029,6 +2111,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_use [data-testid="stButton"],
 .st-key-journey_explore_evaluate [data-testid="stButton"],
 .st-key-journey_explore_test [data-testid="stButton"],
+.st-key-journey_explore_sampling_se [data-testid="stButton"],
 .st-key-journey_explore_improve [data-testid="stButton"],
 .st-key-journey_explore_interpret [data-testid="stButton"] ,
 .st-key-journey_explore_question [data-testid="stButton"] {
@@ -2043,6 +2126,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_use button,
 .st-key-journey_explore_evaluate button,
 .st-key-journey_explore_test button,
+.st-key-journey_explore_sampling_se button,
 .st-key-journey_explore_improve button,
 .st-key-journey_explore_interpret button ,
 .st-key-journey_explore_question button {
@@ -2065,6 +2149,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_use button p,
 .st-key-journey_explore_evaluate button p,
 .st-key-journey_explore_test button p,
+.st-key-journey_explore_sampling_se button p,
 .st-key-journey_explore_improve button p,
 .st-key-journey_explore_interpret button p,
 .st-key-journey_explore_question button p,
@@ -2073,6 +2158,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_use button span,
 .st-key-journey_explore_evaluate button span,
 .st-key-journey_explore_test button span,
+.st-key-journey_explore_sampling_se button span,
 .st-key-journey_explore_improve button span,
 .st-key-journey_explore_interpret button span ,
 .st-key-journey_explore_question button span {
@@ -2084,6 +2170,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_use button:hover,
 .st-key-journey_explore_evaluate button:hover,
 .st-key-journey_explore_test button:hover,
+.st-key-journey_explore_sampling_se button:hover,
 .st-key-journey_explore_improve button:hover,
 .st-key-journey_explore_interpret button:hover ,
 .st-key-journey_explore_question button:hover {
@@ -2106,6 +2193,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   .st-key-journey_card_use:has(.journey-is-back),
   .st-key-journey_card_evaluate:has(.journey-is-back),
   .st-key-journey_card_test:has(.journey-is-back),
+  .st-key-journey_card_sampling_se:has(.journey-is-back),
   .st-key-journey_card_improve:has(.journey-is-back),
   .st-key-journey_card_interpret:has(.journey-is-back) {
     animation: none !important;
@@ -2118,8 +2206,11 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   .st-key-journey_card_use,
   .st-key-journey_card_evaluate,
   .st-key-journey_card_test,
+  .st-key-journey_card_sampling_se,
   .st-key-journey_card_improve,
-  .st-key-journey_card_interpret { min-height: 0 !important; }
+  .st-key-journey_card_interpret,
+  .st-key-journey_card_multiple_regression,
+  .st-key-journey_card_f_tests { min-height: 0 !important; }
 }
 </style>
 """
@@ -2202,37 +2293,63 @@ def _dismiss_dataset_drawer() -> None:
     _set_app_data_drawer_open(False)
 
 
+MAIN_LAB_LESSON_KEYS: tuple[str, ...] = tuple(
+    key for key, _ in MAIN_LAB_TABS if key not in ("journey", "library")
+)
+
+
+def _go_to_journey() -> None:
+    """Home button callback: both nav levels must agree before the rerun."""
+    st.session_state.main_lab_tab = "journey"
+    st.session_state.main_lab_lesson_tab = None
+
+
 def render_main_nav() -> str:
-    """Main lab tabs. Load Dataset lives on each statistical tab's status row."""
+    """Two-level nav: The Statistical Journey (parent) above the lesson row (children).
+
+    Dataset Library is a utility, not a lesson, and has no nav entry here.
+    """
     _ensure_app_data_drawer_state()
     if "main_lab_tab" not in st.session_state:
         st.session_state.main_lab_tab = "journey"
-    nav = st.container(
+    current = st.session_state.main_lab_tab
+    if current == "intro":
+        current = "sampling"  # Former standalone Sampling tab → Sampling & Standard Error.
+    if current != "journey" and current not in MAIN_LAB_LESSON_KEYS:
+        current = "journey"
+        st.session_state.main_lab_lesson_tab = None
+    st.session_state.main_lab_tab = current
+
+    with st.container(key="main_nav_home", horizontal=True, vertical_alignment="center", gap="small"):
+        st.button(
+            "The Statistical Journey",
+            key="main_nav_home_btn",
+            type="primary" if current == "journey" else "secondary",
+            on_click=_go_to_journey,
+            width="content",
+        )
+
+    with st.container(
         key="main_nav",
         horizontal=True,
         vertical_alignment="center",
         gap="small",
         wrap=False,
-    )
-    with nav:
-        active = st.segmented_control(
-            "Lab section",
-            options=[key for key, _ in MAIN_LAB_TABS],
+    ):
+        chosen = st.segmented_control(
+            "Lesson",
+            options=list(MAIN_LAB_LESSON_KEYS),
             format_func=lambda key: MAIN_LAB_TAB_LABELS[key],
-            key="main_lab_tab",
-            required=True,
+            key="main_lab_lesson_tab",
             label_visibility="collapsed",
             width="stretch",
             wrap=False,
         )
-    if active == "intro":
-        # Former standalone Sampling tab → Sampling & Inference.
-        active = "sampling"
-        st.session_state.main_lab_tab = active
-    if active not in MAIN_LAB_TAB_LABELS:
-        active = "journey"
-        st.session_state.main_lab_tab = active
-    return str(active)
+
+    if chosen is not None:
+        current = chosen
+    st.session_state.main_lab_tab = current
+    return str(current)
 
 
 def _render_dataset_status_row(status_html: str, *, show_summary: bool = True) -> None:
@@ -3136,7 +3253,7 @@ def _render_sampling_lab_data_panel(population) -> None:
         sample_size = getattr(experiment, "sample_size", sample_size)
     if x_values is None or y_values is None:
         st.caption(
-            "Draw a sample in Sampling & Inference to inspect its observations. "
+            "Draw a sample in Sampling & Standard Error to inspect its observations. "
             f"The lab samples from the fixed population of {population.n:,} students."
         )
         return
@@ -3660,9 +3777,8 @@ _ONE_BETA_NOTE = None
 _ONE_LEGEND = None
 _DIST_SCATTER_HEIGHT = 515
 _DIST_HIST_HEIGHT = 480
-_ONE_SCATTER_HEIGHT = 460
-# Match Repeated Sampling's histogram height exactly for visual consistency.
-_ONE_BETA_HEIGHT = _DIST_HIST_HEIGHT
+_ONE_SCATTER_HEIGHT = 205
+_ONE_BETA_HEIGHT = 205
 _ONE_HIST_HEIGHT = 230
 
 
@@ -3728,7 +3844,8 @@ def _se_intervals_html(benchmark_se, repeated_sd, estimated) -> str:
     )
 
 
-def _slope_calculation_html(error) -> str:
+def _se_ingredients_html(error) -> str:
+    """The two SE ingredients (s, Sxx) side by side, with the formula below."""
     if error is None or error.residual_sd is None or error.sxx is None or error.se_beta is None:
         residual = sxx_text = "—"
         result = "—"
@@ -3737,28 +3854,31 @@ def _slope_calculation_html(error) -> str:
         sxx_text = f"{error.sxx:.2f}"
         result = _dist_number(error.se_beta)
     return (
-        '<div class="dist-calc">'
-        "<p>Residual noise: "
-        "s = √[Σ(y<sub>i</sub> − ŷ<sub>i</sub>)<sup>2</sup> / (n − 2)] = "
-        f"<b>{residual}</b></p>"
-        "<p>Spread of X: "
-        "S<sub>xx</sub> = Σ(x<sub>i</sub> − x̄)<sup>2</sup> = "
-        f"<b>{sxx_text}</b></p>"
+        '<div class="se-ingredients">'
+        '<div class="se-ingredient">'
+        '<p class="ing-title">1. Residual scatter (s)</p>'
+        '<p class="ing-desc">How far observations fall from the line. '
+        "More scatter → greater uncertainty.</p>"
+        f'<p class="ing-value">s = <b>{residual}</b></p>'
+        "</div>"
+        '<div class="se-ingredient">'
+        '<p class="ing-title">2. Spread of X (S<sub>xx</sub>)</p>'
+        '<p class="ing-desc">How widely X is distributed. More spread → '
+        "greater precision.</p>"
+        f'<p class="ing-value">S<sub>xx</sub> = <b>{sxx_text}</b></p>'
+        "</div>"
+        "</div>"
         '<p class="dist-formula">'
         f'<span class="se-key">SE({_BETA_HAT}) = s / √S<sub>xx</sub> = '
         f"{residual} / √{sxx_text} = "
         f'<span class="se-final">{result}</span></span></p>'
-        '<p class="dist-takeaway">Using these two measurements from ONE '
-        "sample, we can estimate how much the slope would vary across "
-        "repeated samples.</p>"
-        "</div>"
     )
 
 
-def _discovery_html(error, benchmark, experiment) -> str:
+def _discovery_html(error, benchmark_se, benchmark_repetitions, experiment) -> str:
     se_beta = None if error is None else error.se_beta
     repeated = estimate_sd(experiment.betas)
-    error_text = _signed_percent(relative_se_error(se_beta, benchmark.se_beta))
+    error_text = _signed_percent(relative_se_error(se_beta, benchmark_se))
     repeated_n = int(experiment.n_repetitions)
     observed_n = f"{repeated_n:,}" if repeated_n > 0 else "—"
     return (
@@ -3766,21 +3886,19 @@ def _discovery_html(error, benchmark, experiment) -> str:
         '<p class="kicker">HOW CLOSE CAN ONE SAMPLE GET?</p>'
         '<div class="se-cards">'
         '<div class="se-card bench">'
-        f'<span class="lab">Simulation benchmark<br>({benchmark.repetitions:,} samples)</span>'
-        f'<span class="val">{_dist_number(benchmark.se_beta)}</span>'
+        f'<span class="lab">Reference SE<br>({benchmark_repetitions:,} samples)</span>'
+        f'<span class="val">{_dist_number(benchmark_se)}</span>'
         "</div>"
         '<div class="se-card ref">'
-        f'<span class="lab">Observed SE<br>({observed_n} samples)</span>'
+        f'<span class="lab">SD of estimated slopes<br>({observed_n} samples)</span>'
         f'<span class="val">{_dist_number(repeated)}</span>'
         "</div>"
         '<div class="se-card est">'
-        '<span class="lab">Estimated SE<br>(ONE sample)</span>'
+        '<span class="lab">Estimated SE<br>(one sample)</span>'
         f'<span class="val">{_dist_number(se_beta)}</span>'
         "</div>"
         "</div>"
         f'<p class="se-error">One-sample estimation error: {error_text}</p>'
-        f'<p class="se-close">One sample lets us estimate how much {_BETA_HAT} would vary '
-        "across repeated samples.</p>"
         "</div>"
     )
 
@@ -3789,16 +3907,6 @@ _ONE_INTRO = (
     '<div class="dist-step-one"></div>'
     '<p class="dist-intro">How can one sample reveal the uncertainty of '
     "its slope?</p>"
-)
-
-_ONE_SAMPLING_EXPLANATION = (
-    '<p class="dist-note-line">Two measurements give us the answer:</p>'
-    '<p class="dist-note-line"><b>1. Residual scatter (s)</b> — how far '
-    "observations fall from the regression line. More scatter → greater "
-    "uncertainty in the slope.</p>"
-    '<p class="dist-note-line"><b>2. Spread of X (S<sub>xx</sub>)</b> — how '
-    "widely the predictor values are distributed. More spread → greater "
-    "precision in the slope.</p>"
 )
 
 _ONE_LEFT_HEAD = (
@@ -4086,11 +4194,11 @@ def _render_null_slope(sample_size: int, draw: bool, true_beta: float) -> None:
 
 
 def render_sampling_inference_tab(population, rng: np.random.Generator) -> None:
-    """Combined Sampling & Inference: One Sample plus the three distribution steps."""
-    if "sampling_inference_sub" not in st.session_state:
+    """Sampling & Standard Error: One Sample plus the repeated/estimate-SE steps."""
+    if st.session_state.get("sampling_inference_sub") not in SAMPLING_INFERENCE_SUB_LABELS:
         st.session_state.sampling_inference_sub = "one_sample"
     sub = st.segmented_control(
-        "Sampling & Inference section",
+        "Sampling & Standard Error section",
         options=[key for key, _ in SAMPLING_INFERENCE_SUBTABS],
         format_func=lambda key: SAMPLING_INFERENCE_SUB_LABELS[key],
         key="sampling_inference_sub",
@@ -4103,10 +4211,17 @@ def render_sampling_inference_tab(population, rng: np.random.Generator) -> None:
         # Introduction owns its Load Dataset overlay.
         render_introduction_tab(population, rng)
         return
-    step = {"repeated": "repeated", "estimate_se": "one", "ttest": "test"}[sub]
+    step = {"repeated": "repeated", "estimate_se": "one"}[sub]
     render_sampling_tab(population, rng, step=step)
     if _app_data_drawer_open():
         _dataset_overlay_dialog("sampling", population, rng=rng)
+
+
+def render_ttest_lesson(population, rng: np.random.Generator) -> None:
+    """The t-test as a standalone lesson, reusing the existing implementation."""
+    render_sampling_tab(population, rng, step="test")
+    if _app_data_drawer_open():
+        _dataset_overlay_dialog("ttest", population, rng=rng)
 
 
 def _sampling_status_row(population, experiment) -> None:
@@ -4327,6 +4442,11 @@ def _render_estimate_se(population, rng: np.random.Generator) -> None:
             key="dist_noise_level",
             width=180,
         )
+    st.markdown(
+        '<p class="dist-hint">Increase residual noise and watch uncertainty '
+        "grow in both charts.</p>",
+        unsafe_allow_html=True,
+    )
     experiment = experiment_for_sample_size(
         experiment,
         int(sample_size),
@@ -4380,9 +4500,12 @@ def _render_estimate_se(population, rng: np.random.Generator) -> None:
             st.markdown(_ONE_LEFT_HEAD, unsafe_allow_html=True)
             with st.container(key="one_beta"):
                 _paint_one_sample_hist(population, display_experiment)
-    st.markdown(_ONE_SAMPLING_EXPLANATION, unsafe_allow_html=True)
-    st.markdown(_slope_calculation_html(error), unsafe_allow_html=True)
-    st.markdown(_discovery_html(error, benchmark, display_experiment), unsafe_allow_html=True)
+    st.markdown(_se_ingredients_html(error), unsafe_allow_html=True)
+    scaled_benchmark_se = None if benchmark.se_beta is None else float(noise_level) * benchmark.se_beta
+    st.markdown(
+        _discovery_html(error, scaled_benchmark_se, benchmark.repetitions, display_experiment),
+        unsafe_allow_html=True,
+    )
 
 
 @st.fragment(key="dist_ttest")
@@ -6320,8 +6443,8 @@ def render_standardisation_subtab(view) -> None:
 
 
 def _rout_goto_ttest() -> None:
-    st.session_state.main_lab_tab = "sampling"
-    st.session_state.sampling_inference_sub = "ttest"
+    st.session_state.main_lab_tab = "ttest"
+    st.session_state.main_lab_lesson_tab = "ttest"
 
 
 def _rout_goto_fit_panel(panel: str) -> None:
@@ -6678,7 +6801,7 @@ def render_fitting_tab() -> None:
         # Sampling controls (size slider / All observations / Draw New Sample)
         # are intentionally not shown in Simple Linear Regression lessons —
         # they stay fixed at the Students default (n = 200). The full
-        # sampling UI remains in Sampling & Inference.
+        # sampling UI remains in Sampling & Standard Error.
 
         view = _ensure_fitting_observations(source)
         fingerprint_before = st.session_state.get("fit_view_fingerprint")
@@ -7311,6 +7434,8 @@ def main() -> None:
         render_correlation_causation_tab()
     elif active == "sampling":
         render_sampling_inference_tab(population, rng)
+    elif active == "ttest":
+        render_ttest_lesson(population, rng)
     elif active == "library":
         render_dataset_library_tab()
 

@@ -262,24 +262,24 @@ def test_main_lab_tabs_cover_every_section():
         "fitting",
         "correlation",
         "sampling",
+        "ttest",
         "library",
     ]
     assert "intro" not in keys
     assert "sample" not in keys
     assert "comparison" not in keys
     assert "noise" not in keys
-    assert MAIN_LAB_TAB_LABELS["sampling"] == "Sampling & Inference"
+    assert MAIN_LAB_TAB_LABELS["sampling"] == "Sampling & Standard Error"
+    assert MAIN_LAB_TAB_LABELS["ttest"] == "The t-test"
     assert all(label.strip() for _, label in MAIN_LAB_TABS)
     assert [key for key, _ in SAMPLING_INFERENCE_SUBTABS] == [
         "one_sample",
         "repeated",
         "estimate_se",
-        "ttest",
     ]
     assert SAMPLING_INFERENCE_SUB_LABELS["one_sample"] == "One Sample"
     assert SAMPLING_INFERENCE_SUB_LABELS["repeated"] == "Repeated Sampling"
     assert SAMPLING_INFERENCE_SUB_LABELS["estimate_se"] == "Estimate SE from One Sample"
-    assert SAMPLING_INFERENCE_SUB_LABELS["ttest"] == "The t-test: Is the Slope Zero?"
     assert "Population & one sample" not in MAIN_LAB_TAB_LABELS.values()
     assert "Sample size comparison" not in MAIN_LAB_TAB_LABELS.values()
     assert "Noise experiment" not in MAIN_LAB_TAB_LABELS.values()

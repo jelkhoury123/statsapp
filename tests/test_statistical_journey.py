@@ -6,8 +6,10 @@ import numpy as np
 
 from src.regression import fit_ols
 from src.statistical_journey import (
-    ROW_FORWARD,
-    ROW_RETURN,
+    GRID_ORDER,
+    PLACEHOLDER_BUILDERS,
+    PLACEHOLDER_KEYS,
+    PLACEHOLDER_META,
     STAGE_KEYS,
     STAGE_META,
     build_journey_sample,
@@ -33,10 +35,36 @@ def test_sample_ols_matches_fit():
     assert fit.beta == sample.beta
 
 
-def test_serpentine_visual_order():
-    assert STAGE_KEYS == ("why", "build", "evaluate", "use", "question", "test")
-    assert ROW_FORWARD == ("why", "build", "evaluate")
-    assert ROW_RETURN == ("test", "question", "use")
+def test_grid_reading_order():
+    assert STAGE_KEYS == (
+        "why",
+        "build",
+        "evaluate",
+        "sampling_se",
+        "test",
+        "question",
+        "use",
+    )
+    assert GRID_ORDER == (
+        "why", "build", "evaluate",
+        "sampling_se", "test", "question",
+        "use", "multiple_regression", "f_tests",
+    )
+    assert len(GRID_ORDER) == 9
+    assert set(GRID_ORDER) == set(STAGE_KEYS) | set(PLACEHOLDER_KEYS)
+
+
+def test_placeholder_cards_have_no_dead_lesson_link():
+    for key in PLACEHOLDER_KEYS:
+        meta = PLACEHOLDER_META[key]
+        assert meta["title"]
+        assert meta["question"]
+        assert "lesson" not in meta
+    sample = build_journey_sample()
+    for key in PLACEHOLDER_KEYS:
+        fig = PLACEHOLDER_BUILDERS[key](sample)
+        assert len(fig.data) >= 1
+        assert fig.layout.height == 195
 
 
 def test_stage_metadata_covers_all_stages():
@@ -47,7 +75,7 @@ def test_stage_metadata_covers_all_stages():
         assert meta["back"]
         assert 2 <= len(meta["concepts"]) <= 3
         assert all(isinstance(term, str) and term for term in meta["concepts"])
-        assert meta["lesson"][0] in {"fitting", "sampling", "correlation"}
+        assert meta["lesson"][0] in {"fitting", "sampling", "correlation", "ttest"}
         assert "takeaway" not in meta
 
 
@@ -105,7 +133,11 @@ def test_lesson_targets_existing_tabs():
     assert STAGE_META["build"]["lesson"] == ("fitting", {"fit_lab_panel": "fit"})
     assert STAGE_META["evaluate"]["lesson"] == ("fitting", {"fit_lab_panel": "r2"})
     assert STAGE_META["use"]["lesson"] == ("fitting", {"fit_lab_panel": "use"})
-    assert STAGE_META["test"]["lesson"][0] == "sampling"
+    assert STAGE_META["sampling_se"]["lesson"] == (
+        "sampling",
+        {"sampling_inference_sub": "one_sample"},
+    )
+    assert STAGE_META["test"]["lesson"] == ("ttest", {})
     # "improve" is reserved content for the Part II (multiple regression) journey.
     assert STAGE_META["improve"]["lesson"] == ("correlation", {"corr_lesson": "control"})
     assert STAGE_META["question"]["lesson"] == ("correlation", {"corr_lesson": "causation"})

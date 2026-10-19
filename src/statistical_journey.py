@@ -9,6 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
+from scipy.stats import f as fisher_f
 from scipy.stats import t as student_t
 
 from src.charts import BLUE, FONT, GREY, INK, ORANGE, MUTED, rgba
@@ -25,12 +26,34 @@ MINI_CONFIG = {
     "responsive": True,
 }
 
-# Part I reasoning order along the serpentine path.
-STAGE_KEYS = ("why", "build", "evaluate", "use", "question", "test")
-# Visual rows (left → right on screen).
-ROW_FORWARD = ("why", "build", "evaluate")
-ROW_RETURN = ("test", "question", "use")
+# The seven implemented lessons (clickable cards).
+STAGE_KEYS = ("why", "build", "evaluate", "sampling_se", "test", "question", "use")
 # "improve" is reserved content for the Part II (multiple regression) journey.
+
+# Two coming-soon cards (Part II), presentational only — no lesson behind them yet.
+PLACEHOLDER_KEYS = ("multiple_regression", "f_tests")
+PLACEHOLDER_META = {
+    "multiple_regression": {
+        "title": "MULTIPLE REGRESSION",
+        "question": "What if we have two predictors?",
+    },
+    "f_tests": {
+        "title": "F-TESTS",
+        "question": "Does adding predictors improve the model?",
+    },
+}
+
+# Reading order of the homepage's 3×3 grid, left to right, top to bottom.
+GRID_ORDER = (
+    "why", "build", "evaluate",
+    "sampling_se", "test", "question",
+    "use", "multiple_regression", "f_tests",
+)
+# Color phase per real stage (background tint + title color — see app.py CSS).
+_PHASE_BY_STAGE = {
+    "why": "build", "build": "build", "evaluate": "build", "use": "build",
+    "sampling_se": "eval", "test": "eval", "question": "eval",
+}
 
 STAGE_META = {
     "why": {
@@ -61,7 +84,7 @@ STAGE_META = {
     },
     "use": {
         "title": "USE",
-        "question": "What can we do with it?",
+        "question": "How can we make predictions?",
         "lesson": ("fitting", {"fit_lab_panel": "use"}),
         "link": "Explore lesson →",
         "back": (
@@ -83,10 +106,22 @@ STAGE_META = {
         ),
         "concepts": ("SSE", "R²", "Residual SE"),
     },
+    "sampling_se": {
+        "title": "SAMPLING",
+        "question": "Why do estimates vary between samples?",
+        "lesson": ("sampling", {"sampling_inference_sub": "one_sample"}),
+        "link": "Explore lesson →",
+        "back": (
+            "Draw a different sample and the estimated slope changes. The "
+            "spread of these estimates across many samples — the standard "
+            "error — tells us how much to trust a result from just one."
+        ),
+        "concepts": ("Sampling variability", "Standard error", "Repeated samples"),
+    },
     "test": {
         "title": "TEST",
-        "question": "Could our findings be sampling noise?",
-        "lesson": ("sampling", {"sampling_inference_sub": "ttest"}),
+        "question": "Is the slope significantly different from zero?",
+        "lesson": ("ttest", {}),
         "link": "Explore lesson →",
         "back": (
             "Every sample is different. An apparent relationship "
@@ -259,6 +294,30 @@ def mini_evaluate(sample: JourneySample) -> go.Figure:
     return _base_layout(go.Figure(traces))
 
 
+def mini_sampling_se(sample: JourneySample) -> go.Figure:
+    """Resampled fits fanning around the line — different samples, different slopes."""
+    rng = np.random.default_rng(JOURNEY_SEED + 7)
+    x = np.array([float(sample.hours.min()), float(sample.hours.max())])
+    n = sample.hours.size
+    traces: list = [_scatter_cloud(sample, opacity=0.5)]
+    for _ in range(10):
+        idx = rng.choice(n, size=n, replace=True)
+        fit = fit_ols(sample.hours[idx], sample.scores[idx])
+        if fit.degenerate:
+            continue
+        traces.append(
+            go.Scatter(
+                x=x,
+                y=fit.alpha + fit.beta * x,
+                mode="lines",
+                line=dict(color=rgba(ORANGE, 0.35), width=1.2),
+                hoverinfo="skip",
+            )
+        )
+    traces.append(_ols_line(sample, color=BLUE, width=2.2))
+    return _base_layout(go.Figure(traces))
+
+
 def mini_test(sample: JourneySample) -> go.Figure:
     """Sampling distribution with a marked test statistic."""
     del sample
@@ -356,6 +415,69 @@ def mini_question(sample: JourneySample) -> go.Figure:
     return _base_layout(fig)
 
 
+def mini_multiple_regression(sample: JourneySample) -> go.Figure:
+    """Points sized and coloured by a second predictor — more than one driver of Y."""
+    spread = float(sample.motivation.max() - sample.motivation.min()) or 1.0
+    sizes = 5 + 9 * (sample.motivation - sample.motivation.min()) / spread
+    fig = go.Figure(
+        go.Scatter(
+            x=sample.hours,
+            y=sample.scores,
+            mode="markers",
+            marker=dict(
+                size=sizes,
+                color=sample.motivation,
+                colorscale="Purples",
+                showscale=False,
+                opacity=0.85,
+                line=dict(width=0.6, color="white"),
+            ),
+            hoverinfo="skip",
+        )
+    )
+    fig.add_trace(_ols_line(sample, color=INK, width=1.8))
+    return _base_layout(fig)
+
+
+def mini_f_tests(sample: JourneySample) -> go.Figure:
+    """F-distribution with a shaded rejection region — comparing nested models."""
+    del sample
+    dfn, dfd = 2, 30
+    xs = np.linspace(0.001, 6, 160)
+    dens = fisher_f.pdf(xs, dfn, dfd)
+    crit = float(fisher_f.ppf(0.95, dfn, dfd))
+    tail_x = xs[xs >= crit]
+    tail_y = dens[xs >= crit]
+    fig = go.Figure(
+        [
+            go.Scatter(
+                x=np.concatenate([[crit], tail_x]),
+                y=np.concatenate([[0.0], tail_y]),
+                mode="lines",
+                fill="tozeroy",
+                line=dict(width=0),
+                fillcolor=rgba(ORANGE, 0.35),
+                hoverinfo="skip",
+            ),
+            go.Scatter(x=xs, y=dens, mode="lines", line=dict(color=GREY, width=1.8), hoverinfo="skip"),
+            go.Scatter(
+                x=[crit, crit],
+                y=[0, float(fisher_f.pdf(crit, dfn, dfd))],
+                mode="lines",
+                line=dict(color=ORANGE, width=2.2),
+                hoverinfo="skip",
+            ),
+        ]
+    )
+    return _base_layout(fig)
+
+
+PLACEHOLDER_BUILDERS = {
+    "multiple_regression": mini_multiple_regression,
+    "f_tests": mini_f_tests,
+}
+
+
 MINI_BUILDERS = {
     "why": mini_why,
     "build": mini_build,
@@ -364,6 +486,7 @@ MINI_BUILDERS = {
     "test": mini_test,
     "improve": mini_improve,
     "question": mini_question,
+    "sampling_se": mini_sampling_se,
 }
 
 
@@ -377,6 +500,8 @@ def open_lesson(stage: str) -> None:
     st.session_state.journey_flipped = None
     tab, updates = STAGE_META[stage]["lesson"]
     st.session_state.main_lab_tab = tab
+    # Keep the lesson nav row's own widget state in sync with the target tab.
+    st.session_state.main_lab_lesson_tab = tab
     for key, value in updates.items():
         st.session_state[key] = value
 
@@ -389,14 +514,6 @@ def flip_to_back(stage: str) -> None:
 def flip_to_front() -> None:
     """Return the flipped card to its front face."""
     st.session_state.journey_flipped = None
-
-
-def _render_arrow(kind: str = "right") -> None:
-    symbol = {"right": "→", "left": "←", "down": "↓"}[kind]
-    st.markdown(
-        f'<div class="journey-arrow journey-arrow-{kind}">{symbol}</div>',
-        unsafe_allow_html=True,
-    )
 
 
 def _render_card_front(stage: str, sample: JourneySample, *, phase: str) -> None:
@@ -473,30 +590,35 @@ def _render_stage_card(stage: str, sample: JourneySample, *, phase: str) -> None
         _render_card_front(stage, sample, phase=phase)
 
 
-def _render_row(
-    stages: tuple[str, ...],
-    sample: JourneySample,
-    *,
-    phase: str,
-    arrow: str = "right",
-) -> None:
-    cols = st.columns([1.0, 0.14, 1.0, 0.14, 1.0], gap="medium")
-    slots = (cols[0], cols[2], cols[4])
-    arrows = (cols[1], cols[3])
-    for col, stage in zip(slots, stages):
-        with col:
-            with st.container(key=f"journey_card_{stage}"):
-                _render_stage_card(stage, sample, phase=phase)
-    for col in arrows:
-        with col:
-            _render_arrow(arrow)
+def _render_placeholder_card(stage: str, sample: JourneySample) -> None:
+    meta = PLACEHOLDER_META[stage]
+    st.markdown(
+        '<div class="journey-stage journey-phase-soon">'
+        f'<p class="journey-stage-title">{meta["title"]}</p>'
+        f'<p class="journey-stage-q">{meta["question"]}</p>'
+        '<span class="journey-soon-badge">Coming soon</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.plotly_chart(
+        PLACEHOLDER_BUILDERS[stage](sample),
+        width="stretch",
+        config=MINI_CONFIG,
+        key=f"journey_mini_{stage}",
+    )
 
 
-def _render_turn_down() -> None:
-    """Simple ↓ under EVALUATE into USE (right column of both rows)."""
-    _c0, _a0, _c1, _a1, c2 = st.columns([1.0, 0.14, 1.0, 0.14, 1.0], gap="medium")
-    with c2:
-        _render_arrow("down")
+def _render_grid(sample: JourneySample) -> None:
+    """Nine equally sized cards, three per row, in GRID_ORDER."""
+    for start in range(0, len(GRID_ORDER), 3):
+        cols = st.columns(3, gap="medium")
+        for col, stage in zip(cols, GRID_ORDER[start : start + 3]):
+            with col:
+                with st.container(key=f"journey_card_{stage}"):
+                    if stage in PLACEHOLDER_KEYS:
+                        _render_placeholder_card(stage, sample)
+                    else:
+                        _render_stage_card(stage, sample, phase=_PHASE_BY_STAGE[stage])
 
 
 def _mount_card_click_bridge() -> None:
@@ -533,7 +655,7 @@ def _mount_card_click_bridge() -> None:
 
 
 def render_statistical_journey() -> None:
-    """Single-page serpentine journey map (navigation overview)."""
+    """Nine-card grid overview of the full statistical journey."""
     if "journey_flipped" not in st.session_state:
         st.session_state.journey_flipped = None
     sample = build_journey_sample()
@@ -551,9 +673,4 @@ def render_statistical_journey() -> None:
         unsafe_allow_html=True,
     )
 
-    # WHY → BUILD → EVALUATE
-    #                  ↓
-    # USE ← QUESTION ← TEST
-    _render_row(ROW_FORWARD, sample, phase="build", arrow="right")
-    _render_turn_down()
-    _render_row(ROW_RETURN, sample, phase="eval", arrow="left")
+    _render_grid(sample)
