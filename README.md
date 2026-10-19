@@ -1,9 +1,5 @@
 # Regression Lab
 
-A small teaching app for first-year psychology students. It shows how the
-intercept and slope of a simple regression move from sample to sample when
-every sample is drawn from the same fixed population.
-
 The population is 100,000 students in `data/students_population.csv`.
 Sampling never rebuilds that file and never writes over it.
 
