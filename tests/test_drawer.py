@@ -260,6 +260,7 @@ def test_main_lab_tabs_cover_every_section():
     assert keys == [
         "journey",
         "fitting",
+        "multiple_regression",
         "correlation",
         "sampling",
         "ttest",

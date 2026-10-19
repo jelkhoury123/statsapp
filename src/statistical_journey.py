@@ -25,34 +25,47 @@ MINI_CONFIG = {
     "staticPlot": True,
     "responsive": True,
 }
+# staticPlot breaks WebGL (3D) rendering in plotly.js — lock rotation via
+# scene.dragmode instead, so this one card still renders but stays still.
+MINI_CONFIG_3D = {
+    "displaylogo": False,
+    "displayModeBar": False,
+    "responsive": True,
+    "scrollZoom": False,
+}
 
-# The seven implemented lessons (clickable cards).
-STAGE_KEYS = ("why", "build", "evaluate", "sampling_se", "test", "question", "use")
-# "improve" is reserved content for the Part II (multiple regression) journey.
+# The eight implemented lessons (clickable cards).
+STAGE_KEYS = ("why", "build", "evaluate", "sampling_se", "test", "question", "use", "multiple_regression")
+# "improve" is reserved content for a future Part II journey.
 
-# Two coming-soon cards (Part II), presentational only — no lesson behind them yet.
-PLACEHOLDER_KEYS = ("multiple_regression", "f_tests")
+# One coming-soon card left, presentational only — no lesson behind it yet.
+PLACEHOLDER_KEYS = ("f_tests",)
 PLACEHOLDER_META = {
-    "multiple_regression": {
-        "title": "MULTIPLE REGRESSION",
-        "question": "What if we have two predictors?",
-    },
     "f_tests": {
         "title": "F-TESTS",
         "question": "Does adding predictors improve the model?",
     },
 }
 
-# Reading order of the homepage's 3×3 grid, left to right, top to bottom.
+# Logical reading order of the homepage's 3×3 grid.
 GRID_ORDER = (
     "why", "build", "evaluate",
-    "sampling_se", "test", "question",
-    "use", "multiple_regression", "f_tests",
+    "use", "question", "sampling_se",
+    "test", "multiple_regression", "f_tests",
 )
+# Visual rows (left → right on screen) — row 2 is displayed in reverse so the
+# zigzag reads: row1 L→R, down at column 3, row2 R→L, down at column 1, row3 L→R.
+VISUAL_ROWS = (
+    ("why", "build", "evaluate"),
+    ("sampling_se", "question", "use"),
+    ("test", "multiple_regression", "f_tests"),
+)
+VISUAL_ROW_ARROWS = ("right", "left", "right")
 # Color phase per real stage (background tint + title color — see app.py CSS).
 _PHASE_BY_STAGE = {
     "why": "build", "build": "build", "evaluate": "build", "use": "build",
     "sampling_se": "eval", "test": "eval", "question": "eval",
+    "multiple_regression": "build",
 }
 
 STAGE_META = {
@@ -154,6 +167,19 @@ STAGE_META = {
             "explain it."
         ),
         "concepts": ("Correlation", "Causation", "Confounding"),
+    },
+    "multiple_regression": {
+        "title": "MULTIPLE REGRESSION",
+        "question": "What if we have two predictors?",
+        "lesson": ("multiple_regression", {}),
+        "link": "Explore lesson →",
+        "back": (
+            "A model can use several predictors at once. With two "
+            "predictors, regression fits a plane instead of a line. "
+            "Each coefficient measures the effect of one predictor "
+            "while holding the other constant."
+        ),
+        "concepts": ("Multiple predictors", "Regression plane", "Holding constant"),
     },
 }
 
@@ -416,27 +442,67 @@ def mini_question(sample: JourneySample) -> go.Figure:
 
 
 def mini_multiple_regression(sample: JourneySample) -> go.Figure:
-    """Points sized and coloured by a second predictor — more than one driver of Y."""
-    spread = float(sample.motivation.max() - sample.motivation.min()) or 1.0
-    sizes = 5 + 9 * (sample.motivation - sample.motivation.min()) / spread
-    fig = go.Figure(
-        go.Scatter(
-            x=sample.hours,
-            y=sample.scores,
-            mode="markers",
+    """Static 3D preview: a fitted plane through scatter points on three axes."""
+    x1 = sample.hours
+    x2 = sample.motivation
+    y = sample.scores
+    design = np.column_stack([np.ones(x1.size), x1, x2])
+    coef, *_ = np.linalg.lstsq(design, y, rcond=None)
+    alpha, b1, b2 = coef
+    pad1 = 0.12 * (float(x1.max()) - float(x1.min()))
+    pad2 = 0.12 * (float(x2.max()) - float(x2.min()))
+    g1 = np.linspace(float(x1.min()) - pad1, float(x1.max()) + pad1, 10)
+    g2 = np.linspace(float(x2.min()) - pad2, float(x2.max()) + pad2, 10)
+    grid_x, grid_y = np.meshgrid(g1, g2)
+    grid_z = alpha + b1 * grid_x + b2 * grid_y
+    axis_blank = dict(
+        visible=False,
+        showbackground=False,
+        showgrid=False,
+        showticklabels=False,
+        showspikes=False,
+        title=dict(text=""),
+    )
+    fig = go.Figure()
+    fig.add_trace(
+        go.Surface(
+            x=g1, y=g2, z=grid_z,
+            colorscale=[[0, "rgba(124,58,237,0.88)"], [1, "rgba(124,58,237,0.88)"]],
+            showscale=False, opacity=0.88, hoverinfo="skip",
+        )
+    )
+    fig.add_trace(
+        go.Scatter3d(
+            x=x1, y=x2, z=y, mode="markers",
             marker=dict(
-                size=sizes,
-                color=sample.motivation,
-                colorscale="Purples",
+                size=4.5,
+                color=x2,
+                colorscale=[[0, "#1D4ED8"], [1, "#7C3AED"]],
                 showscale=False,
-                opacity=0.85,
-                line=dict(width=0.6, color="white"),
+                opacity=0.95,
+                line=dict(width=0),
             ),
             hoverinfo="skip",
         )
     )
-    fig.add_trace(_ols_line(sample, color=INK, width=1.8))
-    return _base_layout(fig)
+    fig.update_layout(
+        height=MINI_HEIGHT,
+        margin=dict(l=0, r=0, t=0, b=0),
+        scene=dict(
+            xaxis=axis_blank,
+            yaxis=axis_blank,
+            zaxis=axis_blank,
+            camera=dict(eye=dict(x=1.0, y=-1.0, z=0.85)),
+            aspectmode="cube",
+            dragmode=False,
+            domain=dict(x=[0, 1], y=[0, 1]),
+        ),
+        showlegend=False,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family=FONT, color=INK, size=8),
+    )
+    return fig
 
 
 def mini_f_tests(sample: JourneySample) -> go.Figure:
@@ -473,7 +539,6 @@ def mini_f_tests(sample: JourneySample) -> go.Figure:
 
 
 PLACEHOLDER_BUILDERS = {
-    "multiple_regression": mini_multiple_regression,
     "f_tests": mini_f_tests,
 }
 
@@ -487,6 +552,7 @@ MINI_BUILDERS = {
     "improve": mini_improve,
     "question": mini_question,
     "sampling_se": mini_sampling_se,
+    "multiple_regression": mini_multiple_regression,
 }
 
 
@@ -538,7 +604,7 @@ def _render_card_front(stage: str, sample: JourneySample, *, phase: str) -> None
     st.plotly_chart(
         stage_figure(stage, sample),
         width="stretch",
-        config=MINI_CONFIG,
+        config=MINI_CONFIG_3D if stage == "multiple_regression" else MINI_CONFIG,
         key=f"journey_mini_{stage}",
     )
 
@@ -563,14 +629,14 @@ def _render_card_back(stage: str, *, phase: str) -> None:
         help="Return to the chart",
     )
     st.markdown(
-        tipify(
-            f'<div class="journey-is-back" aria-hidden="true"></div>'
-            f'<div class="journey-stage journey-phase-{phase} journey-back">'
-            f'<p class="journey-stage-title">{meta["title"]}</p>'
+        f'<div class="journey-is-back" aria-hidden="true"></div>'
+        f'<div class="journey-stage journey-phase-{phase} journey-back">'
+        f'<p class="journey-stage-title">{meta["title"]}</p>'
+        + tipify(
             f'<p class="journey-back-body">{meta["back"]}</p>'
             f'{_concepts_line(meta["concepts"])}'
-            f"</div>"
-        ),
+        )
+        + "</div>",
         unsafe_allow_html=True,
     )
     st.button(
@@ -596,7 +662,6 @@ def _render_placeholder_card(stage: str, sample: JourneySample) -> None:
         '<div class="journey-stage journey-phase-soon">'
         f'<p class="journey-stage-title">{meta["title"]}</p>'
         f'<p class="journey-stage-q">{meta["question"]}</p>'
-        '<span class="journey-soon-badge">Coming soon</span>'
         "</div>",
         unsafe_allow_html=True,
     )
@@ -609,7 +674,7 @@ def _render_placeholder_card(stage: str, sample: JourneySample) -> None:
 
 
 def _render_arrow(kind: str = "right") -> None:
-    symbol = {"right": "→", "down": "↓"}[kind]
+    symbol = {"right": "→", "left": "←", "down": "↓"}[kind]
     st.markdown(
         f'<div class="journey-arrow journey-arrow-{kind}">{symbol}</div>',
         unsafe_allow_html=True,
@@ -617,10 +682,9 @@ def _render_arrow(kind: str = "right") -> None:
 
 
 def _render_grid(sample: JourneySample) -> None:
-    """Nine equally sized cards, three per row, in GRID_ORDER, with progress arrows."""
-    n_rows = len(GRID_ORDER) // 3
-    for row in range(n_rows):
-        stages = GRID_ORDER[row * 3 : row * 3 + 3]
+    """Nine equally sized cards in a zigzag: row 1 L→R, row 2 R→L, row 3 L→R."""
+    n_rows = len(VISUAL_ROWS)
+    for row, (stages, arrow_dir) in enumerate(zip(VISUAL_ROWS, VISUAL_ROW_ARROWS)):
         cols = st.columns([1.0, 0.1, 1.0, 0.1, 1.0], gap="medium")
         for col, stage in zip((cols[0], cols[2], cols[4]), stages):
             with col:
@@ -631,10 +695,13 @@ def _render_grid(sample: JourneySample) -> None:
                         _render_stage_card(stage, sample, phase=_PHASE_BY_STAGE[stage])
         for col in (cols[1], cols[3]):
             with col:
-                _render_arrow("right")
+                _render_arrow(arrow_dir)
         if row < n_rows - 1:
-            _, _, down_col, _, _ = st.columns([1.0, 0.1, 1.0, 0.1, 1.0], gap="medium")
-            with down_col:
+            # Continue down from the last card visited this row: column 3 after
+            # a left→right row, column 1 after a right→left row.
+            down_slot = 4 if arrow_dir == "right" else 0
+            down_cols = st.columns([1.0, 0.1, 1.0, 0.1, 1.0], gap="medium")
+            with down_cols[down_slot]:
                 _render_arrow("down")
 
 

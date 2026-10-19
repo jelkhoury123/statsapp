@@ -44,11 +44,12 @@ def test_grid_reading_order():
         "test",
         "question",
         "use",
+        "multiple_regression",
     )
     assert GRID_ORDER == (
         "why", "build", "evaluate",
-        "sampling_se", "test", "question",
-        "use", "multiple_regression", "f_tests",
+        "use", "question", "sampling_se",
+        "test", "multiple_regression", "f_tests",
     )
     assert len(GRID_ORDER) == 9
     assert set(GRID_ORDER) == set(STAGE_KEYS) | set(PLACEHOLDER_KEYS)
@@ -75,7 +76,7 @@ def test_stage_metadata_covers_all_stages():
         assert meta["back"]
         assert 2 <= len(meta["concepts"]) <= 3
         assert all(isinstance(term, str) and term for term in meta["concepts"])
-        assert meta["lesson"][0] in {"fitting", "sampling", "correlation", "ttest"}
+        assert meta["lesson"][0] in {"fitting", "sampling", "correlation", "ttest", "multiple_regression"}
         assert "takeaway" not in meta
 
 
@@ -138,6 +139,7 @@ def test_lesson_targets_existing_tabs():
         {"sampling_inference_sub": "one_sample"},
     )
     assert STAGE_META["test"]["lesson"] == ("ttest", {})
+    assert STAGE_META["multiple_regression"]["lesson"] == ("multiple_regression", {})
     # "improve" is reserved content for the Part II (multiple regression) journey.
     assert STAGE_META["improve"]["lesson"] == ("correlation", {"corr_lesson": "control"})
     assert STAGE_META["question"]["lesson"] == ("correlation", {"corr_lesson": "causation"})

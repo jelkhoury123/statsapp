@@ -147,6 +147,7 @@ SAMPLE_SIZES = [10, 20, 30, 50, 100, 200, 500, 1000, 5000]
 MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
     ("journey", "The Statistical Journey"),
     ("fitting", "Simple Linear Regression"),
+    ("multiple_regression", "Multiple Regression"),
     ("correlation", "Correlation & Causation"),
     ("sampling", "Sampling & Standard Error"),
     ("ttest", "The t-test"),
@@ -1702,6 +1703,18 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     white-space: nowrap;
 }
 .dist-formula .se-key { font-weight: 780; }
+.mr-head { margin: 0 0 0.3rem 0; font-size: 1.15rem; font-weight: 750; color: #12263a; }
+.mr-note { margin: 0.2rem 0; font-size: 0.9rem; line-height: 1.35rem; color: #374151; }
+.mr-sub { margin: 0.3rem 0 0.2rem 0; font-size: 0.86rem; font-weight: 650; color: #12263a; }
+.mr-coef {
+    margin: 0.3rem 0; padding: 0.4rem 0.6rem; font-size: 0.95rem; font-weight: 650;
+    color: #12263a; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px;
+}
+.mr-stat { margin: 0.15rem 0; font-size: 0.88rem; color: #374151; }
+.mr-calc { font-size: 0.9rem; line-height: 1.4rem; color: #374151; }
+.mr-calc p { margin: 0.15rem 0; }
+.mr-formula { color: #1D4ED8 !important; font-weight: 750; }
+.mr-compare { margin: 0.3rem 0; font-size: 0.86rem; color: #52606D; }
 .se-ingredients {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1787,6 +1800,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why,
 .st-key-journey_card_use,
 .st-key-journey_card_evaluate,
+.st-key-journey_card_multiple_regression,
 .st-key-journey_card_test,
 .st-key-journey_card_sampling_se,
 .st-key-journey_card_improve,
@@ -1805,7 +1819,6 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   transform-style: preserve-3d;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
-.st-key-journey_card_multiple_regression,
 .st-key-journey_card_f_tests {
   position: relative !important;
   margin: 0 !important;
@@ -1821,6 +1834,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why:hover,
 .st-key-journey_card_use:hover,
 .st-key-journey_card_evaluate:hover,
+.st-key-journey_card_multiple_regression:hover,
 .st-key-journey_card_test:hover,
 .st-key-journey_card_sampling_se:hover,
 .st-key-journey_card_improve:hover,
@@ -1834,6 +1848,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why:has(.journey-is-front),
 .st-key-journey_card_use:has(.journey-is-front),
 .st-key-journey_card_evaluate:has(.journey-is-front),
+.st-key-journey_card_multiple_regression:has(.journey-is-front),
 .st-key-journey_card_test:has(.journey-is-front),
 .st-key-journey_card_sampling_se:has(.journey-is-front),
 .st-key-journey_card_improve:has(.journey-is-front),
@@ -1844,7 +1859,8 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_build:has(.journey-is-back),
 .st-key-journey_card_why:has(.journey-is-back),
 .st-key-journey_card_use:has(.journey-is-back),
-.st-key-journey_card_evaluate:has(.journey-is-back) {
+.st-key-journey_card_evaluate:has(.journey-is-back),
+.st-key-journey_card_multiple_regression:has(.journey-is-back) {
   background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 100%) !important;
   border-color: #93C5FD !important;
 }
@@ -1859,7 +1875,8 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_build:has(.journey-is-front),
 .st-key-journey_card_why:has(.journey-is-front),
 .st-key-journey_card_use:has(.journey-is-front),
-.st-key-journey_card_evaluate:has(.journey-is-front) {
+.st-key-journey_card_evaluate:has(.journey-is-front),
+.st-key-journey_card_multiple_regression:has(.journey-is-front) {
   background: linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 100%) !important;
 }
 .st-key-journey_card_test:has(.journey-is-front),
@@ -1877,6 +1894,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why:has(.journey-is-back),
 .st-key-journey_card_use:has(.journey-is-back),
 .st-key-journey_card_evaluate:has(.journey-is-back),
+.st-key-journey_card_multiple_regression:has(.journey-is-back),
 .st-key-journey_card_test:has(.journey-is-back),
 .st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
@@ -1918,6 +1936,11 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   margin: 0 0 0.35rem 0;
   font-size: 0.74rem; font-weight: 550; color: #64748B; line-height: 1.15rem;
 }
+.st-key-journey_card_multiple_regression .journey-back .journey-stage-title {
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
 .journey-back .journey-key-concepts span {
   font-weight: 700; color: #94A3B8; letter-spacing: 0.02em;
 }
@@ -1925,6 +1948,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why:has(.journey-is-back),
 .st-key-journey_card_use:has(.journey-is-back),
 .st-key-journey_card_evaluate:has(.journey-is-back),
+.st-key-journey_card_multiple_regression:has(.journey-is-back),
 .st-key-journey_card_test:has(.journey-is-back),
 .st-key-journey_card_sampling_se:has(.journey-is-back),
 .st-key-journey_card_improve:has(.journey-is-back),
@@ -1938,6 +1962,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why:has(.journey-is-back) .st-key-journey_explore_why,
 .st-key-journey_card_use:has(.journey-is-back) .st-key-journey_explore_use,
 .st-key-journey_card_evaluate:has(.journey-is-back) .st-key-journey_explore_evaluate,
+.st-key-journey_card_multiple_regression:has(.journey-is-back) .st-key-journey_explore_multiple_regression,
 .st-key-journey_card_test:has(.journey-is-back) .st-key-journey_explore_test,
 .st-key-journey_card_sampling_se:has(.journey-is-back) .st-key-journey_explore_sampling_se,
 .st-key-journey_card_improve:has(.journey-is-back) .st-key-journey_explore_improve,
@@ -1950,6 +1975,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why .stPlotlyChart,
 .st-key-journey_card_use .stPlotlyChart,
 .st-key-journey_card_evaluate .stPlotlyChart,
+.st-key-journey_card_multiple_regression .stPlotlyChart,
 .st-key-journey_card_test .stPlotlyChart,
 .st-key-journey_card_sampling_se .stPlotlyChart,
 .st-key-journey_card_improve .stPlotlyChart,
@@ -1959,6 +1985,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why .js-plotly-plot,
 .st-key-journey_card_use .js-plotly-plot,
 .st-key-journey_card_evaluate .js-plotly-plot,
+.st-key-journey_card_multiple_regression .js-plotly-plot,
 .st-key-journey_card_test .js-plotly-plot,
 .st-key-journey_card_sampling_se .js-plotly-plot,
 .st-key-journey_card_improve .js-plotly-plot,
@@ -1968,6 +1995,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_card_why iframe,
 .st-key-journey_card_use iframe,
 .st-key-journey_card_evaluate iframe,
+.st-key-journey_card_multiple_regression iframe,
 .st-key-journey_card_test iframe,
 .st-key-journey_card_sampling_se iframe,
 .st-key-journey_card_improve iframe,
@@ -1980,6 +2008,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_why,
 .st-key-journey_flip_use,
 .st-key-journey_flip_evaluate,
+.st-key-journey_flip_multiple_regression,
 .st-key-journey_flip_test,
 .st-key-journey_flip_sampling_se,
 .st-key-journey_flip_improve,
@@ -1989,6 +2018,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_why,
 .st-key-journey_unflip_use,
 .st-key-journey_unflip_evaluate,
+.st-key-journey_unflip_multiple_regression,
 .st-key-journey_unflip_test,
 .st-key-journey_unflip_sampling_se,
 .st-key-journey_unflip_improve,
@@ -2007,6 +2037,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_why > div,
 .st-key-journey_flip_use > div,
 .st-key-journey_flip_evaluate > div,
+.st-key-journey_flip_multiple_regression > div,
 .st-key-journey_flip_test > div,
 .st-key-journey_flip_sampling_se > div,
 .st-key-journey_flip_improve > div,
@@ -2016,6 +2047,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_why > div,
 .st-key-journey_unflip_use > div,
 .st-key-journey_unflip_evaluate > div,
+.st-key-journey_unflip_multiple_regression > div,
 .st-key-journey_unflip_test > div,
 .st-key-journey_unflip_sampling_se > div,
 .st-key-journey_unflip_improve > div,
@@ -2025,6 +2057,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_why [data-testid="stButton"],
 .st-key-journey_flip_use [data-testid="stButton"],
 .st-key-journey_flip_evaluate [data-testid="stButton"],
+.st-key-journey_flip_multiple_regression [data-testid="stButton"],
 .st-key-journey_flip_test [data-testid="stButton"],
 .st-key-journey_flip_sampling_se [data-testid="stButton"],
 .st-key-journey_flip_improve [data-testid="stButton"],
@@ -2034,6 +2067,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_why [data-testid="stButton"],
 .st-key-journey_unflip_use [data-testid="stButton"],
 .st-key-journey_unflip_evaluate [data-testid="stButton"],
+.st-key-journey_unflip_multiple_regression [data-testid="stButton"],
 .st-key-journey_unflip_test [data-testid="stButton"],
 .st-key-journey_unflip_sampling_se [data-testid="stButton"],
 .st-key-journey_unflip_improve [data-testid="stButton"],
@@ -2051,6 +2085,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_flip_why button,
 .st-key-journey_flip_use button,
 .st-key-journey_flip_evaluate button,
+.st-key-journey_flip_multiple_regression button,
 .st-key-journey_flip_test button,
 .st-key-journey_flip_sampling_se button,
 .st-key-journey_flip_improve button,
@@ -2060,6 +2095,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_unflip_why button,
 .st-key-journey_unflip_use button,
 .st-key-journey_unflip_evaluate button,
+.st-key-journey_unflip_multiple_regression button,
 .st-key-journey_unflip_test button,
 .st-key-journey_unflip_sampling_se button,
 .st-key-journey_unflip_improve button,
@@ -2085,6 +2121,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_why,
 .st-key-journey_explore_use,
 .st-key-journey_explore_evaluate,
+.st-key-journey_explore_multiple_regression,
 .st-key-journey_explore_test,
 .st-key-journey_explore_sampling_se,
 .st-key-journey_explore_improve,
@@ -2101,6 +2138,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_why > div,
 .st-key-journey_explore_use > div,
 .st-key-journey_explore_evaluate > div,
+.st-key-journey_explore_multiple_regression > div,
 .st-key-journey_explore_test > div,
 .st-key-journey_explore_sampling_se > div,
 .st-key-journey_explore_improve > div,
@@ -2110,6 +2148,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_why [data-testid="stButton"],
 .st-key-journey_explore_use [data-testid="stButton"],
 .st-key-journey_explore_evaluate [data-testid="stButton"],
+.st-key-journey_explore_multiple_regression [data-testid="stButton"],
 .st-key-journey_explore_test [data-testid="stButton"],
 .st-key-journey_explore_sampling_se [data-testid="stButton"],
 .st-key-journey_explore_improve [data-testid="stButton"],
@@ -2125,6 +2164,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_why button,
 .st-key-journey_explore_use button,
 .st-key-journey_explore_evaluate button,
+.st-key-journey_explore_multiple_regression button,
 .st-key-journey_explore_test button,
 .st-key-journey_explore_sampling_se button,
 .st-key-journey_explore_improve button,
@@ -2148,6 +2188,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_why button p,
 .st-key-journey_explore_use button p,
 .st-key-journey_explore_evaluate button p,
+.st-key-journey_explore_multiple_regression button p,
 .st-key-journey_explore_test button p,
 .st-key-journey_explore_sampling_se button p,
 .st-key-journey_explore_improve button p,
@@ -2157,6 +2198,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_why button span,
 .st-key-journey_explore_use button span,
 .st-key-journey_explore_evaluate button span,
+.st-key-journey_explore_multiple_regression button span,
 .st-key-journey_explore_test button span,
 .st-key-journey_explore_sampling_se button span,
 .st-key-journey_explore_improve button span,
@@ -2169,6 +2211,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-journey_explore_why button:hover,
 .st-key-journey_explore_use button:hover,
 .st-key-journey_explore_evaluate button:hover,
+.st-key-journey_explore_multiple_regression button:hover,
 .st-key-journey_explore_test button:hover,
 .st-key-journey_explore_sampling_se button:hover,
 .st-key-journey_explore_improve button:hover,
@@ -2192,6 +2235,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   .st-key-journey_card_build:has(.journey-is-back),
   .st-key-journey_card_use:has(.journey-is-back),
   .st-key-journey_card_evaluate:has(.journey-is-back),
+  .st-key-journey_card_multiple_regression:has(.journey-is-back),
   .st-key-journey_card_test:has(.journey-is-back),
   .st-key-journey_card_sampling_se:has(.journey-is-back),
   .st-key-journey_card_improve:has(.journey-is-back),
@@ -2205,6 +2249,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   .st-key-journey_card_build,
   .st-key-journey_card_use,
   .st-key-journey_card_evaluate,
+  .st-key-journey_card_multiple_regression,
   .st-key-journey_card_test,
   .st-key-journey_card_sampling_se,
   .st-key-journey_card_improve,
@@ -7428,6 +7473,10 @@ def main() -> None:
         render_statistical_journey()
     elif active == "fitting":
         _render_lab_with_drawer("fitting", population, render_fitting_tab, rng=rng)
+    elif active == "multiple_regression":
+        from src.multiple_regression import render_multiple_regression_tab
+
+        render_multiple_regression_tab(population)
     elif active == "correlation":
         from src.correlation_causation import render_correlation_causation_tab
 
