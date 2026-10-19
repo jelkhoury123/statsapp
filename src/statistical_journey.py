@@ -8,7 +8,6 @@ from functools import lru_cache
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 from scipy.stats import f as fisher_f
 from scipy.stats import t as student_t
 
@@ -711,7 +710,7 @@ def _mount_card_click_bridge() -> None:
     Streamlit tertiary buttons do not reliably fill an absolute overlay; this
     keeps the front visual unchanged while making the whole card clickable.
     """
-    components.html(
+    st.iframe(
         """
         <script>
         (() => {
@@ -733,8 +732,8 @@ def _mount_card_click_bridge() -> None:
         })();
         </script>
         """,
-        height=0,
-        width=0,
+        height=1,
+        width=1,
     )
 
 
