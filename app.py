@@ -147,10 +147,10 @@ SAMPLE_SIZES = [10, 20, 30, 50, 100, 200, 500, 1000, 5000]
 MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
     ("journey", "The Statistical Journey"),
     ("fitting", "Simple Linear Regression"),
-    ("multiple_regression", "Multiple Regression"),
     ("correlation", "Correlation & Causation"),
     ("sampling", "Sampling & Standard Error"),
     ("ttest", "The t-test"),
+    ("multiple_regression", "Multiple Regression"),
     ("library", "Dataset Library"),
 )
 MAIN_LAB_TAB_LABELS = dict(MAIN_LAB_TABS)
@@ -1715,6 +1715,67 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .mr-calc p { margin: 0.15rem 0; }
 .mr-formula { color: #1D4ED8 !important; font-weight: 750; }
 .mr-compare { margin: 0.3rem 0; font-size: 0.86rem; color: #52606D; }
+.mr-eq-label {
+    margin: 0 0 0.2rem 0; font-size: 0.8rem; font-weight: 650;
+    color: #52606D; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.mr-coef-card {
+    margin: 0.8rem 0; padding: 0.55rem 0.7rem; font-size: 0.86rem; line-height: 1.3rem;
+    color: #374151; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+}
+.mr-coef-card b { color: #12263a; }
+.st-key-mr_why_chart_frame {
+    border: 1px solid #DC2626; border-radius: 8px; padding: 0.4rem;
+}
+.mr-list { margin: 0.2rem 0; padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.35rem; color: #374151; }
+.mr-list li { margin: 0.1rem 0; }
+.st-key-mr_examine_panel, .st-key-mr_predict_panel {
+    background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+    padding: 0.5rem 0.65rem; margin-bottom: 0.6rem;
+}
+.mr-legend {
+    display: flex; flex-wrap: wrap; gap: 0.3rem 1rem;
+    margin: 0.35rem 0 0 0; font-size: 0.78rem; color: #52606D;
+}
+.mr-legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.mr-legend-dot {
+    display: inline-block; width: 0.55rem; height: 0.55rem; border-radius: 50%;
+}
+.mr-legend-swatch {
+    display: inline-block; width: 0.8rem; height: 0.55rem; border-radius: 2px;
+}
+.mr-legend-line {
+    display: inline-block; width: 1px; height: 0.7rem; background: #6B7280;
+}
+.mr-legend-diamond {
+    display: inline-block; width: 0.5rem; height: 0.5rem; background: #EA580C;
+    transform: rotate(45deg);
+}
+.mr-mini-legend {
+    display: flex; flex-wrap: wrap; gap: 0.3rem 1rem;
+    margin: 0 0 0.3rem 0; font-size: 0.78rem; color: #52606D;
+}
+.mr-mini-legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.mr-mini-legend-line { display: inline-block; width: 1.1rem; height: 0; }
+.mr-mini-legend-line.dash { border-top: 2px dashed #6B7280; }
+.mr-mini-legend-line.solid { border-top: 2.5px solid #EA580C; }
+.mr-delta-badge {
+    display: inline-block; margin: 0.15rem 0; padding: 0.1rem 0.5rem;
+    font-size: 0.86rem; font-weight: 750; color: #EA580C;
+    background: #FFF1E8; border-radius: 999px;
+}
+.mr-bar-label { margin: 0.2rem 0 0.15rem 0; font-size: 0.8rem; font-weight: 650; color: #52606D; }
+.mr-bar-row { display: flex; align-items: center; gap: 0.4rem; margin: 0.15rem 0; }
+.mr-bar-tag {
+    flex: 0 0 auto; width: 1.6rem; font-size: 0.72rem; font-weight: 700; color: #94A3B8;
+}
+.mr-bar-track {
+    flex: 1 1 auto; height: 0.55rem; background: #E2E8F0; border-radius: 999px; overflow: hidden;
+}
+.mr-bar-fill { height: 100%; border-radius: 999px; }
+.mr-bar-fill.m1 { background: #1D4ED8; }
+.mr-bar-fill.m2 { background: #EA580C; }
+.mr-bar-value { flex: 0 0 auto; width: 2.6rem; text-align: right; font-size: 0.8rem; color: #374151; }
 .se-ingredients {
     display: grid;
     grid-template-columns: 1fr 1fr;
