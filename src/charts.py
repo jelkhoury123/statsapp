@@ -2501,6 +2501,8 @@ def r2_lesson_scatter(
     residual_about: str | None = None,
     mean_trace_name: str | None = None,
     regression_residual_color: str = "rgba(234, 88, 12, 0.75)",
+    observations_name: str = "Observations",
+    mean_residual_name: str = "Residuals from mean",
 ) -> go.Figure:
     """One large scatter for the R² lesson: mean line, candidate, optional OLS, residuals."""
     fig = go.Figure()
@@ -2532,7 +2534,7 @@ def r2_lesson_scatter(
     if residual_about == "mean" and n_points:
         _residual_segments(
             np.full(n_points, y_bar, dtype=np.float64),
-            "Residuals from mean",
+            mean_residual_name,
             "rgba(107, 114, 128, 0.85)",
         )
     elif (
@@ -2557,7 +2559,7 @@ def r2_lesson_scatter(
             x=x_values,
             y=y_values,
             mode="markers",
-            name="Observations",
+            name=observations_name,
             marker=marker,
             hovertemplate=f"{x_title} %{{x:.2f}}<br>{y_title} %{{y:.2f}}<extra></extra>",
         )
