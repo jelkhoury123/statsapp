@@ -366,26 +366,65 @@ def _render_causation() -> None:
         tipify(
             "<p style='margin:0.2rem 0 0.35rem 0;color:#475569;font-weight:400;"
             "font-size:0.9rem;line-height:1.35rem;'>"
-            "Ice cream sales and drownings rise together. Does buying ice "
+            "Ice cream sales and drownings rise together. Does selling ice "
             "cream cause drownings?</p>"
         ),
         unsafe_allow_html=True,
     )
-    temp_shift = st.slider(
-        "Temperature (°C)",
-        min_value=-8.0,
-        max_value=8.0,
-        value=0.0,
-        step=0.5,
-        key="corr_temp_shift",
-    )
+    revealed = bool(st.session_state.get("corr_hidden_revealed", False))
+
+    # The slider only appears after reveal, where moving it is educational —
+    # both panels update together, showing the shared driver in action.
+    if revealed:
+        temp_shift = st.slider(
+            "Temperature change (°C)",
+            min_value=-8.0,
+            max_value=8.0,
+            value=0.0,
+            step=0.5,
+            key="corr_temp_shift",
+        )
+    else:
+        temp_shift = 0.0
+
     temp, ice, drown = ice_cream_scene(
         N_SCENE, seed=DEFAULT_SEED + 17, temp_shift=float(temp_shift)
     )
     fit = fit_ols(ice, drown)
     r_hat = pearson_r(ice, drown)
     r2 = float(fit.r_squared) if not fit.degenerate else float("nan")
-    revealed = bool(st.session_state.get("corr_hidden_revealed", False))
+
+    if not revealed:
+        st.plotly_chart(
+            correlation_scatter(
+                ice,
+                drown,
+                alpha=float(fit.alpha),
+                beta=float(fit.beta),
+                x_title="Ice cream sales (illustrative)",
+                y_title="Drownings (illustrative)",
+                title="Ice cream sales vs drownings",
+                height=440,
+            ),
+            width="stretch",
+            config=PLOTLY_CONFIG,
+            key="corr_ice_drown",
+        )
+        st.markdown(
+            tipify(
+                '<p class="fit-std-slope">'
+                f"r = <b>{_fmt(r_hat)}</b> &nbsp;·&nbsp; R² = <b>{_fmt(r2)}</b>"
+                "</p>"
+            ),
+            unsafe_allow_html=True,
+        )
+        st.button(
+            "Reveal the hidden variable",
+            key="corr_reveal_btn",
+            type="primary",
+            on_click=_toggle_corr_reveal,
+        )
+        return
 
     c1, c2 = st.columns(2, gap="medium")
     with c1:
@@ -421,13 +460,9 @@ def _render_causation() -> None:
                 beta=float(fit.beta),
                 x_title="Ice cream sales",
                 y_title="Drownings",
-                title=(
-                    "Same points, coloured by temperature"
-                    if revealed
-                    else "What explains this relationship?"
-                ),
+                title="Same points, coloured by temperature",
                 height=380,
-                color_by=temp if revealed else None,
+                color_by=temp,
                 color_title="Temp °C",
                 show_line=False,
             ),
@@ -435,36 +470,35 @@ def _render_causation() -> None:
             config=PLOTLY_CONFIG,
             key="corr_ice_drown_temp",
         )
-        if revealed:
-            st.caption(
-                f"Mean temperature in this draw: {float(np.mean(temp)):.1f} °C "
-                f"(shift {temp_shift:+.1f})."
-            )
-        else:
-            st.button(
-                "Reveal temperature",
-                key="corr_reveal_btn",
-                type="primary",
-                on_click=_toggle_corr_reveal,
-            )
+        st.caption(f"Mean temperature in this draw: {float(np.mean(temp)):.1f} °C.")
 
-    if revealed:
-        st.markdown(
-            tipify(
-                '<div class="fit-r2-lesson" style="padding:0.55rem 0.7rem;">'
-                '<div class="result" style="margin:0;">'
-                '<p class="big">Hot weather increases both ice cream sales '
-                "and swimming activity. More swimming can lead to more "
-                "drownings.</p>"
-                "</div>"
-                "<p style='margin:0.35rem 0 0 0;font-weight:400;"
-                "color:#334155;font-size:0.86rem;'>Correlation does not "
-                "establish causation. A third variable may explain why two "
-                "things move together.</p>"
-                "</div>"
-            ),
-            unsafe_allow_html=True,
-        )
+    st.markdown(
+        tipify(
+            "<p style='margin:0.5rem 0 0.3rem 0;color:#334155;font-weight:400;"
+            "font-size:0.88rem;line-height:1.3rem;'>Hotter weather increases "
+            "both ice cream sales and swimming activity — and more swimming "
+            "exposure can lead to more drownings.</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="fit-r2-lesson" style="padding:0.5rem 0.7rem;">'
+        '<div class="result" style="margin:0;">'
+        '<p class="big">Correlation does not imply causation.</p>'
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="corr-causal-diagram">'
+        '<div class="node wide">Temperature</div>'
+        '<div class="arrow">↙</div><div class="arrow">↘</div>'
+        '<div class="node">Ice cream sales</div>'
+        '<div class="node">Swimming activity</div>'
+        "<div></div><div class=\"arrow\">↓</div>"
+        '<div></div><div class="node">Drownings</div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def _render_control() -> None:

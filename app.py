@@ -1750,6 +1750,19 @@ p.fit-why-step-title {
   font-size: 0.82rem; color: #1E3A8A; font-weight: 500;
 }
 .corr-key-insight .row b { font-weight: 800; }
+.corr-causal-diagram {
+  display: grid; grid-template-columns: 1fr 1fr;
+  row-gap: 0.1rem; column-gap: 0.5rem;
+  text-align: center; margin: 0.5rem auto 0.2rem auto; max-width: 420px;
+}
+.corr-causal-diagram .node {
+  background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px;
+  padding: 0.35rem 0.5rem; font-size: 0.78rem; font-weight: 700; color: #1E3A8A;
+}
+.corr-causal-diagram .node.wide { grid-column: 1 / span 2; }
+.corr-causal-diagram .arrow {
+  font-size: 1.1rem; color: #64748B; line-height: 1.2;
+}
 .st-key-fit_r_panel { margin: 0; }
 .st-key-fit_r_panel [data-testid="stHorizontalBlock"] {
   gap: 0.75rem !important; align-items: stretch !important;
