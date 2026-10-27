@@ -373,19 +373,17 @@ def _render_causation() -> None:
     )
     revealed = bool(st.session_state.get("corr_hidden_revealed", False))
 
-    # The slider only appears after reveal, where moving it is educational —
-    # both panels update together, showing the shared driver in action.
-    if revealed:
-        temp_shift = st.slider(
-            "Temperature change (°C)",
-            min_value=-8.0,
-            max_value=8.0,
-            value=0.0,
-            step=0.5,
-            key="corr_temp_shift",
-        )
-    else:
-        temp_shift = 0.0
+    # Same widget (key="corr_temp_shift") before and after reveal, so its
+    # value and the underlying simulated observations carry straight
+    # through — only the label changes to name what it actually controls.
+    temp_shift = st.slider(
+        "Temperature change (°C)" if revealed else "Unknown factor",
+        min_value=-10.0,
+        max_value=10.0,
+        value=0.0,
+        step=0.5,
+        key="corr_temp_shift",
+    )
 
     temp, ice, drown = ice_cream_scene(
         N_SCENE, seed=DEFAULT_SEED + 17, temp_shift=float(temp_shift)
