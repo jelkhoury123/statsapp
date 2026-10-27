@@ -1763,6 +1763,10 @@ p.fit-why-step-title {
 .corr-causal-diagram .arrow {
   font-size: 1.1rem; color: #64748B; line-height: 1.2;
 }
+.st-key-corr_reveal_prompt {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 0.6rem; min-height: 380px; text-align: center;
+}
 .st-key-fit_r_panel { margin: 0; }
 .st-key-fit_r_panel [data-testid="stHorizontalBlock"] {
   gap: 0.75rem !important; align-items: stretch !important;
