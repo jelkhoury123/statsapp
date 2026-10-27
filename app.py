@@ -1750,20 +1750,14 @@ p.fit-why-step-title {
 .dist-formula .se-key { font-weight: 780; }
 .mr-head { margin: 0 0 0.3rem 0; font-size: 1.15rem; font-weight: 750; color: #12263a; }
 .mr-note { margin: 0.2rem 0; font-size: 0.9rem; line-height: 1.35rem; color: #374151; }
-.t-understand-head { margin: 1.1rem 0 0.35rem 0; font-size: 1.15rem; font-weight: 760; color: #12263a; }
-.t-understand-badge {
-    display: inline-block; margin: 0.3rem 0.4rem 0.3rem 0; padding: 0.18rem 0.65rem;
-    font-size: 0.95rem; font-weight: 750; border-radius: 999px;
+.t-understand-head { margin: 0 0 0.3rem 0; font-size: 1.05rem; font-weight: 760; color: #12263a; }
+.t-understand-mini-label { margin: 0.4rem 0 0.1rem 0; font-size: 0.78rem; font-weight: 650; color: #52606D; }
+.t-understand-panel {
+    display: flex; flex-direction: column; justify-content: center;
+    height: 360px; padding: 0 0.3rem;
 }
-.t-understand-conclusion {
-    margin: 0.5rem 0; padding: 0.5rem 0.7rem; background: #F3F4F6;
-    border-left: 3px solid #12263a; border-radius: 6px;
-    font-weight: 650; font-size: 0.92rem; color: #12263a; line-height: 1.35rem;
-}
-.t-understand-hint { margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #6B7280; }
-div[class*="st-key-t_understand_chart_wrap_"] {
-    position: sticky; top: 8px; z-index: 5; background: #F4F6F8;
-}
+.t-understand-panel ul { margin: 0.3rem 0 0 1.05rem; padding: 0; font-size: 0.92rem; line-height: 1.5rem; color: #374151; }
+.t-understand-panel li { margin: 0.3rem 0; }
 .mr-sub { margin: 0.3rem 0 0.2rem 0; font-size: 0.86rem; font-weight: 650; color: #12263a; }
 .mr-coef {
     margin: 0.3rem 0; padding: 0.4rem 0.6rem; font-size: 0.95rem; font-weight: 650;
@@ -4760,66 +4754,64 @@ _T_UNDERSTAND_STAGE_TITLES: tuple[str, ...] = (
 )
 
 
-def _t_understand_stage_block_html(
-    stage: int, *, t_stat: float, df: int, actual_p: float,
+_T_UNDERSTAND_CHART_HEIGHT = 360
+
+
+def _t_understand_panel_html(
+    stage: int, *, beta: float, se: float, t_stat: float, df: int, actual_p: float,
     alpha: float, critical: float, reject_actual: bool,
-    explore_t: float, exploring: bool, explore_p: float | None,
+    exploring: bool, explore_t: float, explore_p: float | None,
 ) -> str:
     title = _T_UNDERSTAND_STAGE_TITLES[stage - 1]
-    extra = ""
     if stage == 1:
-        body = (
-            f"Our estimated slope is <b>{abs(t_stat):.2f}</b> standard errors "
-            "away from zero.<br>The t-statistic measures how far our "
-            "estimate is from the value assumed under H₀, expressed in "
-            "standard errors."
-        )
+        direction = "above" if t_stat >= 0 else "below"
+        items = [
+            f"Estimated slope: <b>{beta:.3f}</b>",
+            f"Standard error: <b>{se:.3f}</b>",
+            f"t = <b>{t_stat:.2f}</b>: our estimate is {abs(t_stat):.2f} "
+            f"standard errors {direction} zero.",
+        ]
     elif stage == 2:
-        body = (
-            "If the true slope were zero, repeated samples would produce "
-            "t-statistics distributed around zero.<br>Values near zero are "
-            "common. Values far from zero are increasingly unusual."
-        )
-        extra = f'<p class="t-understand-badge" style="background:#F3F4F6;color:#374151;">df = {df}</p>'
+        items = [
+            "Assume the true slope is zero (H₀).",
+            "Repeated samples produce different t-statistics.",
+            "Values far from zero are less likely.",
+        ]
     elif stage == 3:
-        body = (
-            "How unusual is our observed t-statistic?<br>The shaded tails "
-            "show the probability of obtaining a t-statistic at least this "
-            "extreme, in either direction, if H₀ were true."
-        )
-        extra = (
-            f'<p class="t-understand-badge" style="background:#DBEAFE;color:#1D4ED8;">'
-            f"p = {_p_text(actual_p)}</p>"
-        )
+        items = [
+            "How unusual is our observed t?",
+            "Shaded tails represent outcomes at least as extreme.",
+            f"p = <b>{actual_p:.4f}</b> ({actual_p * 100:.1f}%)",
+        ]
         if exploring and explore_p is not None:
-            extra += (
-                f'<p class="t-understand-badge" style="background:#F3E8FF;color:#7E22CE;">'
-                f"Exploratory p-value = {_p_text(explore_p)}</p>"
+            items.append(
+                f'<span style="color:#7E22CE;">Exploring t = ±{abs(explore_t):.2f}: '
+                f"p = {explore_p:.4f}</span>"
             )
     elif stage == 4:
-        body = (
-            "We choose a significance threshold α to decide what counts as "
-            f"sufficiently unusual.<br>At α = {alpha:.2f}, values beyond "
-            f"±{critical:.3f} fall in the rejection regions."
-        )
+        inside = "inside" if not reject_actual else "outside"
+        region = "non-rejection" if not reject_actual else "rejection"
+        items = [
+            "Choose a significance threshold α.",
+            f"At α = {alpha:.2f}, critical t = ±{critical:.3f}.",
+            f"Observed t = {t_stat:.3f} is {inside} the {region} region.",
+        ]
     else:
-        conclusion = (
-            "We reject H₀. The observed slope is unusually far from zero "
-            "under the assumption that the true slope is zero."
-            if reject_actual else
-            "We fail to reject H₀. The observed slope is not sufficiently "
-            "unusual under the assumption that the true slope is zero."
-        )
-        caveat = "" if reject_actual else " This does not prove that the true slope equals zero."
-        body = (
-            f'<p class="mr-stat">Observed t: <b>{t_stat:.3f}</b> &nbsp;·&nbsp; '
-            f"df: <b>{df}</b> &nbsp;·&nbsp; "
-            f"p-value: <b>{_p_text(actual_p)}</b> &nbsp;·&nbsp; "
-            f"α: <b>{alpha:.2f}</b></p>"
-            f'<p class="t-understand-conclusion">{conclusion}{caveat}</p>'
-        )
-        return f'<p class="t-understand-head">{title}</p>{body}'
-    return f'<p class="t-understand-head">{title}</p><p class="mr-note">{body}</p>{extra}'
+        verdict = "reject" if reject_actual else "fail to reject"
+        evidence = "Sufficient" if reject_actual else "Insufficient"
+        p_text = _p_text(actual_p)
+        comparator = "&lt;" if actual_p < alpha else "&ge;"
+        items = [
+            f"p {p_text} {comparator} α = {alpha:.2f}" if p_text.startswith("<")
+            else f"p = {p_text} {comparator} α = {alpha:.2f}",
+            f"We <b>{verdict} H₀</b>.",
+            f"{evidence} evidence that the true slope differs from zero.",
+        ]
+    rows = "".join(f"<li>{item}</li>" for item in items)
+    return (
+        f'<div class="t-understand-panel"><p class="t-understand-head">{title}</p>'
+        f"<ul>{rows}</ul></div>"
+    )
 
 
 def _render_t_understand_body(
@@ -4835,51 +4827,64 @@ def _render_t_understand_body(
 
     st.markdown(_t_fraction_html(beta, se, t_stat, beta_label), unsafe_allow_html=True)
 
-    # Both controls render on every stage (greyed out before their stage) so
-    # the chart below never shifts position as stages reveal new controls.
-    alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
-    explore_t = float(st.session_state[explore_key])
-    alpha = st.radio(
-        "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS,
-        index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
-        format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
-        disabled=stage < 4,
-    )
-    explore_t = st.slider(
-        "Explore a different t value", min_value=-6.0, max_value=6.0,
-        value=explore_t, step=0.05, key=f"{explore_key}_slider", disabled=stage < 3,
-    )
-    st.markdown(
-        '<p class="t-understand-hint">Moving this explores a hypothetical '
-        "t-statistic — it does not change the actual sample or its "
-        "result.</p>",
-        unsafe_allow_html=True,
-    )
-    st.session_state[explore_key] = explore_t
+    # Both controls always render, in reserved space, so the chart's column
+    # never shifts; a scoped visibility:hidden rule (not disabled=, not
+    # display:none) hides them before their stage without collapsing space.
+    alpha_key = f"t_understand_alpha_{suffix}"
+    slider_key = f"t_understand_slider_{suffix}"
+    if stage < 4:
+        st.markdown(f'<style>.st-key-{alpha_key} {{ visibility: hidden; }}</style>',
+                   unsafe_allow_html=True)
+    if stage < 3:
+        st.markdown(f'<style>.st-key-{slider_key} {{ visibility: hidden; }}</style>',
+                   unsafe_allow_html=True)
+
+    left, center, right = st.columns([0.20, 0.55, 0.25], gap="medium")
+
+    with left:
+        alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
+        st.markdown('<p class="t-understand-mini-label">Significance (α)</p>',
+                   unsafe_allow_html=True)
+        with st.container(key=alpha_key):
+            alpha = st.radio(
+                "Significance level", options=_T_DIST_ALPHA_OPTIONS,
+                index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
+                format_func=lambda a: f"{a:.2f}", key="ttest_dist_alpha",
+                label_visibility="collapsed",
+            )
+        explore_t = float(st.session_state[explore_key])
+        st.markdown('<p class="t-understand-mini-label">Explore t (hypothetical)</p>',
+                   unsafe_allow_html=True)
+        with st.container(key=slider_key):
+            explore_t = st.slider(
+                "Explore t", min_value=-6.0, max_value=6.0, value=explore_t, step=0.05,
+                key=f"{explore_key}_slider", label_visibility="collapsed",
+            )
+        st.session_state[explore_key] = explore_t
     critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
 
-    with st.container(key=f"t_understand_chart_wrap_{suffix}"):
-        _l, mid, _r = st.columns([1, 4, 1])
-        with mid:
-            st.plotly_chart(
-                _t_understand_figure(t_stat=t_stat, df=df, stage=stage, critical=critical,
-                                     explore_t=explore_t if stage >= 3 else None),
-                width="stretch", config=PLOTLY_CONFIG, key=f"ttest_understand_chart_{suffix}",
-            )
+    with center:
+        st.plotly_chart(
+            _t_understand_figure(t_stat=t_stat, df=df, stage=stage, critical=critical,
+                                 explore_t=explore_t if stage >= 3 else None,
+                                 height=_T_UNDERSTAND_CHART_HEIGHT),
+            width="stretch", config=PLOTLY_CONFIG, key=f"ttest_understand_chart_{suffix}",
+        )
 
     exploring = stage >= 3 and abs(explore_t - t_stat) > 1e-9
     actual_p = 2.0 * float(student_t.sf(abs(t_stat), df))
     explore_p = 2.0 * float(student_t.sf(abs(explore_t), df)) if exploring else None
     reject_actual = abs(t_stat) > critical
 
-    st.markdown(
-        _t_understand_stage_block_html(
-            stage, t_stat=t_stat, df=df, actual_p=actual_p,
-            alpha=alpha, critical=critical, reject_actual=reject_actual,
-            explore_t=explore_t, exploring=exploring, explore_p=explore_p,
-        ),
-        unsafe_allow_html=True,
-    )
+    with right:
+        st.markdown(
+            _t_understand_panel_html(
+                stage, beta=beta, se=se, t_stat=t_stat, df=df, actual_p=actual_p,
+                alpha=alpha, critical=critical, reject_actual=reject_actual,
+                exploring=exploring, explore_t=explore_t, explore_p=explore_p,
+            ),
+            unsafe_allow_html=True,
+        )
 
     prev_col, next_col, replay_col, indicator_col = st.columns([1, 1, 1, 2])
     with prev_col:
