@@ -257,26 +257,24 @@ def _render_understanding() -> None:
         ),
         unsafe_allow_html=True,
     )
+    r_target = st.slider(
+        "Target Pearson correlation r",
+        min_value=-1.0,
+        max_value=1.0,
+        value=0.75,
+        step=0.05,
+        key="corr_r_slider",
+    )
+    # Resample when r changes (seed folds in rounded r for stability).
+    seed = DEFAULT_SEED + int(round(float(r_target) * 1000))
+    x, y = correlated_pair(N_CORR, float(r_target), seed=seed)
+    fit = fit_ols(x, y)
+    r_hat = pearson_r(x, y)
+    r2 = float(fit.r_squared) if not fit.degenerate else float("nan")
+    beta_star = standardised_slope(float(fit.beta), sample_sd(x), sample_sd(y))
 
     left, right = st.columns([1.1, 0.9], gap="medium")
     with left:
-        r_target = st.slider(
-            "Target Pearson correlation r",
-            min_value=-1.0,
-            max_value=1.0,
-            value=0.75,
-            step=0.05,
-            key="corr_r_slider",
-        )
-        # Resample when r changes (seed folds in rounded r for stability).
-        seed = DEFAULT_SEED + int(round(float(r_target) * 1000))
-        x, y = correlated_pair(N_CORR, float(r_target), seed=seed)
-        fit = fit_ols(x, y)
-        r_hat = pearson_r(x, y)
-        r2 = float(fit.r_squared) if not fit.degenerate else float("nan")
-        beta_star = standardised_slope(
-            float(fit.beta), sample_sd(x), sample_sd(y)
-        )
         st.plotly_chart(
             correlation_scatter(
                 x,
@@ -285,15 +283,32 @@ def _render_understanding() -> None:
                 beta=float(fit.beta),
                 x_title="X (illustrative)",
                 y_title="Y (illustrative)",
-                title=f"Scatter with target r ≈ {r_target:+.2f}",
+                title="Correlation and regression line",
                 height=440,
             ),
             width="stretch",
             config=PLOTLY_CONFIG,
             key="corr_r_scatter",
         )
+        st.markdown(
+            tipify(
+                '<p class="fit-r2-muted-note">'
+                f"Target r = <b>{r_target:+.2f}</b> · Observed r = "
+                f"<b>{_fmt(r_hat)}</b></p>"
+                '<p class="fit-r2-muted-note">Random samples may differ '
+                "slightly from the target correlation.</p>"
+            ),
+            unsafe_allow_html=True,
+        )
 
     with right:
+        st.markdown(
+            tipify(
+                '<p style="color:#334155;font-weight:650;font-size:0.86rem;'
+                f'margin:0 0 0.35rem 0;">{_corr_interpretation(r_hat)}</p>'
+            ),
+            unsafe_allow_html=True,
+        )
         st.markdown(
             tipify(
                 '<table class="fit-r2-summary-table">'
@@ -306,30 +321,9 @@ def _render_understanding() -> None:
             ),
             unsafe_allow_html=True,
         )
-        st.latex(r"\beta^{*} = r \qquad R^2 = r^2")
-        st.markdown(
-            '<div class="fit-r2-concl">In simple linear regression, '
-            "correlation equals the standardised slope, and its square "
-            "equals R².</div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            tipify(
-                '<p class="fit-r2-muted-note">'
-                f"Target r = <b>{r_target:+.2f}</b> · Observed r = "
-                f"<b>{_fmt(r_hat)}</b><br>"
-                "Random samples may differ slightly from the target "
-                "correlation.</p>"
-            ),
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            tipify(
-                '<p style="color:#334155;font-weight:650;font-size:0.86rem;'
-                f'margin:0.4rem 0 0 0;">{_corr_interpretation(r_hat)}</p>'
-            ),
-            unsafe_allow_html=True,
-        )
+        _l, mid, _r = st.columns([1, 2, 1])
+        with mid:
+            st.latex(r"\beta^{*} = r \qquad R^2 = r^2")
         with st.expander("Connections to regression", expanded=False):
             st.latex(r"\hat{\beta} = r \times \dfrac{\mathrm{SD}(Y)}{\mathrm{SD}(X)}")
             st.markdown(
