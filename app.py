@@ -6509,6 +6509,7 @@ def _fit_why_step_figure(sample, step: int, *, x_range, y_range):
     return fig
 
 
+@st.fragment(key="fit_why_panel")
 def render_why_model_subtab() -> None:
     """Five-step auto-playing lesson: table → scatter → mean → regression → conclusion."""
     from src.statistical_journey import build_journey_sample
