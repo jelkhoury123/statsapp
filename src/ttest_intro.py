@@ -21,12 +21,6 @@ TITLES = (
     "Even then, sample slopes vary around zero",
     "Could our nonzero slope be sampling variation?",
 )
-POINTS = (
-    ("Fit a model", "Best slope for our sample."),
-    ("Remember sampling", "Estimates vary by sample."),
-    ("Ask the question", "Nonzero by chance, or real?"),
-)
-
 
 @lru_cache(maxsize=1)
 def intro_data():
@@ -134,17 +128,6 @@ def render_ttest_intro():
     if step == 4:
         state.tt_intro_playing = False  # final frame: stop, wait for Replay
 
-    # Steps 3-4 both sit under the third bullet ("Ask the question") — the
-    # null-distribution build-up and its conclusion are one idea split
-    # across two frames for pacing, not two separate concepts.
-    active = (0, 1, 2, 2, 2)[step]
-    active_lab, active_txt = POINTS[active]
-    st.markdown(
-        f'<div class="fit-why-lesson"><div class="points">'
-        f'<p class="lab">{active_lab}</p><p class="txt">{active_txt}</p>'
-        f'</div></div>',
-        unsafe_allow_html=True,
-    )
     st.markdown(f'<p class="fit-why-step-title">{TITLES[step]}</p>', unsafe_allow_html=True)
     st.plotly_chart(intro_figure(step), width="stretch", key="tt_intro_chart",
                     config={"displayModeBar": False, "displaylogo": False})
