@@ -373,21 +373,9 @@ def _render_causation() -> None:
     )
     revealed = bool(st.session_state.get("corr_hidden_revealed", False))
 
-    # Same widget (key="corr_temp_shift") before and after reveal, so its
-    # value and the underlying simulated observations carry straight
-    # through — only the label changes to name what it actually controls.
-    temp_shift = st.slider(
-        "Temperature change (°C)" if revealed else "Unknown factor",
-        min_value=-10.0,
-        max_value=10.0,
-        value=0.0,
-        step=0.5,
-        key="corr_temp_shift",
-    )
-
-    temp, ice, drown = ice_cream_scene(
-        N_SCENE, seed=DEFAULT_SEED + 17, temp_shift=float(temp_shift)
-    )
+    # Fixed draw — identical before and after reveal, so clicking Reveal
+    # never regenerates the observations.
+    temp, ice, drown = ice_cream_scene(N_SCENE, seed=DEFAULT_SEED + 17, temp_shift=0.0)
     fit = fit_ols(ice, drown)
     r_hat = pearson_r(ice, drown)
     r2 = float(fit.r_squared) if not fit.degenerate else float("nan")
@@ -468,7 +456,6 @@ def _render_causation() -> None:
             config=PLOTLY_CONFIG,
             key="corr_ice_drown_temp",
         )
-        st.caption(f"Mean temperature in this draw: {float(np.mean(temp)):.1f} °C.")
 
     st.markdown(
         tipify(
