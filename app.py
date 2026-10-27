@@ -4674,10 +4674,10 @@ def _t_understand_figure(
     active_t = explore_t if (stage >= 3 and explore_t is not None) else t_stat
     fig = go.Figure()
 
-    fig.add_vline(x=0, line_color=GREY, line_width=2, line_dash="dash")
+    fig.add_shape(type="line", x0=0, x1=0, y0=0, y1=y_top * 0.8,
+                  line=dict(color=GREY, width=2, dash="dash"))
     fig.add_annotation(x=0, y=y_top * 0.95, yanchor="top", text="β = 0 (H₀)",
                        showarrow=False, font=dict(size=11, color=INK, family=FONT))
-    obs_label_y = peak * 1.15
 
     if stage >= 4 and critical is not None and critical <= _T_DIST_X_MAX:
         for mask in (grid <= -critical, grid >= critical):
@@ -4723,7 +4723,8 @@ def _t_understand_figure(
     fig.add_trace(go.Scatter(x=[t_stat], y=[0], mode="markers",
                              marker=dict(symbol="diamond", size=13, color=ORANGE),
                              showlegend=False, hoverinfo="skip"))
-    fig.add_annotation(x=t_stat, y=obs_label_y, text=f"Observed t = {t_stat:.3f}",
+    fig.add_annotation(x=t_stat, y=line_top, xanchor="left", yanchor="bottom",
+                       xshift=6, yshift=4, text=f"Observed t = {t_stat:.3f}",
                        showarrow=False, font=dict(size=12, color=ORANGE, family=FONT),
                        bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
