@@ -7440,11 +7440,6 @@ def render_standardisation_subtab(view) -> None:
             f"<b>{abs(beta_star_a):.3f}-SD {dir_a}</b> in exam score, versus "
             f"<b>{abs(beta_star_b):.3f} SD</b> for {label_b}."
             "</p>"
-            '<p class="fit-std-note">'
-            "Each is its own simple regression, not a joint model — so "
-            "these compare the predictors separately, not after "
-            "controlling for one another."
-            "</p>"
         ),
         unsafe_allow_html=True,
     )
