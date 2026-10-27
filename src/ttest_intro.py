@@ -139,12 +139,13 @@ def render_ttest_intro():
     # null-distribution build-up and its conclusion are one idea split
     # across two frames for pacing, not two separate concepts.
     active = (0, 1, 2, 2, 2)[step]
-    cards = ''.join(
-        f'<div class="point{" active" if i == active else ""}"><p class="lab">{title}</p>'
-        f'<p class="txt">{description}</p></div>'
-        for i, (title, description) in enumerate(POINTS)
+    active_lab, active_txt = POINTS[active]
+    st.markdown(
+        f'<div class="fit-why-lesson"><div class="points">'
+        f'<p class="lab">{active_lab}</p><p class="txt">{active_txt}</p>'
+        f'</div></div>',
+        unsafe_allow_html=True,
     )
-    st.markdown(f'<div class="fit-why-lesson"><div class="points">{cards}</div></div>', unsafe_allow_html=True)
     st.markdown(f'<p class="fit-why-step-title">{TITLES[step]}</p>', unsafe_allow_html=True)
     st.plotly_chart(intro_figure(step), width="stretch", key="tt_intro_chart",
                     config={"displayModeBar": False, "displaylogo": False})

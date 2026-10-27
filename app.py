@@ -920,28 +920,16 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 }
 .fit-why-lesson { margin: 0; padding: 0.75rem 0 0 0; }
 .fit-why-lesson .points {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start; gap: 0 1rem;
+  display: flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.1rem 0 0.1rem 0.6rem; border-left: 3px solid #EA580C;
   margin: 0 0 1.75rem 0;
 }
-@media (max-width: 700px) {
-  .fit-why-lesson .points { grid-template-columns: 1fr; gap: 0.5rem; }
+.fit-why-lesson .points .lab {
+  margin: 0; font-size: 1rem; font-weight: 700; color: #C2410C;
 }
-.fit-why-lesson .point {
-  padding: 0.1rem 0 0.1rem 0.6rem; border-left: 3px solid transparent;
-  transition: border-color 0.5s ease;
+.fit-why-lesson .points .txt {
+  margin: 0; font-size: 0.95rem; color: #1F2933;
 }
-.fit-why-lesson .point .lab {
-  margin: 0 0 0.2rem 0; font-size: 1rem; font-weight: 700;
-  color: #475569; line-height: 1.45; transition: color 0.5s ease;
-}
-.fit-why-lesson .point .txt {
-  margin: 0; font-size: 0.95rem; color: #52606D; line-height: 1.5;
-  transition: color 0.5s ease;
-}
-.fit-why-lesson .point.active { border-left-color: #EA580C; }
-.fit-why-lesson .point.active .lab { color: #C2410C; }
-.fit-why-lesson .point.active .txt { color: #1F2933; }
 .fit-why-step-title {
   margin: 0.1rem 0 0.5rem 0; font-size: 1.05rem; font-weight: 750;
   color: #12263a;
@@ -6447,12 +6435,15 @@ def render_why_model_subtab() -> None:
         step = 0
     active_idx = FIT_WHY_POINT_FOR_STEP[step]
 
-    parts = ['<div class="fit-why-lesson"><div class="points">']
-    for idx, (lab, txt) in enumerate(FIT_WHY_POINTS):
-        cls = "point active" if idx == active_idx else "point"
-        parts.append(f'<div class="{cls}"><p class="lab">{lab}</p><p class="txt">{txt}</p></div>')
-    parts.append("</div></div>")
-    st.markdown(tipify("".join(parts)), unsafe_allow_html=True)
+    active_lab, active_txt = FIT_WHY_POINTS[active_idx]
+    st.markdown(
+        tipify(
+            '<div class="fit-why-lesson"><div class="points">'
+            f'<p class="lab">{active_lab}</p><p class="txt">{active_txt}</p>'
+            "</div></div>"
+        ),
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         f'<p class="fit-why-step-title">{FIT_WHY_STEP_TITLES[step]}</p>',
