@@ -4632,10 +4632,24 @@ _TTEST_BUILD_BRIDGE = (
 )
 
 
-def _t_build_scale_figure(t_stat: float, height: int = 170) -> go.Figure:
-    """A number line in SE units showing how far t̂ sits from the null."""
+def _t_build_scale_figure(
+    t_stat: float, *, df: int | None = None, show_distribution: bool = False,
+    height: int = 220,
+) -> go.Figure:
+    """Step 1: a number line showing t as a distance from the null in SE
+    units. Step 2 (show_distribution=True) overlays the sampling
+    distribution of t under H0, previewing the next subtab."""
     reach = max(3.5, abs(t_stat) + 1.2)
     fig = go.Figure()
+    if show_distribution and df:
+        from scipy.stats import t as student_t
+
+        grid = np.linspace(-reach, reach, 300)
+        density = student_t.pdf(grid, df)
+        curve = density / density.max() * 1.05
+        fig.add_scatter(x=grid, y=curve, mode="lines", line=dict(color=BLUE, width=2),
+                        fill="tozeroy", fillcolor="rgba(37,99,235,0.08)",
+                        hoverinfo="skip", showlegend=False)
     fig.add_shape(type="line", x0=-reach, x1=reach, y0=0, y1=0,
                   line=dict(color=GREY, width=1.5))
     lo, hi = -int(reach), int(reach)
@@ -4644,25 +4658,42 @@ def _t_build_scale_figure(t_stat: float, height: int = 170) -> go.Figure:
                       line=dict(color=GREY, width=1))
         fig.add_annotation(x=tick, y=-0.3, text=str(tick), showarrow=False,
                            font=dict(size=10, color=GREY, family=FONT))
-    fig.add_shape(type="line", x0=0, x1=0, y0=-0.08, y1=1.0,
+    fig.add_shape(type="line", x0=0, x1=0, y0=-0.08, y1=1.25,
                   line=dict(color=GREY, width=2, dash="dash"))
-    fig.add_annotation(x=0, y=1.1, text="β = 0 (H₀)", showarrow=False,
+    fig.add_annotation(x=0, y=1.32, text="β = 0 (H₀)", showarrow=False,
                        font=dict(size=11, color=INK, family=FONT))
-    fig.add_shape(type="line", x0=0, x1=t_stat, y0=0.55, y1=0.55,
+    fig.add_shape(type="line", x0=0, x1=t_stat, y0=-0.22, y1=-0.22,
                   line=dict(color=ORANGE, width=2.5))
     fig.add_trace(go.Scatter(x=[t_stat], y=[0], mode="markers",
                              marker=dict(symbol="diamond", size=12, color=ORANGE),
                              showlegend=False, hoverinfo="skip"))
-    fig.add_annotation(x=t_stat, y=0.78, text=f"t = {t_stat:.2f} SE",
+    fig.add_annotation(x=t_stat, y=-0.42, text=f"t = {t_stat:.2f} SE",
                        showarrow=False, font=dict(size=12, color=ORANGE, family=FONT))
     fig.update_xaxes(range=[-reach - 0.3, reach + 0.3], showticklabels=False,
                      showgrid=False, zeroline=False, fixedrange=True)
-    fig.update_yaxes(range=[-0.5, 1.35], showticklabels=False, showgrid=False,
+    fig.update_yaxes(range=[-0.6, 1.45], showticklabels=False, showgrid=False,
                      zeroline=False, fixedrange=True)
     fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10),
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      showlegend=False)
+                      showlegend=False, transition=dict(duration=350))
     return fig
+
+
+def _render_t_build_scale(t_stat: float, df: int, *, state_key: str, chart_key: str) -> None:
+    """Centered 2-step reveal: the distance on a number line, then (on
+    request) the sampling distribution it sits within."""
+    st.session_state.setdefault(state_key, False)
+    _l, mid, _r = st.columns([1, 3, 1])
+    with mid:
+        st.plotly_chart(
+            _t_build_scale_figure(t_stat, df=df, show_distribution=st.session_state[state_key]),
+            width="stretch", config={"displayModeBar": False, "displaylogo": False}, key=chart_key,
+        )
+        if not st.session_state[state_key]:
+            st.button(
+                "Show the sampling distribution ↓", key=f"{state_key}_btn",
+                on_click=lambda: st.session_state.__setitem__(state_key, True),
+            )
 
 
 def _render_ttest_build_case_a() -> None:
@@ -4701,9 +4732,9 @@ def _render_ttest_build_case_a() -> None:
         _t_fraction_html(result.beta, result.standard_error, result.t_statistic),
         unsafe_allow_html=True,
     )
-    st.plotly_chart(
-        _t_build_scale_figure(result.t_statistic), width="stretch",
-        config={"displayModeBar": False, "displaylogo": False}, key="ttest_build_scale_a",
+    _render_t_build_scale(
+        result.t_statistic, result.degrees_of_freedom,
+        state_key="ttest_build_show_dist_a", chart_key="ttest_build_scale_a",
     )
     st.markdown(_TTEST_BUILD_BRIDGE, unsafe_allow_html=True)
 
@@ -4757,9 +4788,9 @@ def _render_ttest_build_case_b(population) -> None:
             unsafe_allow_html=True,
         )
     st.markdown(_t_fraction_html(beta2, se2, t_stat), unsafe_allow_html=True)
-    st.plotly_chart(
-        _t_build_scale_figure(t_stat), width="stretch",
-        config={"displayModeBar": False, "displaylogo": False}, key="ttest_build_scale_b",
+    _render_t_build_scale(
+        t_stat, sample.n - 3,
+        state_key="ttest_build_show_dist_b", chart_key="ttest_build_scale_b",
     )
     st.markdown(_TTEST_BUILD_BRIDGE, unsafe_allow_html=True)
 
