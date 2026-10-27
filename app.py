@@ -4441,8 +4441,7 @@ def render_sampling_inference_tab(population, rng: np.random.Generator) -> None:
 
 TTEST_SUBTABS: tuple[tuple[str, str], ...] = (
     ("why", "Why a t-test?"),
-    ("build", "Building the t-statistic"),
-    ("dist", "The t-distribution"),
+    ("understand", "Understanding the t-test"),
     ("interpret", "Interpreting the Result"),
 )
 TTEST_SUBTAB_LABELS = dict(TTEST_SUBTABS)
@@ -4618,95 +4617,9 @@ def _t_fraction_html(numerator: float, denominator: float, result: float) -> str
     )
 
 
-def _ttest_build_steps_html(beta_label: str, beta: float, se: float) -> str:
-    return (
-        '<p class="mr-head">How far is our estimated slope from zero?</p>'
-        '<p class="mr-note">We cannot judge a slope by its size alone — we '
-        "need to compare it with its standard error.</p>"
-        '<ol class="t-build-points">'
-        f"<li><b>Our estimate:</b> {beta_label} = {beta:.2f}</li>"
-        f"<li><b>Our uncertainty:</b> SE({beta_label}) = {se:.3f} — how much "
-        "the estimated slope typically varies across samples.</li>"
-        f"<li><b>Standardising:</b> t = ({beta_label} − 0) / SE({beta_label})</li>"
-        "</ol>"
-    )
-
-
-def _ttest_build_bridge_html(t_stat: float) -> str:
-    return (
-        '<p class="mr-note">Our estimate is '
-        f"<b>{abs(t_stat):.2f}</b> standard errors from zero. Is that "
-        "unusual if the true slope is zero?</p>"
-    )
-
-
-def _t_build_scale_figure(t_stat: float, height: int = 200) -> go.Figure:
-    """A number line showing t as a distance from the null, in SE units."""
-    reach = max(3.5, abs(t_stat) + 1.2)
-    fig = go.Figure()
-    fig.add_shape(type="line", x0=-reach, x1=reach, y0=0, y1=0,
-                  line=dict(color=GREY, width=1.5))
-    lo, hi = -int(reach), int(reach)
-    for tick in range(lo, hi + 1):
-        fig.add_shape(type="line", x0=tick, x1=tick, y0=-0.08, y1=0.08,
-                      line=dict(color=GREY, width=1))
-        fig.add_annotation(x=tick, y=-0.28, text=str(tick), showarrow=False,
-                           font=dict(size=10, color=GREY, family=FONT))
-    fig.add_shape(type="line", x0=0, x1=0, y0=-0.08, y1=1.0,
-                  line=dict(color=GREY, width=2, dash="dash"))
-    fig.add_annotation(x=0, y=1.08, text="β = 0 (H₀)", showarrow=False,
-                       font=dict(size=11, color=INK, family=FONT))
-    fig.add_annotation(x=t_stat, y=0.3, ax=0, ay=0.3, xref="x", yref="y",
-                       axref="x", ayref="y", showarrow=True, arrowhead=3,
-                       arrowsize=1, arrowwidth=2.2, arrowcolor=ORANGE, text="")
-    fig.add_trace(go.Scatter(x=[t_stat], y=[0], mode="markers",
-                             marker=dict(symbol="diamond", size=13, color=ORANGE),
-                             showlegend=False, hoverinfo="skip"))
-    fig.add_annotation(x=t_stat / 2, y=0.5,
-                       text=f"{abs(t_stat):.2f} standard errors from zero",
-                       showarrow=False, font=dict(size=12, color=ORANGE, family=FONT))
-    fig.update_xaxes(range=[-reach - 0.3, reach + 0.3], showticklabels=False,
-                     showgrid=False, zeroline=False, fixedrange=True,
-                     title=dict(text="Distance from zero (standard errors)",
-                                font=dict(size=11, color=GREY, family=FONT)))
-    fig.update_yaxes(range=[-0.45, 1.25], showticklabels=False, showgrid=False,
-                     zeroline=False, fixedrange=True)
-    fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=45),
-                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      showlegend=False)
-    return fig
-
-
-def _render_t_build_scale(t_stat: float, *, chart_key: str) -> None:
-    _l, mid, _r = st.columns([1, 3, 1])
-    with mid:
-        st.plotly_chart(
-            _t_build_scale_figure(t_stat), width="stretch",
-            config={"displayModeBar": False, "displaylogo": False}, key=chart_key,
-        )
-
-
-def _render_ttest_build_case_a() -> None:
-    from src.ttest_intro import intro_data
-
-    x, scores, alphas, betas, index, se = intro_data()
-    result = slope_t_test(x, scores[index])
-    if result.beta is None or not result.standard_error:
-        st.markdown(
-            '<p class="mr-note">Not enough variation in this sample to '
-            "compute a standard error.</p>",
-            unsafe_allow_html=True,
-        )
-        return
-
-    st.markdown(_ttest_build_steps_html("β̂", result.beta, result.standard_error),
-               unsafe_allow_html=True)
-    st.markdown(
-        _t_fraction_html(result.beta, result.standard_error, result.t_statistic),
-        unsafe_allow_html=True,
-    )
-    _render_t_build_scale(result.t_statistic, chart_key="ttest_build_scale_a")
-    st.markdown(_ttest_build_bridge_html(result.t_statistic), unsafe_allow_html=True)
+_T_DIST_ALPHA_OPTIONS: tuple[float, ...] = (0.01, 0.05, 0.10)
+_T_DIST_X_MAX = 6.0
+_T_UNDERSTAND_STAGES = 5
 
 
 def _attendance_coef_se(sample, scenario: str) -> tuple[float, float]:
@@ -4726,7 +4639,241 @@ def _attendance_coef_se(sample, scenario: str) -> tuple[float, float]:
     return float(beta[2]), se
 
 
-def _render_ttest_build_case_b(population) -> None:
+def _t_understand_figure(
+    *, t_stat: float, df: int, stage: int, critical: float | None = None,
+    explore_t: float | None = None, height: int = 420,
+) -> go.Figure:
+    """One chart, five stages, fixed axes throughout.
+
+    Stage 1: observed t as a distance from zero (arrow + marker).
+    Stage 2: + the sampling distribution of t under H0.
+    Stage 3: + two-sided p-value shading (blue, hatched) around the active t.
+    Stage 4: + critical values and rejection regions (red).
+    Stage 5: unchanged chart — the conclusion is text below it.
+    """
+    from scipy.stats import t as student_t
+
+    grid = np.linspace(-_T_DIST_X_MAX, _T_DIST_X_MAX, 500)
+    density = student_t.pdf(grid, df)
+    peak = float(density.max()) if density.size else 1.0
+    y_top = peak * 1.35
+    active_t = explore_t if (stage >= 3 and explore_t is not None) else t_stat
+    fig = go.Figure()
+
+    fig.add_vline(x=0, line_color=GREY, line_width=2, line_dash="dash")
+    fig.add_annotation(x=0, y=y_top, yanchor="top", text="β = 0 (H₀)",
+                       showarrow=False, font=dict(size=11, color=INK, family=FONT))
+
+    if stage >= 4 and critical is not None and critical <= _T_DIST_X_MAX:
+        for mask in (grid <= -critical, grid >= critical):
+            fig.add_trace(go.Scatter(
+                x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
+                line=dict(width=0), fillcolor="rgba(220,38,38,0.28)",
+                hoverinfo="skip", showlegend=False,
+            ))
+
+    if stage >= 3:
+        abs_active = abs(active_t)
+        if 0 < abs_active <= _T_DIST_X_MAX:
+            for mask in (grid <= -abs_active, grid >= abs_active):
+                fig.add_trace(go.Scatter(
+                    x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
+                    line=dict(width=0), fillcolor="rgba(29,78,216,0.0)",
+                    fillpattern=dict(shape="/", fgcolor="rgba(29,78,216,0.45)", size=6, solidity=0.25),
+                    hoverinfo="skip", showlegend=False,
+                ))
+
+    if stage >= 2:
+        fig.add_trace(go.Scatter(
+            x=grid, y=density, mode="lines", line=dict(color=INK, width=2.2),
+            hoverinfo="skip", showlegend=False,
+        ))
+
+    if stage >= 4 and critical is not None and critical <= _T_DIST_X_MAX:
+        for edge in (-critical, critical):
+            fig.add_vline(x=edge, line_color="#991B1B", line_width=1.4, line_dash="dot")
+        fig.add_annotation(x=critical, y=y_top * 0.72, text=f"Critical t = ±{critical:.3f}",
+                           showarrow=False, xanchor="left", xshift=6,
+                           font=dict(size=11, color="#991B1B", family=FONT))
+
+    # Observed t: an arrow from zero on the baseline, plus the marker — present in every stage.
+    fig.add_annotation(x=t_stat, y=0, ax=0, ay=0, xref="x", yref="y", axref="x", ayref="y",
+                       showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2.2,
+                       arrowcolor=ORANGE, text="")
+    fig.add_trace(go.Scatter(x=[t_stat], y=[0], mode="markers",
+                             marker=dict(symbol="diamond", size=13, color=ORANGE),
+                             showlegend=False, hoverinfo="skip"))
+    obs_label_y = y_top * 0.18 if stage < 2 else peak * 1.1
+    fig.add_annotation(x=t_stat, y=obs_label_y, text=f"Observed t = {t_stat:.3f}",
+                       showarrow=False, font=dict(size=12, color=ORANGE, family=FONT),
+                       bgcolor="rgba(255,255,255,0.85)", borderpad=2)
+
+    if stage >= 3 and explore_t is not None and abs(explore_t - t_stat) > 1e-9:
+        fig.add_vline(x=explore_t, line_color="#9333EA", line_width=2, line_dash="dashdot")
+        fig.add_annotation(x=explore_t, y=y_top * 0.42, text=f"Exploring t = {explore_t:.2f}",
+                           showarrow=False, font=dict(size=11, color="#9333EA", family=FONT),
+                           bgcolor="rgba(255,255,255,0.85)", borderpad=2)
+
+    fig.update_xaxes(title_text="Distance from zero (standard errors)",
+                     range=[-_T_DIST_X_MAX, _T_DIST_X_MAX])
+    fig.update_yaxes(range=[0, y_top], showticklabels=False, zeroline=False)
+    fig.update_layout(
+        template="plotly_white", height=height, margin=dict(l=20, r=20, t=30, b=45),
+        font=dict(family=FONT, color=INK, size=12), showlegend=False,
+    )
+    return fig
+
+
+_T_UNDERSTAND_STAGE_TITLES: tuple[str, ...] = (
+    "Measuring the distance",
+    "The t-distribution",
+    "The p-value",
+    "Statistical significance",
+    "Conclusion",
+)
+
+
+def _t_understand_stage_text(
+    stage: int, *, beta_label: str, t_stat: float, df: int,
+    p_value: float, alpha: float, critical: float, reject: bool,
+) -> str:
+    if stage == 1:
+        body = (
+            f"We cannot judge {beta_label} by its size alone — we compare it "
+            f"with its standard error: t = {t_stat:.3f}."
+        )
+    elif stage == 2:
+        body = (
+            "If the true slope were zero, repeated samples would produce "
+            f"t-statistics following this bell-shaped curve (df = {df}). This "
+            "is the distribution of the <b>standardised distance</b> — not "
+            "the sampling distribution of raw slopes you saw earlier."
+        )
+    elif stage == 3:
+        body = (
+            "The shaded tails show the probability, under H₀, of a "
+            f"t-statistic at least this extreme in either direction: "
+            f"two-sided p = <b>{_p_text(p_value)}</b>."
+        )
+    elif stage == 4:
+        body = (
+            f"p comes from the data; α = {alpha:.2f} is a threshold we choose "
+            f"in advance. Values beyond ±{critical:.3f} (red) fall in the "
+            "rejection region."
+        )
+    else:
+        verdict = "reject H₀" if reject else "fail to reject H₀"
+        body = (
+            f"t = {t_stat:.3f} &nbsp;·&nbsp; df = {df} &nbsp;·&nbsp; "
+            f"two-sided p = <b>{_p_text(p_value)}</b> &nbsp;·&nbsp; α = {alpha:.2f} "
+            f"&nbsp;→&nbsp; <b>we {verdict}</b>. "
+            + (
+                "The data are unlikely under H₀ — evidence the true slope "
+                "differs from zero."
+                if reject else
+                "We lack enough evidence that the true slope differs from "
+                "zero — this does <b>not</b> prove it equals zero."
+            )
+        )
+    return (
+        f'<p class="mr-head">{_T_UNDERSTAND_STAGE_TITLES[stage - 1]}</p>'
+        f'<p class="mr-note">{body}</p>'
+    )
+
+
+def _render_t_understand_body(
+    *, beta: float, se: float, t_stat: float, df: int, beta_label: str, suffix: str,
+) -> None:
+    from scipy.stats import t as student_t
+
+    stage_key = f"ttest_understand_stage_{suffix}"
+    explore_key = f"ttest_understand_explore_{suffix}"
+    st.session_state.setdefault(stage_key, 1)
+    st.session_state.setdefault(explore_key, float(t_stat))
+    stage = int(st.session_state[stage_key])
+
+    st.markdown(
+        _t_fraction_html(beta, se, t_stat),
+        unsafe_allow_html=True,
+    )
+
+    alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
+    if stage >= 4:
+        alpha = st.radio(
+            "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS,
+            index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
+            format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
+        )
+    critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
+
+    explore_t: float | None = None
+    if stage >= 3:
+        explore_t = st.slider(
+            "Explore a different t value", min_value=-6.0, max_value=6.0,
+            value=float(st.session_state[explore_key]), step=0.05, key=f"{explore_key}_slider",
+        )
+        st.session_state[explore_key] = explore_t
+
+    _l, mid, _r = st.columns([1, 4, 1])
+    with mid:
+        st.plotly_chart(
+            _t_understand_figure(t_stat=t_stat, df=df, stage=stage, critical=critical,
+                                 explore_t=explore_t),
+            width="stretch", config=PLOTLY_CONFIG, key=f"ttest_understand_chart_{suffix}",
+        )
+
+    active_t = explore_t if (stage >= 3 and explore_t is not None) else t_stat
+    p_value = 2.0 * float(student_t.sf(abs(active_t), df))
+    reject = abs(active_t) > critical
+    st.markdown(
+        _t_understand_stage_text(
+            stage, beta_label=beta_label, t_stat=t_stat, df=df,
+            p_value=p_value, alpha=alpha, critical=critical, reject=reject,
+        ),
+        unsafe_allow_html=True,
+    )
+
+    prev_col, next_col, replay_col, indicator_col = st.columns([1, 1, 1, 2])
+    with prev_col:
+        if st.button("← Previous", key=f"{stage_key}_prev", disabled=stage <= 1):
+            st.session_state[stage_key] = max(1, stage - 1)
+            st.rerun()
+    with next_col:
+        if st.button("Next →", key=f"{stage_key}_next", disabled=stage >= _T_UNDERSTAND_STAGES):
+            st.session_state[stage_key] = min(_T_UNDERSTAND_STAGES, stage + 1)
+            st.rerun()
+    with replay_col:
+        if st.button("Replay ↺", key=f"{stage_key}_replay"):
+            st.session_state[stage_key] = 1
+            st.session_state[explore_key] = float(t_stat)
+            st.rerun()
+    with indicator_col:
+        st.markdown(
+            f'<p class="mr-note" style="text-align:right;margin-top:0.4rem;">'
+            f"{stage} / {_T_UNDERSTAND_STAGES}</p>",
+            unsafe_allow_html=True,
+        )
+
+
+def _render_ttest_understand_case_a() -> None:
+    from src.ttest_intro import intro_data
+
+    x, scores, alphas, betas, index, se = intro_data()
+    result = slope_t_test(x, scores[index])
+    if result.beta is None or not result.standard_error or not result.degrees_of_freedom:
+        st.markdown(
+            '<p class="mr-note">Not enough variation in this sample to '
+            "compute a standard error.</p>",
+            unsafe_allow_html=True,
+        )
+        return
+    _render_t_understand_body(
+        beta=result.beta, se=result.standard_error, t_stat=result.t_statistic,
+        df=result.degrees_of_freedom, beta_label="β̂", suffix="a",
+    )
+
+
+def _render_ttest_understand_case_b(population) -> None:
     from src.multiple_regression import mr_sample
 
     scenario = st.segmented_control(
@@ -4742,16 +4889,14 @@ def _render_ttest_build_case_b(population) -> None:
 
     sample = mr_sample(population)
     beta2, se2 = _attendance_coef_se(sample, scenario)
-    t_stat = beta2 / se2
-
-    st.markdown(_ttest_build_steps_html("β̂₂ (attendance)", beta2, se2),
-               unsafe_allow_html=True)
-    st.markdown(_t_fraction_html(beta2, se2, t_stat), unsafe_allow_html=True)
-    _render_t_build_scale(t_stat, chart_key="ttest_build_scale_b")
-    st.markdown(_ttest_build_bridge_html(t_stat), unsafe_allow_html=True)
+    df = int(sample.n) - 3
+    _render_t_understand_body(
+        beta=beta2, se=se2, t_stat=beta2 / se2, df=df,
+        beta_label="β̂₂ (attendance)", suffix="b",
+    )
 
 
-def _render_ttest_build(population) -> None:
+def _render_ttest_understand(population) -> None:
     case = st.segmented_control(
         "Case",
         options=[key for key, _ in _TTEST_WHY_CASES],
@@ -4763,190 +4908,9 @@ def _render_ttest_build(population) -> None:
     if case not in dict(_TTEST_WHY_CASES):
         case = "simple"
     if case == "simple":
-        _render_ttest_build_case_a()
+        _render_ttest_understand_case_a()
     else:
-        _render_ttest_build_case_b(population)
-
-
-_T_DIST_ALPHA_OPTIONS: tuple[float, ...] = (0.01, 0.05, 0.10)
-_T_DIST_X_MAX = 6.0
-
-
-def _t_distribution_figure(*, df: int, t_stat: float, critical: float, height: int = 420) -> go.Figure:
-    """Two-sided Student's t under H0: rejection tails, observed t, p-value area.
-
-    Same visual language as the F-test lesson's F-distribution chart
-    (solid rejection fill, hatched p-value area, dashed critical lines,
-    off-scale arrow), but symmetric on both tails.
-    """
-    from scipy.stats import t as student_t
-
-    grid = np.linspace(-_T_DIST_X_MAX, _T_DIST_X_MAX, 500)
-    density = student_t.pdf(grid, df)
-    peak = float(np.max(density)) if density.size else 1.0
-    fig = go.Figure()
-
-    if critical <= _T_DIST_X_MAX:
-        for mask in (grid <= -critical, grid >= critical):
-            fig.add_trace(
-                go.Scatter(
-                    x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
-                    line=dict(width=0), fillcolor="rgba(220,38,38,0.28)",
-                    hoverinfo="skip", showlegend=False,
-                )
-            )
-
-    abs_t = abs(t_stat)
-    if 0 < abs_t <= _T_DIST_X_MAX:
-        for mask in (grid <= -abs_t, grid >= abs_t):
-            fig.add_trace(
-                go.Scatter(
-                    x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
-                    line=dict(width=0), fillcolor="rgba(29,78,216,0.0)",
-                    fillpattern=dict(shape="/", fgcolor="rgba(29,78,216,0.45)", size=6, solidity=0.25),
-                    hoverinfo="skip", showlegend=False,
-                )
-            )
-
-    fig.add_trace(
-        go.Scatter(
-            x=grid, y=density, mode="lines", name="t distribution",
-            line=dict(color=INK, width=2.4),
-            hovertemplate="t %{x:.2f}<br>Density %{y:.3f}<extra></extra>",
-        )
-    )
-
-    if critical <= _T_DIST_X_MAX:
-        for edge in (-critical, critical):
-            fig.add_vline(x=edge, line_color=GREY, line_width=1.4, line_dash="dash")
-        fig.add_annotation(
-            x=critical, y=peak * 0.9, text=f"Critical t = ±{critical:.3f}",
-            showarrow=False, xanchor="left", xshift=6,
-            font=dict(size=11, color="#52606D", family=FONT),
-        )
-        tail_x = min(critical + 0.9, _T_DIST_X_MAX - 0.3)
-        fig.add_annotation(
-            x=tail_x, y=0, yshift=14,
-            text="Rejection region<br>(α/2 in each tail)",
-            showarrow=False, xanchor="center",
-            font=dict(size=10, color="#991B1B", family=FONT),
-        )
-
-    if abs_t <= _T_DIST_X_MAX:
-        fig.add_vline(x=t_stat, line_color=BLUE, line_width=2.4)
-        fig.add_annotation(
-            x=t_stat, y=peak * 1.04, text=f"Observed t = {t_stat:.3f}",
-            showarrow=False,
-            xanchor="left" if t_stat < _T_DIST_X_MAX * 0.8 else "right",
-            xshift=6 if t_stat < _T_DIST_X_MAX * 0.8 else -6,
-            bgcolor="rgba(255,255,255,0.88)", borderpad=2,
-            font=dict(size=12, color=BLUE, family=FONT),
-        )
-    else:
-        edge_x = _T_DIST_X_MAX if t_stat > 0 else -_T_DIST_X_MAX
-        fig.add_annotation(
-            x=edge_x, y=peak * 0.55, ax=edge_x * 0.82, ay=peak * 0.55,
-            xref="x", yref="y", axref="x", ayref="y",
-            text=f"Observed t = {t_stat:.3f} (off scale)",
-            showarrow=True, arrowhead=2, arrowcolor=BLUE,
-            font=dict(size=12, color=BLUE, family=FONT),
-            xanchor="right" if t_stat > 0 else "left",
-        )
-
-    fig.update_xaxes(title_text="t statistic", range=[-_T_DIST_X_MAX, _T_DIST_X_MAX])
-    fig.update_yaxes(title_text="Density", rangemode="tozero")
-    fig.update_layout(
-        template="plotly_white", height=height, margin=dict(l=50, r=20, t=30, b=40),
-        font=dict(family=FONT, color=INK, size=12), showlegend=False,
-    )
-    return fig
-
-
-def _render_ttest_dist_body(*, t_stat: float, df: int, beta_label: str) -> None:
-    from scipy.stats import t as student_t
-
-    st.markdown(
-        '<p class="mr-note">This distribution describes the t-statistics we '
-        "would expect across repeated samples if H₀ were true — it is "
-        "<b>two-sided</b>, since the estimate could fall far from zero in "
-        "either direction.</p>",
-        unsafe_allow_html=True,
-    )
-    alpha = st.radio(
-        "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS, index=1,
-        format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
-    )
-    critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
-    p_value = 2.0 * float(student_t.sf(abs(t_stat), df))
-
-    st.plotly_chart(
-        _t_distribution_figure(df=df, t_stat=t_stat, critical=critical),
-        width="stretch", config=PLOTLY_CONFIG, key="ttest_dist_chart",
-    )
-    st.markdown(
-        f'<p class="mr-stat">{beta_label}: t = <b>{t_stat:.3f}</b> &nbsp;·&nbsp; '
-        f"df = n − p − 1 = <b>{df}</b> &nbsp;·&nbsp; "
-        f"two-sided p = <b>{_p_text(p_value)}</b></p>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<p class="mr-note">Red areas show the rejection thresholds chosen '
-        "using α. Blue hatched areas represent the p-value: the "
-        "probability, under H₀, of a result at least this extreme in "
-        "either direction.</p>",
-        unsafe_allow_html=True,
-    )
-
-
-def _render_ttest_dist(population) -> None:
-    case = st.segmented_control(
-        "Case",
-        options=[key for key, _ in _TTEST_WHY_CASES],
-        format_func=lambda k: dict(_TTEST_WHY_CASES)[k],
-        key="ttest_why_case",
-        label_visibility="collapsed",
-        default="simple",
-    )
-    if case not in dict(_TTEST_WHY_CASES):
-        case = "simple"
-
-    if case == "simple":
-        true_beta = float(st.session_state.get("ttest_why_true_beta", 0.0))
-        stored = st.session_state.get("ttest_why_sample_a")
-        if isinstance(stored, tuple) and stored[0] == true_beta:
-            _, hours, scores = stored
-        else:
-            null_pop = null_population(true_beta)
-            hours, scores = draw_null_sample(null_pop, 100, _null_rng())
-            st.session_state.ttest_why_sample_a = (true_beta, hours, scores)
-        result = slope_t_test(hours, scores)
-        if result.t_statistic is None or not result.degrees_of_freedom:
-            st.markdown(
-                '<p class="mr-note">Not enough variation in this sample to '
-                "compute a t-statistic.</p>",
-                unsafe_allow_html=True,
-            )
-            return
-        _render_ttest_dist_body(
-            t_stat=result.t_statistic, df=result.degrees_of_freedom, beta_label="β̂₁"
-        )
-    else:
-        from src.multiple_regression import mr_sample
-
-        scenario = st.segmented_control(
-            "Scenario",
-            options=[key for key, _ in _TTEST_WHY_SCENARIOS],
-            format_func=lambda k: dict(_TTEST_WHY_SCENARIOS)[k],
-            key="ttest_why_case_b_scenario",
-            label_visibility="collapsed",
-            default="weak",
-        )
-        if scenario not in dict(_TTEST_WHY_SCENARIOS):
-            scenario = "weak"
-        sample = mr_sample(population)
-        beta2, se2 = _attendance_coef_se(sample, scenario)
-        df = int(sample.n) - 3
-        _render_ttest_dist_body(t_stat=beta2 / se2, df=df, beta_label="β̂₂")
+        _render_ttest_understand_case_b(population)
 
 
 def _ols_full_stats(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
@@ -5129,7 +5093,7 @@ def _render_ttest_interpret(population) -> None:
 
 
 def render_ttest_lesson(population, rng: np.random.Generator) -> None:
-    """The t-test lesson. All four subtabs are implemented."""
+    """The t-test lesson. All three subtabs are implemented."""
     del rng
     if "ttest_sub" not in st.session_state:
         st.session_state.ttest_sub = "why"
@@ -5146,10 +5110,8 @@ def render_ttest_lesson(population, rng: np.random.Generator) -> None:
 
     if sub == "why":
         _render_ttest_why(population)
-    elif sub == "build":
-        _render_ttest_build(population)
-    elif sub == "dist":
-        _render_ttest_dist(population)
+    elif sub == "understand":
+        _render_ttest_understand(population)
     elif sub == "interpret":
         _render_ttest_interpret(population)
 
