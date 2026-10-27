@@ -6420,12 +6420,17 @@ def _fit_why_table_html(sample) -> str:
 
 
 def _toggle_fit_why_playing() -> None:
-    st.session_state.fit_why_playing = not bool(st.session_state.get("fit_why_playing", True))
+    resuming = not bool(st.session_state.get("fit_why_playing", True))
+    st.session_state.fit_why_playing = resuming
+    if resuming:
+        # Don't let elapsed pause time count toward the next advance.
+        st.session_state.fit_why_last_tick = time.time()
 
 
 def _replay_fit_why_step() -> None:
     st.session_state.fit_why_step = 0
     st.session_state.fit_why_playing = True
+    st.session_state.fit_why_last_tick = time.time()
 
 
 def _fit_why_step_figure(sample, step: int, *, x_range, y_range):
@@ -6534,7 +6539,7 @@ def _fit_why_step_figure(sample, step: int, *, x_range, y_range):
     return fig
 
 
-@st.fragment(key="fit_why_panel")
+@st.fragment(key="fit_why_panel", run_every=FIT_WHY_HOLD_SECONDS)
 def render_why_model_subtab() -> None:
     """Five-step auto-playing lesson: table → scatter → mean → regression → conclusion."""
     from src.statistical_journey import build_journey_sample
@@ -6542,6 +6547,8 @@ def render_why_model_subtab() -> None:
     step = int(st.session_state.get("fit_why_step", 0))
     if step not in FIT_WHY_STEPS:
         step = 0
+    if "fit_why_last_tick" not in st.session_state:
+        st.session_state.fit_why_last_tick = time.time()
 
     st.markdown(
         f'<p class="fit-why-step-title">{FIT_WHY_STEP_TITLES[step]}</p>',
@@ -6629,9 +6636,14 @@ def render_why_model_subtab() -> None:
             )
 
     if playing and not finished:
-        time.sleep(FIT_WHY_HOLD_SECONDS)
-        st.session_state.fit_why_step = min(step + 1, FIT_WHY_STEPS[-1])
-        st.rerun(scope="fragment")
+        # Ticked by the fragment's own run_every timer — never a manual
+        # st.rerun() — so advancing here can never trigger a full-page
+        # rerun (which previously let other page content bleed through).
+        now = time.time()
+        last_tick = float(st.session_state.get("fit_why_last_tick", 0.0))
+        if now - last_tick >= FIT_WHY_HOLD_SECONDS - 0.05:
+            st.session_state.fit_why_step = min(step + 1, FIT_WHY_STEPS[-1])
+            st.session_state.fit_why_last_tick = now
 
 
 def render_use_model_subtab(view) -> None:
