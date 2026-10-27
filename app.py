@@ -4728,10 +4728,8 @@ def _t_understand_figure(
                        bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
     if stage >= 3 and explore_t is not None and abs(explore_t - t_stat) > 1e-9:
-        abs_explore = abs(explore_t)
-        for edge in (-abs_explore, abs_explore):
-            fig.add_vline(x=edge, line_color="#9333EA", line_width=2, line_dash="dashdot")
-        fig.add_annotation(x=abs_explore, y=peak * 0.5, text=f"Explore t = ±{abs_explore:.2f}",
+        fig.add_vline(x=explore_t, line_color="#9333EA", line_width=2, line_dash="dashdot")
+        fig.add_annotation(x=explore_t, y=peak * 0.5, text=f"Explore t = {explore_t:.2f}",
                            showarrow=False, font=dict(size=11, color="#9333EA", family=FONT),
                            bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
@@ -4785,7 +4783,7 @@ def _t_understand_panel_html(
         ]
         if exploring and explore_p is not None:
             items.append(
-                f'<span style="color:#7E22CE;">Exploring t = ±{abs(explore_t):.2f}: '
+                f'<span style="color:#7E22CE;">Exploring t = {explore_t:.2f}: '
                 f"p = {explore_p:.4f}</span>"
             )
     elif stage == 4:
