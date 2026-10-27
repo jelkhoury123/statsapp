@@ -6502,11 +6502,6 @@ def render_why_model_subtab() -> None:
 
 def render_use_model_subtab(view) -> None:
     """USE lesson: apply the fitted model — explain, predict, compare with reality."""
-    st.markdown(
-        tipify('<p class="fit-r2-heading">What can we do with our model?</p>'),
-        unsafe_allow_html=True,
-    )
-
     ols = ols_fit(view.x, view.y)
     alpha, beta = float(ols.alpha), float(ols.beta)
     sst = total_sum_of_squares(view.y)
