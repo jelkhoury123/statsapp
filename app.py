@@ -4610,26 +4610,9 @@ def _render_ttest_why_case_b(population) -> None:
 
 
 def _render_ttest_why(population) -> None:
-    case = st.segmented_control(
-        "Case",
-        options=[key for key, _ in _TTEST_WHY_CASES],
-        format_func=lambda k: dict(_TTEST_WHY_CASES)[k],
-        key="ttest_why_case",
-        label_visibility="collapsed",
-        default="simple",
-    )
-    if case not in dict(_TTEST_WHY_CASES):
-        case = "simple"
-    if case == "simple":
-        _render_ttest_why_case_a()
-    else:
-        _render_ttest_why_case_b(population)
-    st.markdown(
-        '<p class="mr-sub">Both cases lead to the same question: how large '
-        "is our estimated coefficient compared with the uncertainty "
-        "surrounding that estimate? The <b>t-statistic</b> answers this.</p>",
-        unsafe_allow_html=True,
-    )
+    from src.ttest_intro import render_ttest_intro
+
+    render_ttest_intro()
 
 
 def _t_fraction_html(numerator: float, denominator: float, result: float) -> str:
@@ -6304,7 +6287,7 @@ R2_LESSON_STEPS = (
 
 FIT_WHY_STEPS = (0, 1, 2, 3, 4)  # A: table, B: scatter, C: mean, D: regression, E: conclusion
 FIT_WHY_ANIM_SECONDS = 0.7
-FIT_WHY_HOLD_SECONDS = 2.75  # auto-play: reading time per step before advancing (~11s total)
+FIT_WHY_HOLD_SECONDS = 5.5  # Reading time per frame; final frame stays visible.
 
 FIT_WHY_POINTS = (
     ("Represent reality", "Describe how we think variables are related."),
@@ -6536,7 +6519,7 @@ def render_why_model_subtab() -> None:
                 '<div class="fit-r2-lesson" style="margin:0.2rem 0 0 0;'
                 'padding:0.35rem 0.5rem;"><div class="result" '
                 'style="margin:0;"><p class="big">Regression uses X to '
-                "explain variation in Y and improve predictions over "
+                "explain variation in Y and aims to improve predictions over "
                 "the mean.</p></div></div>"
             )
         else:
