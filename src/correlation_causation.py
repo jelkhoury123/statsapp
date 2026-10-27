@@ -120,25 +120,6 @@ def fit_multiple(
     )
 
 
-def _strength_label(r: float) -> str:
-    a = abs(float(r))
-    if a >= 0.99:
-        return "perfect"
-    if a >= 0.7:
-        return "strong"
-    if a >= 0.4:
-        return "moderate"
-    if a >= 0.2:
-        return "weak"
-    return "very weak / none"
-
-
-def _direction_label(r: float) -> str:
-    if abs(float(r)) < 0.05:
-        return "no clear linear direction"
-    return "positive" if float(r) > 0 else "negative"
-
-
 def correlation_scatter(
     x: np.ndarray,
     y: np.ndarray,
@@ -213,6 +194,27 @@ def _fmt(v: float, digits: int = 3) -> str:
     return f"{float(v):.{digits}f}"
 
 
+def _fmt_pct(v: float) -> str:
+    if not np.isfinite(v):
+        return "—"
+    return f"{100.0 * float(v):.1f}%"
+
+
+def _corr_interpretation(r_hat: float) -> str:
+    """Concise, dynamic read of the observed (not target) sample correlation."""
+    if not np.isfinite(r_hat):
+        return "—"
+    a = abs(float(r_hat))
+    if a < 0.2:
+        return (
+            "Little or no linear relationship — a non-linear relationship "
+            "may still exist."
+        )
+    direction = "positive" if r_hat > 0 else "negative"
+    strength = "Strong" if a >= 0.7 else "Moderate" if a >= 0.4 else "Weak"
+    return f"{strength} {direction} linear relationship."
+
+
 def render_correlation_causation_tab() -> None:
     """Top-level Correlation & Causation lab."""
     st.markdown(
@@ -245,34 +247,36 @@ def render_correlation_causation_tab() -> None:
 def _render_understanding() -> None:
     st.markdown(
         tipify(
-            "<p style='margin:0.2rem 0 0.45rem 0;color:#475569;font-weight:400;"
+            "<p style='margin:0.2rem 0 0.15rem 0;color:#475569;font-weight:400;"
             "font-size:0.9rem;line-height:1.35rem;'>"
-            "Pearson's <b>r</b> measures the strength and direction of a "
-            "linear association. Move the slider to regenerate a cloud "
-            "built from that target correlation.</p>"
+            "Correlation measures the direction and strength of a linear "
+            "relationship between two variables.</p>"
+            "<p class='mr-note' style='margin:0 0 0.35rem 0;'>"
+            "Move r from −1 to +1. Watch how the direction and tightness of "
+            "the scatter change.</p>"
         ),
         unsafe_allow_html=True,
     )
-    r_target = st.slider(
-        "Target Pearson correlation r",
-        min_value=-1.0,
-        max_value=1.0,
-        value=0.75,
-        step=0.05,
-        key="corr_r_slider",
-    )
-    # Resample when r changes (seed folds in rounded r for stability).
-    seed = DEFAULT_SEED + int(round(float(r_target) * 1000))
-    x, y = correlated_pair(N_CORR, float(r_target), seed=seed)
-    fit = fit_ols(x, y)
-    r_hat = pearson_r(x, y)
-    r2 = float(fit.r_squared) if not fit.degenerate else float("nan")
-    beta_star = standardised_slope(
-        float(fit.beta), sample_sd(x), sample_sd(y)
-    )
 
-    left, right = st.columns([1.35, 1.0], gap="medium")
+    left, right = st.columns([1.1, 0.9], gap="medium")
     with left:
+        r_target = st.slider(
+            "Target Pearson correlation r",
+            min_value=-1.0,
+            max_value=1.0,
+            value=0.75,
+            step=0.05,
+            key="corr_r_slider",
+        )
+        # Resample when r changes (seed folds in rounded r for stability).
+        seed = DEFAULT_SEED + int(round(float(r_target) * 1000))
+        x, y = correlated_pair(N_CORR, float(r_target), seed=seed)
+        fit = fit_ols(x, y)
+        r_hat = pearson_r(x, y)
+        r2 = float(fit.r_squared) if not fit.degenerate else float("nan")
+        beta_star = standardised_slope(
+            float(fit.beta), sample_sd(x), sample_sd(y)
+        )
         st.plotly_chart(
             correlation_scatter(
                 x,
@@ -288,44 +292,54 @@ def _render_understanding() -> None:
             config=PLOTLY_CONFIG,
             key="corr_r_scatter",
         )
+
     with right:
-        direction = _direction_label(r_hat)
-        strength = _strength_label(r_hat)
         st.markdown(
             tipify(
-                '<p class="fit-std-note" style="font-size:0.88rem;">'
-                f"Target r = <b>{r_target:+.2f}</b> &nbsp;·&nbsp; "
-                f"Sample r = <b>{_fmt(r_hat)}</b></p>"
-                '<p class="fit-std-note" style="margin-top:0;">'
-                "They differ slightly because each draw is a finite random "
-                "sample — the same target r produces a slightly different "
-                "sample r every time.</p>"
+                '<table class="fit-r2-summary-table">'
+                "<thead><tr><th>Statistic</th><th>Value</th></tr></thead>"
+                "<tbody>"
+                f"<tr><td>Pearson correlation r</td><td>{_fmt(r_hat)}</td></tr>"
+                f"<tr><td>Standardised slope β*</td><td>{_fmt(beta_star)}</td></tr>"
+                f"<tr><td>R²</td><td>{_fmt_pct(r2)}</td></tr>"
+                "</tbody></table>"
+            ),
+            unsafe_allow_html=True,
+        )
+        st.latex(r"\beta^{*} = r \qquad R^2 = r^2")
+        st.markdown(
+            '<div class="fit-r2-concl">In simple linear regression, '
+            "correlation equals the standardised slope, and its square "
+            "equals R².</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            tipify(
+                '<p class="fit-r2-muted-note">'
+                f"Target r = <b>{r_target:+.2f}</b> · Observed r = "
+                f"<b>{_fmt(r_hat)}</b><br>"
+                "Random samples may differ slightly from the target "
+                "correlation.</p>"
             ),
             unsafe_allow_html=True,
         )
         st.markdown(
             tipify(
-                f"<p style='color:#334155;font-weight:400;font-size:0.88rem;"
-                f"margin:0.3rem 0;'>R² = <b>{_fmt(r2)}</b> &nbsp;·&nbsp; "
-                f"Direction: <b>{direction}</b> &nbsp;·&nbsp; "
-                f"Strength: <b>{strength}</b></p>"
-                "<p style='color:#64748B;font-weight:400;font-size:0.8rem;"
-                "margin:0.2rem 0;'>Landmarks: "
-                "<b>r = +1</b> perfect positive · <b>r = 0</b> none · "
-                "<b>r = −1</b> perfect negative.</p>"
+                '<p style="color:#334155;font-weight:650;font-size:0.86rem;'
+                f'margin:0.4rem 0 0 0;">{_corr_interpretation(r_hat)}</p>'
             ),
             unsafe_allow_html=True,
         )
         with st.expander("Connections to regression", expanded=False):
+            st.latex(r"\hat{\beta} = r \times \dfrac{\mathrm{SD}(Y)}{\mathrm{SD}(X)}")
             st.markdown(
                 tipify(
                     "<p style='color:#334155;font-weight:400;font-size:0.84rem;"
                     "line-height:1.3rem;'>"
-                    "R² = r² in simple OLS with an intercept — R² measures fit "
-                    "but drops the sign of the relationship. In simple linear "
-                    "regression the standardised slope equals Pearson's r "
-                    f"(here β* ≈ <b>{_fmt(beta_star)}</b> ≈ r ≈ "
-                    f"<b>{_fmt(r_hat)}</b>).</p>"
+                    "Standardising X and Y rescales each by its own SD, so "
+                    "SD(X) and SD(Y) cancel out of the slope formula above — "
+                    "leaving β* = r. This is why the standardised slope "
+                    "and Pearson's r are the same number.</p>"
                 ),
                 unsafe_allow_html=True,
             )
