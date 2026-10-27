@@ -1761,6 +1761,7 @@ p.fit-why-step-title {
     font-weight: 650; font-size: 0.92rem; color: #12263a; line-height: 1.35rem;
 }
 .t-understand-hint { margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #6B7280; }
+div[class*="st-key-t_understand_controls_"] { min-height: 150px; }
 .mr-sub { margin: 0.3rem 0 0.2rem 0; font-size: 0.86rem; font-weight: 650; color: #12263a; }
 .mr-coef {
     margin: 0.3rem 0; padding: 0.4rem 0.6rem; font-size: 0.95rem; font-weight: 650;
@@ -4650,7 +4651,7 @@ def _attendance_coef_se(sample, scenario: str) -> tuple[float, float]:
 
 def _t_understand_figure(
     *, t_stat: float, df: int, stage: int, critical: float | None = None,
-    explore_t: float | None = None, height: int = 420,
+    explore_t: float | None = None, height: int = 360,
 ) -> go.Figure:
     """One chart, five stages, fixed axes throughout.
 
@@ -4723,8 +4724,10 @@ def _t_understand_figure(
                        bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
     if stage >= 3 and explore_t is not None and abs(explore_t - t_stat) > 1e-9:
-        fig.add_vline(x=explore_t, line_color="#9333EA", line_width=2, line_dash="dashdot")
-        fig.add_annotation(x=explore_t, y=peak * 0.5, text=f"Explore t = {explore_t:.2f}",
+        abs_explore = abs(explore_t)
+        for edge in (-abs_explore, abs_explore):
+            fig.add_vline(x=edge, line_color="#9333EA", line_width=2, line_dash="dashdot")
+        fig.add_annotation(x=abs_explore, y=peak * 0.5, text=f"Explore t = ±{abs_explore:.2f}",
                            showarrow=False, font=dict(size=11, color="#9333EA", family=FONT),
                            bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
@@ -4825,7 +4828,7 @@ def _render_t_understand_body(
 
     alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
     explore_t = float(st.session_state[explore_key])
-    with st.container(height=160, border=False):
+    with st.container(key=f"t_understand_controls_{suffix}", border=False):
         if stage >= 4:
             alpha = st.radio(
                 "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS,
@@ -4859,7 +4862,6 @@ def _render_t_understand_body(
     explore_p = 2.0 * float(student_t.sf(abs(explore_t), df)) if exploring else None
     reject_actual = abs(t_stat) > critical
 
-    st.markdown('<div style="margin-top:0.8rem;"></div>', unsafe_allow_html=True)
     st.markdown(
         _t_understand_stage_block_html(
             stage, t_stat=t_stat, df=df, actual_p=actual_p,
