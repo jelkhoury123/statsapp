@@ -1689,6 +1689,20 @@ p.fit-why-step-title {
 .fit-r2-warn {
   margin: 0.3rem 0 0 0; font-size: 0.84rem; color: #9A3412; line-height: 1.35rem;
 }
+.fit-r2-summary-table {
+  width: 100%; border-collapse: collapse; margin: 0.5rem 0 0.4rem 0;
+  font-size: 0.85rem;
+}
+.fit-r2-summary-table th, .fit-r2-summary-table td {
+  padding: 0.35rem 0.6rem; text-align: center; border: 1px solid #E2E8F0;
+}
+.fit-r2-summary-table th {
+  background: #F8FAFC; font-weight: 750; color: #334155;
+}
+.fit-r2-summary-table td:first-child, .fit-r2-summary-table th:first-child {
+  text-align: left; font-weight: 700; color: #334155;
+}
+.fit-r2-summary-table td:last-child { color: #EA580C; font-weight: 700; }
 .st-key-fit_r_panel { margin: 0; }
 .st-key-fit_r_panel [data-testid="stHorizontalBlock"] {
   gap: 0.75rem !important; align-items: stretch !important;
@@ -5795,23 +5809,6 @@ def _open_understanding_r2() -> None:
     st.session_state.fit_lab_panel = "r2"
 
 
-def _snap_r2_experiment_to_ols(
-    alpha: float,
-    beta: float,
-    a0: float,
-    a1: float,
-    b0: float,
-    b1: float,
-) -> None:
-    """Snap R²-lesson sliders to OLS before the widgets are instantiated."""
-    st.session_state.r2_exp_alpha = float(np.clip(alpha, a0, a1))
-    st.session_state.r2_exp_beta = float(np.clip(beta, b0, b1))
-
-
-def _reveal_r2_experiment_ols() -> None:
-    st.session_state.r2_exp_reveal_ols = True
-
-
 def _reset_fitting_line(view, away_from_ols: bool = True) -> None:
     ols = ols_fit(view.x, view.y)
     (a0, a1, _), (b0, b1, _) = view.slider_bounds()
@@ -6365,7 +6362,6 @@ R2_LESSON_STEPS = (
     "baseline",
     "predictor",
     "explained",
-    "experiment",
 )
 
 
@@ -6674,7 +6670,6 @@ def _r2_lesson_step_label(key: str) -> str:
         "baseline": "1 · Baseline",
         "predictor": "2 · Predictor",
         "explained": "3 · Explained",
-        "experiment": "4 · Experiment",
     }.get(key, key)
 
 
@@ -6687,7 +6682,6 @@ def render_understanding_r2_subtab(view) -> None:
     ols = ols_fit(view.x, view.y)
     sst = total_sum_of_squares(view.y)
     y_bar = float(np.mean(view.y)) if view.n else float("nan")
-    (a0, a1, a_step), (b0, b1, b_step) = view.slider_bounds()
 
     step = st.segmented_control(
         "R² lesson stage",
@@ -6700,22 +6694,6 @@ def render_understanding_r2_subtab(view) -> None:
     )
     if step not in R2_LESSON_STEPS:
         step = "baseline"
-
-    # Experiment line starts from the Fit-the-line sliders when available.
-    if "r2_exp_alpha" not in st.session_state:
-        st.session_state.r2_exp_alpha = float(
-            st.session_state.get("fit_alpha", ols.alpha)
-        )
-    if "r2_exp_beta" not in st.session_state:
-        st.session_state.r2_exp_beta = float(
-            st.session_state.get("fit_beta", ols.beta)
-        )
-    st.session_state.r2_exp_alpha = float(
-        np.clip(st.session_state.r2_exp_alpha, a0, a1)
-    )
-    st.session_state.r2_exp_beta = float(
-        np.clip(st.session_state.r2_exp_beta, b0, b1)
-    )
 
     show_mean = True
     reg_alpha = reg_beta = None
@@ -6774,63 +6752,6 @@ def render_understanding_r2_subtab(view) -> None:
                 "after fitting the regression."
             )
         residual_about = "regression" if show_ols_resid else None
-    else:
-        reveal_ols = bool(st.session_state.get("r2_exp_reveal_ols", False))
-        chart_title = (
-            "Experiment: mean, your line, and OLS"
-            if reveal_ols
-            else "Experiment: mean and your line"
-        )
-        exp_row = st.container(
-            horizontal=True, vertical_alignment="bottom", gap="small", wrap=True
-        )
-        with exp_row:
-            exp_alpha = st.slider(
-                "Your intercept (α)",
-                min_value=float(a0),
-                max_value=float(a1),
-                step=float(a_step),
-                key="r2_exp_alpha",
-                width=200,
-            )
-            exp_beta = st.slider(
-                "Your slope (β)",
-                min_value=float(b0),
-                max_value=float(b1),
-                step=float(b_step),
-                key="r2_exp_beta",
-                width=200,
-            )
-            if not reveal_ols:
-                st.button(
-                    "Reveal OLS optimum",
-                    key="r2_reveal_ols",
-                    type="primary",
-                    width=150,
-                    on_click=_reveal_r2_experiment_ols,
-                )
-            st.button(
-                "Snap to OLS",
-                key="r2_snap_ols",
-                width=120,
-                help=tip_title("OLS"),
-                on_click=_snap_r2_experiment_to_ols,
-                args=(float(ols.alpha), float(ols.beta), float(a0), float(a1), float(b0), float(b1)),
-                disabled=not reveal_ols,
-            )
-            show_exp_resid = st.toggle(
-                "Show residuals from your line", key="r2_exp_resid"
-            )
-        reg_alpha, reg_beta = float(exp_alpha), float(exp_beta)
-        regression_name = "Your line"
-        # Distinct from the orange OLS reference line so residuals read
-        # unambiguously as belonging to the blue adjustable line.
-        regression_residual_color = "rgba(29, 78, 216, 0.55)"
-        if reveal_ols:
-            ols_alpha, ols_beta = float(ols.alpha), float(ols.beta)
-        else:
-            ols_alpha, ols_beta = None, None
-        residual_about = "regression" if show_exp_resid else None
 
     chart_height = max(FIT_CHART_HEIGHT + 60, 460)
     if step == "predictor":
@@ -7009,57 +6930,33 @@ def render_understanding_r2_subtab(view) -> None:
                     "models fitted with an intercept.</p>",
                     unsafe_allow_html=True,
                 )
-    else:
-        cand_sse = sum_of_squared_errors(view.x, view.y, reg_alpha, reg_beta)
-        cand_r2 = r_squared(cand_sse, sst)
-        mean_sse = float(sst)  # predicting ȳ → SSR = SS Total
-        mean_r2 = 0.0 if np.isfinite(sst) and sst > 0 else float("nan")
-        warn = ""
-        if np.isfinite(cand_r2) and cand_r2 < 0:
-            warn = (
-                '<p class="fit-r2-warn">Your line has <b>negative R²</b>: it predicts worse than '
-                "simply using the sample mean. OLS never does this for a line with an intercept.</p>"
-            )
-        cards = (
-            '<div class="fit-r2-card">'
-            '<p class="lab">Mean only</p>'
-            f'<p class="val">SSR = <b>{_format_sse(mean_sse)}</b><br>'
-            f"R² = <b>{_format_r_squared(mean_r2)}</b></p>"
-            "</div>"
-            '<div class="fit-r2-card">'
-            '<p class="lab">Your line</p>'
-            f'<p class="val">SSR = <b>{_format_sse(cand_sse)}</b><br>'
-            f"R² = <b>{_format_r_squared(cand_r2)}</b></p>"
-            "</div>"
+        pct_reduction_final = (
+            100.0 * ols_ssr / float(sst)
+            if np.isfinite(ols_ssr) and np.isfinite(sst) and sst > 0
+            else float("nan")
         )
-        takeaway_html = ""
-        if reveal_ols:
-            cards += (
-                '<div class="fit-r2-card best">'
-                '<p class="lab">OLS optimum</p>'
-                f'<p class="val">SSR = <b>{_format_sse(ols_sse)}</b><br>'
-                f"R² = <b>{_format_r_squared(ols_r2)}</b></p>"
-                "</div>"
-            )
-            takeaway_html = (
-                '<div class="takeaway">'
-                '<p class="lab">Key takeaway</p>'
-                "<p>You cannot beat OLS on this sample. Among straight lines "
-                "with an intercept, OLS minimises SSR and maximises R².</p>"
-                "</div>"
-            )
+        pct_reduction_final_label = (
+            f"{pct_reduction_final:.1f}%" if np.isfinite(pct_reduction_final) else "—"
+        )
         st.markdown(
             tipify(
                 '<div class="fit-r2-lesson">'
-                "<h3>4. Experiment on this sample</h3>"
-                "<p>Adjust your line's intercept and slope, and compare it "
-                "with the mean-only baseline. Reveal OLS to see the best "
-                "possible fit.</p>"
-                f'<div class="fit-r2-compare">{cards}</div>'
-                f"{takeaway_html}"
-                f'<div class="metrics"><span>SS Total = <b>{_format_sse(sst)}</b> '
-                "(fixed for this sample)</span></div>"
-                f"{warn}"
+                '<table class="fit-r2-summary-table">'
+                "<thead><tr><th>Metric</th><th>Mean-only model</th>"
+                "<th>OLS regression</th></tr></thead>"
+                "<tbody>"
+                "<tr><td>SSR</td>"
+                f"<td>{_format_sse(sst)}</td>"
+                f"<td>{_format_sse(ols_sse)}</td></tr>"
+                "<tr><td>R²</td>"
+                "<td>0%</td>"
+                f"<td>{_format_r2_pct(ols_r2)}</td></tr>"
+                "</tbody></table>"
+                '<div class="result">'
+                f"<p class=\"big\">Using {view.x_axis.lower()} reduces the sum of "
+                f"squared prediction errors by <b>{pct_reduction_final_label}</b> "
+                "compared with predicting the sample mean.</p>"
+                "</div>"
                 "</div>"
             ),
             unsafe_allow_html=True,
@@ -8364,6 +8261,17 @@ def _render_fitting_line_subtab(
             r2_before = r_squared(sse_before, sst_for_prompt)
             sse_after = float(ols.sse)
             r2_after = r_squared(sse_after, sst_for_prompt)
+            pct_excess = (
+                100.0 * (sse_before - sse_after) / sse_after if sse_after > 0 else 0.0
+            )
+            if pct_excess <= 1.0:
+                closeness = "Excellent — your line was almost exactly the optimal fit!"
+            elif pct_excess <= 10.0:
+                closeness = "You were not far off!"
+            elif pct_excess <= 50.0:
+                closeness = "Decent start — OLS found a noticeably better fit."
+            else:
+                closeness = "OLS found a much better fit — try zeroing in further next time."
             st.markdown(
                 tipify(
                     '<div class="fit-build-prompt success">'
@@ -8371,7 +8279,8 @@ def _render_fitting_line_subtab(
                     '<p class="body">SSR decreased from '
                     f"{_format_sse(sse_before)} to {_format_sse(sse_after)}, "
                     "while R&sup2; increased from "
-                    f"{_format_r2_pct(r2_before)} to {_format_r2_pct(r2_after)}."
+                    f"{_format_r2_pct(r2_before)} to {_format_r2_pct(r2_after)}. "
+                    f"{closeness}"
                     "</p>"
                     "</div>"
                 ),
