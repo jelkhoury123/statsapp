@@ -1516,6 +1516,10 @@ p.fit-why-step-title {
 .fit-r2-lesson p {
   margin: 0 0 0.25rem 0; font-size: 0.88rem; color: #334155; line-height: 1.3rem;
 }
+.fit-r2-lesson .r2-lede {
+  margin: 0 0 0.4rem 0; font-size: 1rem; font-weight: 700;
+  color: #1E3A8A; line-height: 1.4rem;
+}
 .fit-r2-lesson .formula {
   margin: 0.15rem 0 0.3rem 0; padding: 0.3rem 0.55rem;
   background: #F1F5F9; border-radius: 7px; border: 1px solid #E2E8F0;
@@ -6856,24 +6860,15 @@ def render_understanding_r2_subtab(view) -> None:
             tipify(
                 '<div class="fit-r2-lesson">'
                 "<h3>What is R²?</h3>"
-                f"<p>R² measures how much of the variation in {view.y_axis} our "
-                "regression explains, compared with predicting everyone using "
-                "the mean.</p>"
+                f'<p class="r2-lede">R² = the percentage of the variation in '
+                f"{view.y_axis.lower()} that our model explains, instead of just "
+                "guessing the mean.</p>"
+                f'<p class="formula">R² = (SST − SSR) / SST = <b>{r2_pct}</b></p>'
+                f"{bar}"
                 '<div class="metrics">'
                 f"<span>Total variation (SST) = <b>{_format_sse(sst)}</b></span>"
                 f"<span>Unexplained (SSR) = <b>{_format_sse(ols_sse)}</b></span>"
                 f"<span>Explained (SST − SSR) = <b>{_format_sse(ols_ssr)}</b></span>"
-                "</div>"
-                f'<p class="formula">R² = (SST − SSR) / SST = <b>{r2_pct}</b></p>'
-                "<p>Because SST is fixed for a given sample, minimising SSR "
-                "also maximises R². This is why OLS produces the highest "
-                "possible R² among straight-line models fitted with an "
-                "intercept.</p>"
-                f"{bar}"
-                '<div class="takeaway">'
-                '<p class="lab">Key takeaway</p>'
-                f"<p>Our model explains <b>{r2_pct}</b> of the variation in "
-                f"{view.y_axis.lower()} in this sample.</p>"
                 "</div>"
                 '<p class="note">R² does not establish causation or guarantee '
                 "accurate predictions on new data.</p>"
@@ -6910,7 +6905,10 @@ def render_understanding_r2_subtab(view) -> None:
                 st.latex(r"\small{R^2 = 1 - \dfrac{SSR}{SST}}")
                 st.markdown(
                     "<p>Therefore, R² measures the proportion explained by the "
-                    "regression.</p>",
+                    "regression. Because SST is fixed for a given sample, "
+                    "minimising SSR also maximises R² — this is why OLS "
+                    "produces the highest possible R² among straight-line "
+                    "models fitted with an intercept.</p>",
                     unsafe_allow_html=True,
                 )
     else:
