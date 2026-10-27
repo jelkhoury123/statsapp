@@ -4832,8 +4832,8 @@ def _render_t_understand_body(
     alpha_key = f"t_understand_alpha_{suffix}"
     slider_key = f"t_understand_slider_{suffix}"
     hide_rules = "".join([
-        f'.st-key-{alpha_key} {{ visibility: hidden; }}' if stage < 4 else "",
-        f'.st-key-{slider_key} {{ visibility: hidden; }}' if stage < 3 else "",
+        f'.st-key-{alpha_key}, .st-key-{alpha_key} * {{ visibility: hidden !important; }}' if stage < 4 else "",
+        f'.st-key-{slider_key}, .st-key-{slider_key} * {{ visibility: hidden !important; }}' if stage < 3 else "",
     ])
     st.markdown(f"<style>{hide_rules}</style>", unsafe_allow_html=True)
 
