@@ -1750,8 +1750,17 @@ p.fit-why-step-title {
 .dist-formula .se-key { font-weight: 780; }
 .mr-head { margin: 0 0 0.3rem 0; font-size: 1.15rem; font-weight: 750; color: #12263a; }
 .mr-note { margin: 0.2rem 0; font-size: 0.9rem; line-height: 1.35rem; color: #374151; }
-.t-build-points { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; font-size: 0.9rem; line-height: 1.4rem; color: #374151; }
-.t-build-points li { margin: 0.1rem 0; }
+.t-understand-head { margin: 1.1rem 0 0.35rem 0; font-size: 1.15rem; font-weight: 760; color: #12263a; }
+.t-understand-badge {
+    display: inline-block; margin: 0.3rem 0.4rem 0.3rem 0; padding: 0.18rem 0.65rem;
+    font-size: 0.95rem; font-weight: 750; border-radius: 999px;
+}
+.t-understand-conclusion {
+    margin: 0.5rem 0; padding: 0.5rem 0.7rem; background: #F3F4F6;
+    border-left: 3px solid #12263a; border-radius: 6px;
+    font-weight: 650; font-size: 0.92rem; color: #12263a; line-height: 1.35rem;
+}
+.t-understand-hint { margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #6B7280; }
 .mr-sub { margin: 0.3rem 0 0.2rem 0; font-size: 0.86rem; font-weight: 650; color: #12263a; }
 .mr-coef {
     margin: 0.3rem 0; padding: 0.4rem 0.6rem; font-size: 0.95rem; font-weight: 650;
@@ -4663,6 +4672,7 @@ def _t_understand_figure(
     fig.add_vline(x=0, line_color=GREY, line_width=2, line_dash="dash")
     fig.add_annotation(x=0, y=y_top, yanchor="top", text="β = 0 (H₀)",
                        showarrow=False, font=dict(size=11, color=INK, family=FONT))
+    obs_label_y = peak * 1.12
 
     if stage >= 4 and critical is not None and critical <= _T_DIST_X_MAX:
         for mask in (grid <= -critical, grid >= critical):
@@ -4696,21 +4706,25 @@ def _t_understand_figure(
                            showarrow=False, xanchor="left", xshift=6,
                            font=dict(size=11, color="#991B1B", family=FONT))
 
-    # Observed t: an arrow from zero on the baseline, plus the marker — present in every stage.
+    # Observed t: arrow from zero, a solid vertical line up to the curve (or a
+    # fixed height before the curve exists), and the marker — present, in the
+    # same spot, in every stage.
     fig.add_annotation(x=t_stat, y=0, ax=0, ay=0, xref="x", yref="y", axref="x", ayref="y",
                        showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2.2,
                        arrowcolor=ORANGE, text="")
+    line_top = float(student_t.pdf(t_stat, df)) if stage >= 2 else y_top * 0.25
+    fig.add_shape(type="line", x0=t_stat, x1=t_stat, y0=0, y1=line_top,
+                  line=dict(color=ORANGE, width=2.5))
     fig.add_trace(go.Scatter(x=[t_stat], y=[0], mode="markers",
                              marker=dict(symbol="diamond", size=13, color=ORANGE),
                              showlegend=False, hoverinfo="skip"))
-    obs_label_y = y_top * 0.18 if stage < 2 else peak * 1.1
     fig.add_annotation(x=t_stat, y=obs_label_y, text=f"Observed t = {t_stat:.3f}",
                        showarrow=False, font=dict(size=12, color=ORANGE, family=FONT),
                        bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
     if stage >= 3 and explore_t is not None and abs(explore_t - t_stat) > 1e-9:
         fig.add_vline(x=explore_t, line_color="#9333EA", line_width=2, line_dash="dashdot")
-        fig.add_annotation(x=explore_t, y=y_top * 0.42, text=f"Exploring t = {explore_t:.2f}",
+        fig.add_annotation(x=explore_t, y=peak * 0.5, text=f"Explore t = {explore_t:.2f}",
                            showarrow=False, font=dict(size=11, color="#9333EA", family=FONT),
                            bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
@@ -4733,56 +4747,71 @@ _T_UNDERSTAND_STAGE_TITLES: tuple[str, ...] = (
 )
 
 
-def _t_understand_stage_text(
-    stage: int, *, beta_label: str, t_stat: float, df: int,
-    p_value: float, alpha: float, critical: float, reject: bool,
+def _t_understand_stage_block_html(
+    stage: int, *, t_stat: float, df: int, actual_p: float,
+    alpha: float, critical: float, reject_actual: bool,
+    explore_t: float, exploring: bool, explore_p: float | None,
 ) -> str:
+    title = _T_UNDERSTAND_STAGE_TITLES[stage - 1]
+    extra = ""
     if stage == 1:
         body = (
-            f"We cannot judge {beta_label} by its size alone — we compare it "
-            f"with its standard error: t = {t_stat:.3f}."
+            f"Our estimated slope is <b>{abs(t_stat):.2f}</b> standard errors "
+            "away from zero.<br>The t-statistic measures how far our "
+            "estimate is from the value assumed under H₀, expressed in "
+            "standard errors."
         )
     elif stage == 2:
         body = (
             "If the true slope were zero, repeated samples would produce "
-            f"t-statistics following this bell-shaped curve (df = {df}). This "
-            "is the distribution of the <b>standardised distance</b> — not "
-            "the sampling distribution of raw slopes you saw earlier."
+            "t-statistics distributed around zero.<br>Values near zero are "
+            "common. Values far from zero are increasingly unusual."
         )
+        extra = f'<p class="t-understand-badge" style="background:#F3F4F6;color:#374151;">df = {df}</p>'
     elif stage == 3:
         body = (
-            "The shaded tails show the probability, under H₀, of a "
-            f"t-statistic at least this extreme in either direction: "
-            f"two-sided p = <b>{_p_text(p_value)}</b>."
+            "How unusual is our observed t-statistic?<br>The shaded tails "
+            "show the probability of obtaining a t-statistic at least this "
+            "extreme, in either direction, if H₀ were true."
         )
+        extra = (
+            f'<p class="t-understand-badge" style="background:#DBEAFE;color:#1D4ED8;">'
+            f"p = {_p_text(actual_p)}</p>"
+        )
+        if exploring and explore_p is not None:
+            extra += (
+                f'<p class="t-understand-badge" style="background:#F3E8FF;color:#7E22CE;">'
+                f"Exploratory p-value = {_p_text(explore_p)}</p>"
+            )
     elif stage == 4:
         body = (
-            f"p comes from the data; α = {alpha:.2f} is a threshold we choose "
-            f"in advance. Values beyond ±{critical:.3f} (red) fall in the "
-            "rejection region."
+            "We choose a significance threshold α to decide what counts as "
+            f"sufficiently unusual.<br>At α = {alpha:.2f}, values beyond "
+            f"±{critical:.3f} fall in the rejection regions."
         )
     else:
-        verdict = "reject H₀" if reject else "fail to reject H₀"
-        body = (
-            f"t = {t_stat:.3f} &nbsp;·&nbsp; df = {df} &nbsp;·&nbsp; "
-            f"two-sided p = <b>{_p_text(p_value)}</b> &nbsp;·&nbsp; α = {alpha:.2f} "
-            f"&nbsp;→&nbsp; <b>we {verdict}</b>. "
-            + (
-                "The data are unlikely under H₀ — evidence the true slope "
-                "differs from zero."
-                if reject else
-                "We lack enough evidence that the true slope differs from "
-                "zero — this does <b>not</b> prove it equals zero."
-            )
+        verdict = "reject H₀" if reject_actual else "fail to reject H₀"
+        conclusion = (
+            "We reject H₀. The observed slope is unusually far from zero "
+            "under the assumption that the true slope is zero."
+            if reject_actual else
+            "We fail to reject H₀. The observed slope is not sufficiently "
+            "unusual under the assumption that the true slope is zero."
         )
-    return (
-        f'<p class="mr-head">{_T_UNDERSTAND_STAGE_TITLES[stage - 1]}</p>'
-        f'<p class="mr-note">{body}</p>'
-    )
+        caveat = "" if reject_actual else " This does not prove that the true slope equals zero."
+        body = (
+            f'<p class="mr-stat">Observed t: <b>{t_stat:.3f}</b><br>'
+            f"Degrees of freedom: <b>{df}</b><br>"
+            f"p-value: <b>{_p_text(actual_p)}</b><br>"
+            f"Significance level: <b>{alpha:.2f}</b></p>"
+            f'<p class="t-understand-conclusion">{conclusion}{caveat}</p>'
+        )
+        return f'<p class="t-understand-head">{title}</p>{body}'
+    return f'<p class="t-understand-head">{title}</p><p class="mr-note">{body}</p>{extra}'
 
 
 def _render_t_understand_body(
-    *, beta: float, se: float, t_stat: float, df: int, beta_label: str, suffix: str,
+    *, beta: float, se: float, t_stat: float, df: int, suffix: str,
 ) -> None:
     from scipy.stats import t as student_t
 
@@ -4792,43 +4821,50 @@ def _render_t_understand_body(
     st.session_state.setdefault(explore_key, float(t_stat))
     stage = int(st.session_state[stage_key])
 
-    st.markdown(
-        _t_fraction_html(beta, se, t_stat),
-        unsafe_allow_html=True,
-    )
+    st.markdown(_t_fraction_html(beta, se, t_stat), unsafe_allow_html=True)
 
     alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
-    if stage >= 4:
-        alpha = st.radio(
-            "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS,
-            index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
-            format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
-        )
-    critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
-
-    explore_t: float | None = None
-    if stage >= 3:
-        explore_t = st.slider(
-            "Explore a different t value", min_value=-6.0, max_value=6.0,
-            value=float(st.session_state[explore_key]), step=0.05, key=f"{explore_key}_slider",
-        )
+    explore_t = float(st.session_state[explore_key])
+    with st.container(height=160, border=False):
+        if stage >= 4:
+            alpha = st.radio(
+                "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS,
+                index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
+                format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
+            )
+        if stage >= 3:
+            explore_t = st.slider(
+                "Explore a different t value", min_value=-6.0, max_value=6.0,
+                value=explore_t, step=0.05, key=f"{explore_key}_slider",
+            )
+            st.markdown(
+                '<p class="t-understand-hint">Moving this explores a '
+                "hypothetical t-statistic — it does not change the actual "
+                "sample or its result.</p>",
+                unsafe_allow_html=True,
+            )
         st.session_state[explore_key] = explore_t
+    critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
 
     _l, mid, _r = st.columns([1, 4, 1])
     with mid:
         st.plotly_chart(
             _t_understand_figure(t_stat=t_stat, df=df, stage=stage, critical=critical,
-                                 explore_t=explore_t),
+                                 explore_t=explore_t if stage >= 3 else None),
             width="stretch", config=PLOTLY_CONFIG, key=f"ttest_understand_chart_{suffix}",
         )
 
-    active_t = explore_t if (stage >= 3 and explore_t is not None) else t_stat
-    p_value = 2.0 * float(student_t.sf(abs(active_t), df))
-    reject = abs(active_t) > critical
+    exploring = stage >= 3 and abs(explore_t - t_stat) > 1e-9
+    actual_p = 2.0 * float(student_t.sf(abs(t_stat), df))
+    explore_p = 2.0 * float(student_t.sf(abs(explore_t), df)) if exploring else None
+    reject_actual = abs(t_stat) > critical
+
+    st.markdown('<div style="margin-top:0.8rem;"></div>', unsafe_allow_html=True)
     st.markdown(
-        _t_understand_stage_text(
-            stage, beta_label=beta_label, t_stat=t_stat, df=df,
-            p_value=p_value, alpha=alpha, critical=critical, reject=reject,
+        _t_understand_stage_block_html(
+            stage, t_stat=t_stat, df=df, actual_p=actual_p,
+            alpha=alpha, critical=critical, reject_actual=reject_actual,
+            explore_t=explore_t, exploring=exploring, explore_p=explore_p,
         ),
         unsafe_allow_html=True,
     )
@@ -4869,7 +4905,7 @@ def _render_ttest_understand_case_a() -> None:
         return
     _render_t_understand_body(
         beta=result.beta, se=result.standard_error, t_stat=result.t_statistic,
-        df=result.degrees_of_freedom, beta_label="β̂", suffix="a",
+        df=result.degrees_of_freedom, suffix="a",
     )
 
 
@@ -4891,8 +4927,7 @@ def _render_ttest_understand_case_b(population) -> None:
     beta2, se2 = _attendance_coef_se(sample, scenario)
     df = int(sample.n) - 3
     _render_t_understand_body(
-        beta=beta2, se=se2, t_stat=beta2 / se2, df=df,
-        beta_label="β̂₂ (attendance)", suffix="b",
+        beta=beta2, se=se2, t_stat=beta2 / se2, df=df, suffix="b",
     )
 
 
