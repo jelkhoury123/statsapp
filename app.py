@@ -8523,6 +8523,13 @@ def _render_fitting_line_subtab(
     else:
         st.session_state.fit_selected = pick - 1
 
+    if "fit_scatter_nonce" not in st.session_state:
+        st.session_state.fit_scatter_nonce = 0
+    # Same key whether animating or not, so Fit OLS doesn't tear down and
+    # remount the Plotly component at the start/end of the animation — that
+    # remount was the visible page flash.
+    fit_scatter_key = f"fit_scatter_{int(st.session_state.fit_scatter_nonce)}"
+
     with st.container(key="fit_view_panel"):
         # Per-frame lm() animation: session-state hats drive the sliders each rerun.
         if animating:
@@ -8558,7 +8565,7 @@ def _render_fitting_line_subtab(
                 ),
                 width="stretch",
                 config=PLOTLY_CONFIG,
-                key="fit_scatter_anim",
+                key=fit_scatter_key,
             )
             if frame < len(steps) - 1:
                 time.sleep(0.12)
@@ -8613,8 +8620,6 @@ def _render_fitting_line_subtab(
                 unsafe_allow_html=True,
             )
         else:
-            if "fit_scatter_nonce" not in st.session_state:
-                st.session_state.fit_scatter_nonce = 0
             if "fit_applied_chart_idx" not in st.session_state:
                 st.session_state.fit_applied_chart_idx = None
             # Coordinates for click→index fallback inside the on_select callback.
@@ -8640,7 +8645,7 @@ def _render_fitting_line_subtab(
                 ),
                 width="stretch",
                 config=PLOTLY_CONFIG,
-                key=f"fit_scatter_{int(st.session_state.fit_scatter_nonce)}",
+                key=fit_scatter_key,
                 on_select=_on_fit_scatter_select,
                 selection_mode="points",
             )
