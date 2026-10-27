@@ -79,7 +79,7 @@ def intro_figure(step: int) -> go.Figure:
             fig.add_annotation(x=observed, y=0.72, yref="paper",
                                text=f"Our estimate<br>β̂ = {observed:.2f}", showarrow=True,
                                ax=65, ay=-35, arrowcolor=ORANGE,
-                               font=dict(color=ORANGE, size=14), bgcolor="white")
+                               font=dict(color=ORANGE, size=14, family=FONT), bgcolor="white")
         fig.update_xaxes(title="Estimated slope β̂ across samples", range=[-reach, reach])
         fig.update_yaxes(title="Density", range=[0, 1.25 * density.max()], showticklabels=False)
     fig.update_layout(

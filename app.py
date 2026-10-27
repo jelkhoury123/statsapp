@@ -4618,8 +4618,8 @@ def _t_fraction_html(numerator: float, denominator: float, result: float) -> str
 
 _TTEST_BUILD_INTUITION = (
     '<p class="mr-note">β̂ measures the estimated relationship. SE measures '
-    "the uncertainty surrounding that estimate. t measures how many "
-    "standard errors β̂ is from zero.</p>"
+    "the uncertainty surrounding that estimate. t is the distance between "
+    "β̂ and the hypothesised β (zero), measured in standard errors.</p>"
 )
 
 
