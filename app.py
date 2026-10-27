@@ -1447,8 +1447,10 @@ p.fit-why-step-title {
 }
 .fit-std-insight b { color: #1E293B; font-weight: 650; }
 .fit-std-note {
-  margin: 0.15rem 0 0.3rem 0; font-size: 0.78rem; font-weight: 400;
-  color: #64748B; line-height: 1.2rem;
+  margin: 0.4rem 0 0.3rem 0; padding: 0.45rem 0.65rem;
+  background: #EFF6FF; border-left: 3px solid #1D4ED8; border-radius: 6px;
+  font-size: 0.86rem; font-weight: 650;
+  color: #1E3A8A; line-height: 1.3rem;
 }
 .fit-std-formula-pane {
   margin: 0; padding: 0.35rem 0.45rem 0.2rem;
@@ -7534,7 +7536,7 @@ def render_standardisation_subtab(view) -> None:
         tipify(
             '<p class="fit-std-note">'
             "Standardising changes the units, intercept and slope — but "
-            "not R², the fitted relationship, or predictions once "
+            "<b>not R², the fitted relationship, or predictions</b> once "
             "converted back to original units."
             "</p>"
         ),
