@@ -6425,11 +6425,6 @@ def render_why_model_subtab() -> None:
     """Five-step auto-playing lesson: table → scatter → mean → regression → conclusion."""
     from src.statistical_journey import build_journey_sample
 
-    st.markdown(
-        tipify('<p class="fit-r2-heading">Why do we need a statistical model?</p>'),
-        unsafe_allow_html=True,
-    )
-
     step = int(st.session_state.get("fit_why_step", 0))
     if step not in FIT_WHY_STEPS:
         step = 0

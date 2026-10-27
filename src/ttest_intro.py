@@ -134,7 +134,6 @@ def render_ttest_intro():
     if step == 4:
         state.tt_intro_playing = False  # final frame: stop, wait for Replay
 
-    st.markdown('<p class="fit-r2-heading">Why do we need a t-test?</p>', unsafe_allow_html=True)
     # Steps 3-4 both sit under the third bullet ("Ask the question") — the
     # null-distribution build-up and its conclusion are one idea split
     # across two frames for pacing, not two separate concepts.
