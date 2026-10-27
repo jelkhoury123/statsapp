@@ -1403,6 +1403,11 @@ p.fit-why-step-title {
   margin: 0 0 0.35rem 0;
   font-size: 0.85rem; color: #52606D; line-height: 1.4rem;
 }
+.fit-formula-diff {
+  margin: 0.1rem 0 0.4rem 0; text-align: center;
+  font-size: 0.82rem; color: #64748B; line-height: 1.3rem;
+}
+.fit-formula-diff .hl { color: #EA580C; font-weight: 700; }
 .fit-build-results {
   display: flex; gap: 1.5rem; justify-content: center;
   margin: 0.6rem 0 0.4rem 0; padding: 0.5rem 0;
@@ -8206,9 +8211,16 @@ def _render_fitting_line_subtab(
     _l, mid, _r = st.columns([1, 2, 1])
     with mid:
         st.latex(
-            r"\text{SSR} = \sum (y_i - \hat{y}_i)^2 \qquad "
-            r"\text{SST} = \sum (y_i - \bar{y})^2 \qquad "
+            r"\text{SSR} = \sum (y_i - \textcolor{#EA580C}{\hat{y}_i})^2 \qquad "
+            r"\text{SST} = \sum (y_i - \textcolor{#EA580C}{\bar{y}})^2 \qquad "
             r"R^2 = 1 - \dfrac{\text{SSR}}{\text{SST}}"
+        )
+        st.markdown(
+            '<p class="fit-formula-diff">Same idea, same formula shape — the only '
+            "difference is the reference point: the fitted line "
+            '(<span class="hl">ŷᵢ</span>) for SSR, the sample mean '
+            '(<span class="hl">ȳ</span>) for SST.</p>',
+            unsafe_allow_html=True,
         )
 
     try_line_active = bool(st.session_state.get("fit_try_line_active", False))
