@@ -1509,6 +1509,20 @@ p.fit-why-step-title {
   margin: 0; font-size: 0.82rem; color: #334155; line-height: 1.28rem;
 }
 .fit-std-same { color: #047857; font-weight: 700; }
+.fit-std-intro-row {
+  display: flex; flex-wrap: wrap; gap: 0.3rem 1.5rem; margin: 0.25rem 0;
+  font-size: 0.85rem; color: #334155; line-height: 1.3rem;
+}
+.fit-std-interp {
+  margin: 0.15rem 0 0 0; font-size: 0.8rem; color: #52606D; line-height: 1.25rem;
+}
+.st-key-fit_std_grid [data-testid="stHorizontalBlock"] { align-items: stretch; }
+.st-key-fit_std_grid [data-testid="stColumn"] {
+  display: flex; flex-direction: column; height: 100%;
+}
+.st-key-fit_std_grid [data-testid="stColumn"]:nth-of-type(2) {
+  justify-content: center;
+}
 .fit-r2-lesson {
   margin: 0.3rem 0 0.15rem 0; padding: 0.5rem 0.8rem 0.55rem;
   background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
@@ -7133,7 +7147,7 @@ def _std_dual_z_overlay(
         zerolinewidth=1.4,
     )
     fig.update_layout(
-        title="Standardised: compare association strength",
+        title="Both relationships on the same standardised scale",
         height=360,
         showlegend=True,
         legend=dict(
@@ -7384,9 +7398,24 @@ def render_standardisation_subtab(view) -> None:
     st.markdown(
         tipify(
             '<p class="fit-std-banner">'
-            "Standardisation just changes the unit of distance — from an "
-            "arbitrary unit (hours, %) to standard deviations."
+            "Standardisation allows us to compare variables measured in "
+            "different units by expressing them in standard deviations."
             "</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+    _l, mid, _r = st.columns([1, 2, 1])
+    with mid:
+        st.latex(r"z = \dfrac{x - \text{mean}}{\text{standard deviation}}")
+    st.markdown(
+        tipify(
+            '<div class="fit-std-intro-row">'
+            "<span><b>Centre:</b> Subtract the mean → the new mean is 0.</span>"
+            "<span><b>Scale:</b> Divide by the standard deviation → the new "
+            "standard deviation is 1.</span>"
+            "</div>"
+            '<p class="fit-std-note">Fully standardised coefficients (β*) '
+            "standardise <b>both</b> the predictor (X) and the outcome (Y).</p>"
         ),
         unsafe_allow_html=True,
     )
@@ -7429,100 +7458,108 @@ def render_standardisation_subtab(view) -> None:
     r2_a = r_squared(float(ols_a.sse), float(sst))
     r2_b = r_squared(float(ols_b.sse), float(sst))
 
-    left, right = st.columns(2, gap="medium")
-    with left:
-        st.markdown(
-            '<p class="fit-std-col-lab">Original units</p>',
-            unsafe_allow_html=True,
-        )
-        st.selectbox(
-            "Predictor A",
-            options=list(STD_PREDICTOR_KEYS),
-            format_func=lambda key: label_of[key],
-            key="fit_std_pred_a",
-        )
-        _std_compact_scatter(
-            x=x_a,
-            y=scores,
-            alpha=float(ols_a.alpha),
-            beta=float(ols_a.beta),
-            x_title=label_a,
-            y_title="Exam score",
-            title=f"{label_a} → Exam score",
-            key="fit_std_orig_a",
-            marker_color=BLUE,
-        )
-        st.markdown(
-            tipify(
-                '<p class="fit-std-slope">'
-                f"β̂ = <b>{_format_coef(ols_a.beta)}</b> {unit_of[pred_a]} "
-                f"| R² = <b>{_format_r_squared(r2_a)}</b>"
-                "</p>"
-            ),
-            unsafe_allow_html=True,
-        )
-        st.selectbox(
-            "Predictor B",
-            options=options_b,
-            format_func=lambda key: label_of[key],
-            key="fit_std_pred_b",
-        )
-        _std_compact_scatter(
-            x=x_b,
-            y=scores,
-            alpha=float(ols_b.alpha),
-            beta=float(ols_b.beta),
-            x_title=label_b,
-            y_title="Exam score",
-            title=f"{label_b} → Exam score",
-            key="fit_std_orig_b",
-            marker_color=ORANGE,
-        )
-        st.markdown(
-            tipify(
-                '<p class="fit-std-slope">'
-                f"β̂ = <b>{_format_coef(ols_b.beta)}</b> {unit_of[pred_b]} "
-                f"| R² = <b>{_format_r_squared(r2_b)}</b>"
-                "</p>"
-            ),
-            unsafe_allow_html=True,
-        )
+    with st.container(key="fit_std_grid"):
+        left, right = st.columns(2, gap="medium")
+        with left:
+            st.markdown(
+                '<p class="fit-std-col-lab">Original units</p>',
+                unsafe_allow_html=True,
+            )
+            st.selectbox(
+                "Predictor A",
+                options=list(STD_PREDICTOR_KEYS),
+                format_func=lambda key: label_of[key],
+                key="fit_std_pred_a",
+            )
+            _std_compact_scatter(
+                x=x_a,
+                y=scores,
+                alpha=float(ols_a.alpha),
+                beta=float(ols_a.beta),
+                x_title=label_a,
+                y_title="Exam score",
+                title=f"{label_a} → Exam score",
+                key="fit_std_orig_a",
+                marker_color=BLUE,
+            )
+            st.markdown(
+                tipify(
+                    '<p class="fit-std-slope">'
+                    f"β̂ = <b>{_format_coef(ols_a.beta)}</b> {unit_of[pred_a]} "
+                    f"| R² = <b>{_format_r_squared(r2_a)}</b>"
+                    "</p>"
+                ),
+                unsafe_allow_html=True,
+            )
+            st.selectbox(
+                "Predictor B",
+                options=options_b,
+                format_func=lambda key: label_of[key],
+                key="fit_std_pred_b",
+            )
+            _std_compact_scatter(
+                x=x_b,
+                y=scores,
+                alpha=float(ols_b.alpha),
+                beta=float(ols_b.beta),
+                x_title=label_b,
+                y_title="Exam score",
+                title=f"{label_b} → Exam score",
+                key="fit_std_orig_b",
+                marker_color=ORANGE,
+            )
+            st.markdown(
+                tipify(
+                    '<p class="fit-std-slope">'
+                    f"β̂ = <b>{_format_coef(ols_b.beta)}</b> {unit_of[pred_b]} "
+                    f"| R² = <b>{_format_r_squared(r2_b)}</b>"
+                    "</p>"
+                ),
+                unsafe_allow_html=True,
+            )
 
-    with right:
-        st.markdown(
-            '<p class="fit-std-col-lab">Standardised units</p>',
-            unsafe_allow_html=True,
-        )
-        _std_dual_z_overlay(
-            z_a=z_a,
-            z_b=z_b,
-            z_scores=z_y,
-            ols_a=ols_za,
-            ols_b=ols_zb,
-            label_a=label_a,
-            label_b=label_b,
-            key=f"fit_std_z_{pred_a}_{pred_b}",
-        )
-        st.markdown(
-            tipify(
-                '<p class="fit-std-slope">'
-                f"<b>{label_a}</b> · β* = <b>{_format_coef(float(ols_za.beta))}</b> "
-                f"| R² = <b>{_format_r_squared(r2_a)}</b><br>"
-                f"<b>{label_b}</b> · β* = <b>{_format_coef(float(ols_zb.beta))}</b> "
-                f"| R² = <b>{_format_r_squared(r2_b)}</b>"
-                "</p>"
-            ),
-            unsafe_allow_html=True,
-        )
+        with right:
+            st.markdown(
+                '<p class="fit-std-col-lab">Standardised units</p>',
+                unsafe_allow_html=True,
+            )
+            _std_dual_z_overlay(
+                z_a=z_a,
+                z_b=z_b,
+                z_scores=z_y,
+                ols_a=ols_za,
+                ols_b=ols_zb,
+                label_a=label_a,
+                label_b=label_b,
+                key=f"fit_std_z_{pred_a}_{pred_b}",
+            )
+            st.markdown(
+                tipify(
+                    '<p class="fit-std-slope">'
+                    f"<b>{label_a}</b> · β* = <b>{_format_coef(float(ols_za.beta))}</b> "
+                    f"| R² = <b>{_format_r_squared(r2_a)}</b><br>"
+                    f"<b>{label_b}</b> · β* = <b>{_format_coef(float(ols_zb.beta))}</b> "
+                    f"| R² = <b>{_format_r_squared(r2_b)}</b>"
+                    "</p>"
+                ),
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                tipify(
+                    '<p class="fit-std-interp">A standardised coefficient '
+                    "measures the change in Y, in standard deviations, "
+                    "associated with a one-standard-deviation increase in X."
+                    "</p>"
+                    f'<p class="fit-std-interp">{_std_comparison_insight(key_a=pred_a, key_b=pred_b, star_a=beta_star_a, star_b=beta_star_b)}</p>'
+                ),
+                unsafe_allow_html=True,
+            )
 
     st.markdown(
-        tipify(
-            '<p class="fit-std-note">'
-            "Standardising changes the units, intercept and slope — but "
-            "<b>not R², the fitted relationship, or predictions</b> once "
-            "converted back to original units."
-            "</p>"
-        ),
+        '<div class="fit-r2-concl"><b>Key insight:</b> Standardisation makes '
+        "regression coefficients comparable across different units. It "
+        "changes their numerical values but leaves R² and the underlying "
+        "fit unchanged.</div>",
         unsafe_allow_html=True,
     )
 
@@ -7567,6 +7604,17 @@ def render_standardisation_subtab(view) -> None:
                 st.caption(f"Using {label_a} → Exam score.")
         st.caption(
             f"Both methods use {label_a} and yield β* = {_format_coef(beta_star_a)}."
+        )
+        st.markdown(
+            '<p class="fit-std-col-lab">Why R² does not change</p>',
+            unsafe_allow_html=True,
+        )
+        st.latex(r"\beta^{*} = r(X,Y) \qquad R^2 = (\beta^{*})^2")
+        st.caption(
+            "In simple regression, the standardised slope equals the "
+            "correlation between X and Y. Standardising rescales both "
+            "variables by constants, which rescales the line but not how "
+            "tightly points cluster around it — so R² is unchanged."
         )
 
 
