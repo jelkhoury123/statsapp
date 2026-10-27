@@ -1408,6 +1408,8 @@ p.fit-why-step-title {
   font-size: 0.82rem; color: #64748B; line-height: 1.3rem;
 }
 .fit-formula-diff .hl { color: #EA580C; font-weight: 700; }
+.fit-formula-diff-part { display: inline-block; }
+.fit-formula-diff-sep { margin: 0 0.6rem; color: #CBD5E1; }
 .fit-build-results {
   display: flex; gap: 1.5rem; justify-content: center;
   margin: 0.6rem 0 0.4rem 0; padding: 0.5rem 0;
@@ -1423,18 +1425,24 @@ p.fit-why-step-title {
 }
 .st-key-fit_build_prompt_slot { min-height: 4.8rem; }
 .fit-build-prompt {
-  margin: 0 0 0.5rem 0; padding: 0.45rem 0.65rem;
-  background: #F8FAFC; border-left: 3px solid #93C5FD; border-radius: 6px;
+  margin: 0 0 0.6rem 0; padding: 0.65rem 0.85rem;
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border: 1.5px solid #60A5FA; border-left: 5px solid #2563EB;
+  border-radius: 8px; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12);
 }
 .fit-build-prompt.success {
-  background: #F0FDF4; border-left-color: #86EFAC;
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #4ADE80; border-left-color: #16A34A;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.12);
 }
 .fit-build-prompt .title {
-  margin: 0 0 0.1rem 0; font-size: 0.86rem; font-weight: 700; color: #1E3A8A;
+  margin: 0 0 0.15rem 0; font-size: 0.95rem; font-weight: 800; color: #1E3A8A;
 }
+.fit-build-prompt .title::before { content: "🎮 "; }
 .fit-build-prompt.success .title { color: #15803D; }
+.fit-build-prompt.success .title::before { content: "✅ "; }
 .fit-build-prompt .body {
-  margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.3rem;
+  margin: 0; font-size: 0.85rem; color: #334155; line-height: 1.35rem;
 }
 .fit-std-banner {
   margin: 0 0 0.5rem 0;
@@ -8183,7 +8191,7 @@ def render_fitting_tab() -> None:
         # Lab tabs sit immediately above regression controls / lesson content.
         with st.container(key="fit_lab_tabs"):
             if "fit_lab_panel" not in st.session_state:
-                st.session_state.fit_lab_panel = "fit"
+                st.session_state.fit_lab_panel = "why"
             tabs_col, rcode_col = st.columns([5, 1], vertical_alignment="center")
             with tabs_col:
                 lab_panel = st.segmented_control(
@@ -8282,10 +8290,13 @@ def _render_fitting_line_subtab(
             r"R^2 = 1 - \dfrac{\text{SSR}}{\text{SST}}"
         )
         st.markdown(
-            '<p class="fit-formula-diff">Same idea, same formula shape — the only '
-            "difference is the reference point: the fitted line "
-            '(<span class="hl">ŷᵢ</span>) for SSR, the sample mean '
-            '(<span class="hl">ȳ</span>) for SST.</p>',
+            '<p class="fit-formula-diff">'
+            '<span class="fit-formula-diff-part">SSR → reference point is the fitted line '
+            '(<span class="hl">ŷᵢ</span>)</span>'
+            '<span class="fit-formula-diff-sep">·</span>'
+            '<span class="fit-formula-diff-part">SST → reference point is the sample mean '
+            '(<span class="hl">ȳ</span>)</span>'
+            "</p>",
             unsafe_allow_html=True,
         )
 
