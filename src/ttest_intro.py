@@ -148,15 +148,7 @@ def render_ttest_intro():
     st.markdown(f'<p class="fit-why-step-title">{TITLES[step]}</p>', unsafe_allow_html=True)
     st.plotly_chart(intro_figure(step), width="stretch", key="tt_intro_chart",
                     config={"displayModeBar": False, "displaylogo": False})
-    captions = (
-        "Our fitted slope is nonzero — but it's just an estimate.",
-        "β̂ varies across samples; the true β stays fixed.",
-        "A flat relationship can still yield a tilted sample line.",
-        "If β = 0, estimates still cluster around zero, not on it.",
-        "The t-test asks: is our estimate far enough from zero to matter?",
-    )
-    with st.container(height=100, border=False):
-        st.markdown(f'<p class="fit-why-eq-caption">{captions[step]}</p>', unsafe_allow_html=True)
+    with st.container(height=50, border=False):
         if step == 4:
             st.markdown('<p style="text-align:center;color:#C2410C;font-weight:700;">A nonzero estimate alone doesn\'t prove a nonzero true slope.</p>', unsafe_allow_html=True)
     with st.container(horizontal=True, gap="small", vertical_alignment="center"):
