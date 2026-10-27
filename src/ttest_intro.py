@@ -22,9 +22,9 @@ TITLES = (
     "Could our nonzero slope be sampling variation?",
 )
 POINTS = (
-    ("Fit a model", "Find the best slope for the sample we observed."),
-    ("Remember sampling", "The estimate changes from sample to sample."),
-    ("Ask the question", "Could our estimated slope be nonzero even if the true slope is zero?"),
+    ("Fit a model", "Best slope for our sample."),
+    ("Remember sampling", "Estimates vary by sample."),
+    ("Ask the question", "Nonzero by chance, or real?"),
 )
 
 
@@ -149,16 +149,16 @@ def render_ttest_intro():
     st.plotly_chart(intro_figure(step), width="stretch", key="tt_intro_chart",
                     config={"displayModeBar": False, "displaylogo": False})
     captions = (
-        "The best-fitting slope for this sample is nonzero. But it is still an estimate.",
-        "As we saw in Sampling & Standard Error, β̂ varies across samples; the true β stays fixed.",
-        "A flat population relationship can still produce a tilted fitted line in a random sample.",
-        "If β = 0, estimates cluster around zero—not exactly on zero. Under the usual assumptions, this variation is approximately normal.",
-        "The t-test asks whether our estimate is unusually far from zero, relative to its standard error, assuming the true slope is zero.",
+        "Our fitted slope is nonzero — but it's just an estimate.",
+        "β̂ varies across samples; the true β stays fixed.",
+        "A flat relationship can still yield a tilted sample line.",
+        "If β = 0, estimates still cluster around zero, not on it.",
+        "The t-test asks: is our estimate far enough from zero to matter?",
     )
     with st.container(height=100, border=False):
         st.markdown(f'<p class="fit-why-eq-caption">{captions[step]}</p>', unsafe_allow_html=True)
         if step == 4:
-            st.markdown('<p style="text-align:center;color:#C2410C;font-weight:700;">A nonzero estimate alone is not enough to conclude that the true slope is nonzero.</p>', unsafe_allow_html=True)
+            st.markdown('<p style="text-align:center;color:#C2410C;font-weight:700;">A nonzero estimate alone doesn\'t prove a nonzero true slope.</p>', unsafe_allow_html=True)
     with st.container(horizontal=True, gap="small", vertical_alignment="center"):
         if step < 4:
             st.button("Pause ⏸" if state.tt_intro_playing else "Resume ▶", key="tt_intro_pause", on_click=_toggle_playback)

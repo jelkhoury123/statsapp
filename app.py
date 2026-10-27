@@ -6290,9 +6290,9 @@ FIT_WHY_ANIM_SECONDS = 0.7
 FIT_WHY_HOLD_SECONDS = 5.5  # Reading time per frame; final frame stays visible.
 
 FIT_WHY_POINTS = (
-    ("Represent reality", "Describe how we think variables are related."),
-    ("Simplify complexity", "Express those relationships through a mathematical model."),
-    ("Make and evaluate predictions", "Compare what the model predicts with what we observe."),
+    ("Represent reality", "How variables relate."),
+    ("Simplify complexity", "As a math model."),
+    ("Make and evaluate predictions", "Predicted vs. observed."),
 )
 # Which FIT_WHY_POINTS bullet is active at each step A..E.
 FIT_WHY_POINT_FOR_STEP = (0, 0, 1, 1, 2)
@@ -6494,18 +6494,11 @@ def render_why_model_subtab() -> None:
     eq_slot = st.empty()
     with eq_slot.container(key="fit_why_eq_slot"):
         if step == 2:
-            slot_html = (
-                '<p class="fit-why-eq-caption">Predicting the mean ignores X — '
-                "every student gets the same prediction, no matter how many "
-                "hours they studied.</p>"
-            )
+            slot_html = "&nbsp;"
         elif step == 3:
             slot_html = (
                 '<p class="fit-why-eq-formula" style="color:#EA580C;">'
                 "ŷ = α̂ + β̂x</p>"
-                '<p class="fit-why-eq-caption">The regression line lets '
-                "predictions depend on X — different hours studied now "
-                "give different predicted scores.</p>"
             )
         elif step == 4:
             slot_html = (
@@ -6513,9 +6506,6 @@ def render_why_model_subtab() -> None:
                 "ŷ = α̂ + β̂x</p>"
                 '<p class="fit-why-eq-formula" style="color:#1F2933;">'
                 "y<sub>i</sub> = ŷ<sub>i</sub> + ε<sub>i</sub></p>"
-                '<p class="fit-why-eq-caption">ε<sub>i</sub> is the '
-                "residual — the gap between what we observed and what "
-                "the model predicts.</p>"
                 '<div class="fit-r2-lesson" style="margin:0.2rem 0 0 0;'
                 'padding:0.35rem 0.5rem;"><div class="result" '
                 'style="margin:0;"><p class="big">Regression uses X to '
