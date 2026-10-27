@@ -4661,9 +4661,12 @@ def _t_understand_figure(
 
     Stage 1: observed t as a distance from zero (arrow + marker).
     Stage 2: + the sampling distribution of t under H0.
-    Stage 3: + two-sided p-value shading (blue, hatched) around the active t.
+    Stage 3: + orange p-value shading around the observed t; once a
+      hypothetical t is passed in, it also gets its own purple shading
+      and the orange shading becomes visually secondary.
     Stage 4: + critical values and rejection regions (red).
-    Stage 5: unchanged chart — the conclusion is text below it.
+    Stage 5: unchanged chart — explore_t is never passed in, so only
+      the observed t's own orange shading shows.
     """
     from scipy.stats import t as student_t
 
@@ -4671,7 +4674,7 @@ def _t_understand_figure(
     density = student_t.pdf(grid, df)
     peak = float(density.max()) if density.size else 1.0
     y_top = peak * 1.5
-    active_t = explore_t if (stage >= 3 and explore_t is not None) else t_stat
+    exploring = explore_t is not None and abs(explore_t - t_stat) > 1e-9
     fig = go.Figure()
 
     fig.add_shape(type="line", x0=0, x1=0, y0=0, y1=y_top * 0.8,
@@ -4688,15 +4691,25 @@ def _t_understand_figure(
             ))
 
     if stage >= 3:
-        abs_active = abs(active_t)
-        if 0 < abs_active <= _T_DIST_X_MAX:
-            for mask in (grid <= -abs_active, grid >= abs_active):
+        abs_t = abs(t_stat)
+        orange_opacity = 0.10 if exploring else 0.22
+        if 0 < abs_t <= _T_DIST_X_MAX:
+            for mask in (grid <= -abs_t, grid >= abs_t):
                 fig.add_trace(go.Scatter(
                     x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
-                    line=dict(width=0), fillcolor="rgba(29,78,216,0.0)",
-                    fillpattern=dict(shape="/", fgcolor="rgba(29,78,216,0.45)", size=6, solidity=0.25),
+                    line=dict(width=0), fillcolor=f"rgba(234,88,12,{orange_opacity})",
                     hoverinfo="skip", showlegend=False,
                 ))
+        if exploring:
+            abs_e = abs(explore_t)
+            if 0 < abs_e <= _T_DIST_X_MAX:
+                for mask in (grid <= -abs_e, grid >= abs_e):
+                    fig.add_trace(go.Scatter(
+                        x=grid[mask], y=density[mask], mode="lines", fill="tozeroy",
+                        line=dict(width=0), fillcolor="rgba(147,51,234,0.0)",
+                        fillpattern=dict(shape="/", fgcolor="rgba(147,51,234,0.5)", size=6, solidity=0.3),
+                        hoverinfo="skip", showlegend=False,
+                    ))
 
     if stage >= 2:
         fig.add_trace(go.Scatter(
@@ -4728,9 +4741,9 @@ def _t_understand_figure(
                        showarrow=False, font=dict(size=12, color=ORANGE, family=FONT),
                        bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
-    if stage >= 3 and explore_t is not None and abs(explore_t - t_stat) > 1e-9:
-        fig.add_vline(x=explore_t, line_color="#9333EA", line_width=2, line_dash="dashdot")
-        fig.add_annotation(x=explore_t, y=peak * 0.5, text=f"Explore t = {explore_t:.2f}",
+    if exploring:
+        fig.add_vline(x=explore_t, line_color="#9333EA", line_width=2.5, line_dash="dashdot")
+        fig.add_annotation(x=explore_t, y=peak * 0.5, text=f"Hypothetical t = {explore_t:.2f}",
                            showarrow=False, font=dict(size=11, color="#9333EA", family=FONT),
                            bgcolor="rgba(255,255,255,0.85)", borderpad=2)
 
@@ -4780,11 +4793,11 @@ def _t_understand_panel_html(
         items = [
             "How unusual is our observed t?",
             "Shaded tails represent outcomes at least as extreme.",
-            f"p = <b>{actual_p:.4f}</b> ({actual_p * 100:.1f}%)",
+            f"Observed p = <b>{actual_p:.4f}</b> ({actual_p * 100:.1f}%)",
         ]
         if exploring and explore_p is not None:
             items.append(
-                f'<span style="color:#7E22CE;">Exploring t = {explore_t:.2f}: '
+                f'<span style="color:#7E22CE;">Hypothetical t = {explore_t:.2f}: '
                 f"p = {explore_p:.4f}</span>"
             )
     elif stage == 4:
@@ -4795,6 +4808,12 @@ def _t_understand_panel_html(
             f"At α = {alpha:.2f}, critical t = ±{critical:.3f}.",
             f"Observed t = {t_stat:.3f} is {inside} the {region} region.",
         ]
+        if exploring and explore_p is not None:
+            explore_sig = "significant" if explore_p < alpha else "not significant"
+            items.append(
+                f'<span style="color:#7E22CE;">Hypothetical t = {explore_t:.2f}: '
+                f"p = {explore_p:.4f} ({explore_sig})</span>"
+            )
     else:
         verdict = "reject" if reject_actual else "fail to reject"
         evidence = "Sufficient" if reject_actual else "Insufficient"
@@ -4820,20 +4839,31 @@ def _render_t_understand_body(
 
     stage_key = f"ttest_understand_stage_{suffix}"
     explore_key = f"ttest_understand_explore_{suffix}"
+    reveal_key = f"ttest_understand_reveal_{suffix}"
     st.session_state.setdefault(stage_key, 1)
     st.session_state.setdefault(explore_key, float(t_stat))
+    st.session_state.setdefault(reveal_key, False)
     stage = int(st.session_state[stage_key])
+    revealed = bool(st.session_state[reveal_key])
+
+    # The hypothetical slider only matters at stage 3 (after the user asks
+    # for it) and stage 4 (where it's retained); stage 5 always hides it and
+    # returns to the actual observed result.
+    show_slider = stage == 4 or (stage == 3 and revealed)
+    show_reveal_button = stage == 3 and not revealed
 
     st.markdown(_t_fraction_html(beta, se, t_stat, beta_label), unsafe_allow_html=True)
 
-    # Both controls always render, in reserved space, so the chart's column
-    # never shifts; a scoped visibility:hidden rule (not disabled=, not
-    # display:none) hides them before their stage without collapsing space.
+    # All three controls always render, in reserved space, so the chart's
+    # column never shifts; a scoped visibility:hidden rule (not disabled=,
+    # not display:none) hides them when not pedagogically relevant.
     alpha_key = f"t_understand_alpha_{suffix}"
     slider_key = f"t_understand_slider_{suffix}"
+    button_key = f"t_understand_reveal_{suffix}"
     hide_rules = "".join([
         f'.st-key-{alpha_key}, .st-key-{alpha_key} * {{ visibility: hidden !important; }}' if stage < 4 else "",
-        f'.st-key-{slider_key}, .st-key-{slider_key} * {{ visibility: hidden !important; }}' if stage < 3 else "",
+        f'.st-key-{slider_key}, .st-key-{slider_key} * {{ visibility: hidden !important; }}' if not show_slider else "",
+        f'.st-key-{button_key}, .st-key-{button_key} * {{ visibility: hidden !important; }}' if not show_reveal_button else "",
     ])
     st.markdown(f"<style>{hide_rules}</style>", unsafe_allow_html=True)
 
@@ -4850,26 +4880,37 @@ def _render_t_understand_body(
                 format_func=lambda a: f"{a:.2f}", key="ttest_dist_alpha",
                 label_visibility="collapsed",
             )
+        with st.container(key=button_key):
+            if st.button("Explore other t-values", key=f"{reveal_key}_btn"):
+                st.session_state[reveal_key] = True
+                st.rerun()
         explore_t = float(st.session_state[explore_key])
         with st.container(key=slider_key):
-            st.markdown('<p class="t-understand-mini-label">Explore t (hypothetical)</p>',
+            st.markdown('<p class="t-understand-mini-label">Hypothetical t</p>',
                        unsafe_allow_html=True)
             explore_t = st.slider(
                 "Explore t", min_value=-6.0, max_value=6.0, value=explore_t, step=0.05,
                 key=f"{explore_key}_slider", label_visibility="collapsed",
             )
-        st.session_state[explore_key] = explore_t
+            st.session_state[explore_key] = explore_t
+            if show_slider:
+                hyp_p = 2.0 * float(student_t.sf(abs(explore_t), df))
+                st.markdown(
+                    f'<p class="t-understand-mini-label" style="color:#7E22CE;">'
+                    f"Hypothetical p = {hyp_p:.4f}</p>",
+                    unsafe_allow_html=True,
+                )
     critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
 
     with center:
         st.plotly_chart(
             _t_understand_figure(t_stat=t_stat, df=df, stage=stage, critical=critical,
-                                 explore_t=explore_t if stage >= 3 else None,
+                                 explore_t=explore_t if show_slider else None,
                                  height=_T_UNDERSTAND_CHART_HEIGHT),
             width="stretch", config=PLOTLY_CONFIG, key=f"ttest_understand_chart_{suffix}",
         )
 
-    exploring = stage >= 3 and abs(explore_t - t_stat) > 1e-9
+    exploring = show_slider and abs(explore_t - t_stat) > 1e-9
     actual_p = 2.0 * float(student_t.sf(abs(t_stat), df))
     explore_p = 2.0 * float(student_t.sf(abs(explore_t), df)) if exploring else None
     reject_actual = abs(t_stat) > critical
@@ -4897,6 +4938,7 @@ def _render_t_understand_body(
         if st.button("Replay ↺", key=f"{stage_key}_replay"):
             st.session_state[stage_key] = 1
             st.session_state[explore_key] = float(t_stat)
+            st.session_state[reveal_key] = False
             st.rerun()
     with indicator_col:
         st.markdown(
