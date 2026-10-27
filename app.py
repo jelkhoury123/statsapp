@@ -1703,6 +1703,13 @@ p.fit-why-step-title {
   text-align: left; font-weight: 700; color: #334155;
 }
 .fit-r2-summary-table td:last-child { color: #EA580C; font-weight: 700; }
+.fit-slopefit-insight {
+  margin: 0.4rem 0 0 0; padding: 0.4rem 0.7rem;
+  background: #F8FAFC; border-left: 3px solid #94A3B8; border-radius: 6px;
+}
+.fit-slopefit-insight p {
+  margin: 0; font-size: 0.86rem; color: #334155; line-height: 1.35rem;
+}
 .st-key-fit_r_panel { margin: 0; }
 .st-key-fit_r_panel [data-testid="stHorizontalBlock"] {
   gap: 0.75rem !important; align-items: stretch !important;
@@ -7305,27 +7312,34 @@ def render_slope_vs_fit_subtab() -> None:
         ),
         unsafe_allow_html=True,
     )
+    st.markdown(
+        '<p class="mr-note">Change β while keeping R² fixed. Then change R² '
+        "while keeping β fixed. Observe how the line and scatter change.</p>",
+        unsafe_allow_html=True,
+    )
 
-    slider_col1, slider_col2 = st.columns(2, gap="large")
-    with slider_col1:
-        beta = st.slider(
-            "Slope β", min_value=-1.0, max_value=1.0, step=0.1, value=0.5,
-            key="slope_fit_beta",
+    with st.container(key="slopefit_toolbar"):
+        slider_row = st.container(
+            horizontal=True, vertical_alignment="bottom", gap="medium", wrap=True
         )
-    with slider_col2:
-        target_r2 = st.slider(
-            "R²", min_value=0.01, max_value=1.00, step=0.01, value=0.80,
-            key="slope_fit_r2",
+        with slider_row:
+            beta = st.slider(
+                "Slope β", min_value=-1.0, max_value=1.0, step=0.1, value=0.5,
+                key="slope_fit_beta", width=280,
+            )
+            target_r2 = st.slider(
+                "R²", min_value=0.01, max_value=1.00, step=0.01, value=0.80,
+                key="slope_fit_r2", width=280,
+            )
+        zoom_to_fit = st.checkbox(
+            "Zoom to fit", key="slope_fit_zoom", value=False,
+            help="Off: the Y-axis stays fixed, so you can see the actual size "
+            "of the change. On: the axis rescales to fit every point.",
         )
 
-    x, y, alpha_f, beta_f, r2_f = _slope_fit_sample(beta, target_r2)
+    x, y, alpha_f, beta_f, _r2_f = _slope_fit_sample(beta, target_r2)
 
     x_range = list(_SLOPE_FIT_X_RANGE)
-    zoom_to_fit = st.checkbox(
-        "Zoom to fit", key="slope_fit_zoom", value=False,
-        help="Off: the Y-axis stays fixed, so you can see the actual size "
-        "of the change. On: the axis rescales to fit every point.",
-    )
     outside = int(np.sum((y < _SLOPE_FIT_Y_RANGE[0]) | (y > _SLOPE_FIT_Y_RANGE[1])))
     if zoom_to_fit:
         y_pad = max(0.08 * float(np.ptp(y)), 0.5)
@@ -7333,11 +7347,6 @@ def render_slope_vs_fit_subtab() -> None:
     else:
         y_range = list(_SLOPE_FIT_Y_RANGE)
 
-    st.markdown(
-        f'<p class="mr-stat">Fitted β = <b>{beta_f:.3f}</b> &nbsp;·&nbsp; '
-        f"Fitted R² = <b>{r2_f:.3f}</b></p>",
-        unsafe_allow_html=True,
-    )
     if abs(beta) < 1e-9:
         st.markdown(
             '<p class="mr-note">At β = 0, X carries no linear information '
@@ -7356,17 +7365,16 @@ def render_slope_vs_fit_subtab() -> None:
         )
 
     st.plotly_chart(
-        _slope_fit_figure(x, y, alpha_f, beta_f, x_range=x_range, y_range=y_range),
+        _slope_fit_figure(x, y, alpha_f, beta_f, x_range=x_range, y_range=y_range, height=330),
         width="stretch", config=PLOTLY_CONFIG, key="slope_fit_chart",
     )
 
     st.markdown(
-        '<div class="fit-r2-lesson" style="margin-top:0.3rem;padding:0.3rem;">'
-        '<div class="result" style="margin:0;">'
-        '<p class="big">β determines the direction and steepness of the '
-        "relationship.<br>R² measures how well the model fits.<br>"
-        "A larger |β| does not necessarily mean a larger R².</p>"
-        "</div></div>",
+        '<div class="fit-slopefit-insight"><p>'
+        "<b>Key insight:</b> β determines the direction and steepness of the "
+        "relationship. R² measures how closely observations follow the "
+        "fitted line. A steeper slope does not necessarily mean a better fit."
+        "</p></div>",
         unsafe_allow_html=True,
     )
 
