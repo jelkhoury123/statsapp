@@ -1703,6 +1703,14 @@ p.fit-why-step-title {
   text-align: left; font-weight: 700; color: #334155;
 }
 .fit-r2-summary-table td:last-child { color: #EA580C; font-weight: 700; }
+.fit-r2-concl {
+  margin: 0.4rem 0 0 0; padding: 0.4rem 0.7rem;
+  background: #F8FAFC; border-left: 3px solid #94A3B8; border-radius: 6px;
+  font-size: 0.86rem; color: #334155; line-height: 1.35rem;
+}
+.fit-r2-muted-note {
+  margin: 0.3rem 0 0 0; font-size: 0.76rem; color: #94A3B8; line-height: 1.25rem;
+}
 .fit-slopefit-insight {
   margin: 0.4rem 0 0 0; padding: 0.4rem 0.7rem;
   background: #F8FAFC; border-left: 3px solid #94A3B8; border-radius: 6px;
@@ -6753,11 +6761,6 @@ def render_understanding_r2_subtab(view) -> None:
         show_ols_resid = st.toggle(
             "Show residuals from OLS", key="r2_show_ols_resid", value=False
         )
-        if show_ols_resid:
-            st.caption(
-                "The orange lines show the prediction errors that remain "
-                "after fitting the regression."
-            )
         residual_about = "regression" if show_ols_resid else None
 
     chart_height = max(FIT_CHART_HEIGHT + 60, 460)
@@ -6766,7 +6769,7 @@ def render_understanding_r2_subtab(view) -> None:
     elif step == "baseline":
         chart_height -= 45
     elif step == "explained":
-        chart_height -= 70
+        chart_height = int((chart_height - 70) * 0.8)
     st.plotly_chart(
         r2_lesson_scatter(
             hours=view.x,
@@ -6886,18 +6889,10 @@ def render_understanding_r2_subtab(view) -> None:
             tipify(
                 '<div class="fit-r2-lesson">'
                 "<h3>What is R²?</h3>"
-                f'<p class="r2-lede">R² = the percentage of the variation in '
-                f"{view.y_axis.lower()} that our model explains, instead of just "
-                "guessing the mean.</p>"
+                '<p class="r2-lede">R² measures the proportion of variation in '
+                f"{view.y_axis.lower()} explained by the regression model.</p>"
                 f'<p class="formula">R² = (SST − SSR) / SST = <b>{r2_pct}</b></p>'
                 f"{bar}"
-                '<div class="metrics">'
-                f"<span>Total variation (SST) = <b>{_format_sse(sst)}</b></span>"
-                f"<span>Unexplained (SSR) = <b>{_format_sse(ols_sse)}</b></span>"
-                f"<span>Explained (SST − SSR) = <b>{_format_sse(ols_ssr)}</b></span>"
-                "</div>"
-                '<p class="note">R² does not establish causation or guarantee '
-                "accurate predictions on new data.</p>"
                 "</div>"
             ),
             unsafe_allow_html=True,
@@ -6959,11 +6954,11 @@ def render_understanding_r2_subtab(view) -> None:
                 "<td>0%</td>"
                 f"<td>{_format_r2_pct(ols_r2)}</td></tr>"
                 "</tbody></table>"
-                '<div class="result">'
-                f"<p class=\"big\">Using {view.x_axis.lower()} reduces the sum of "
-                f"squared prediction errors by <b>{pct_reduction_final_label}</b> "
-                "compared with predicting the sample mean.</p>"
-                "</div>"
+                '<p class="fit-r2-concl">The regression reduces squared '
+                f"prediction errors by <b>{pct_reduction_final_label}</b> "
+                "relative to the mean-only model.</p>"
+                '<p class="fit-r2-muted-note">R² does not establish causation '
+                "or guarantee accurate predictions on new data.</p>"
                 "</div>"
             ),
             unsafe_allow_html=True,
