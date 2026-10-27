@@ -4618,97 +4618,79 @@ def _t_fraction_html(numerator: float, denominator: float, result: float) -> str
     )
 
 
-_TTEST_BUILD_INTUITION = (
-    '<ul class="t-build-points">'
-    "<li><b>β̂</b> — what we found in this sample.</li>"
-    "<li><b>SE</b> — how much that estimate would bounce around in other samples.</li>"
-    "<li><b>t</b> — how far β̂ is from zero, in standard errors.</li>"
-    "</ul>"
-)
+def _ttest_build_steps_html(beta_label: str, beta: float, se: float) -> str:
+    return (
+        '<p class="mr-head">How far is our estimated slope from zero?</p>'
+        '<p class="mr-note">We cannot judge a slope by its size alone — we '
+        "need to compare it with its standard error.</p>"
+        '<ol class="t-build-points">'
+        f"<li><b>Our estimate:</b> {beta_label} = {beta:.2f}</li>"
+        f"<li><b>Our uncertainty:</b> SE({beta_label}) = {se:.3f} — how much "
+        "the estimated slope typically varies across samples.</li>"
+        f"<li><b>Standardising:</b> t = ({beta_label} − 0) / SE({beta_label})</li>"
+        "</ol>"
+    )
 
-_TTEST_BUILD_BRIDGE = (
-    '<p class="mr-note">Next: is that distance large enough to be '
-    "surprising if the true β really were zero?</p>"
-)
+
+def _ttest_build_bridge_html(t_stat: float) -> str:
+    return (
+        '<p class="mr-note">Our estimate is '
+        f"<b>{abs(t_stat):.2f}</b> standard errors from zero. Is that "
+        "unusual if the true slope is zero?</p>"
+    )
 
 
-def _t_build_scale_figure(
-    t_stat: float, *, df: int | None = None, show_distribution: bool = False,
-    height: int = 220,
-) -> go.Figure:
-    """Step 1: a number line showing t as a distance from the null in SE
-    units. Step 2 (show_distribution=True) overlays the sampling
-    distribution of t under H0, previewing the next subtab."""
+def _t_build_scale_figure(t_stat: float, height: int = 200) -> go.Figure:
+    """A number line showing t as a distance from the null, in SE units."""
     reach = max(3.5, abs(t_stat) + 1.2)
     fig = go.Figure()
-    if show_distribution and df:
-        from scipy.stats import t as student_t
-
-        grid = np.linspace(-reach, reach, 300)
-        density = student_t.pdf(grid, df)
-        curve = density / density.max() * 1.05
-        fig.add_scatter(x=grid, y=curve, mode="lines", line=dict(color=BLUE, width=2),
-                        fill="tozeroy", fillcolor="rgba(37,99,235,0.08)",
-                        hoverinfo="skip", showlegend=False)
     fig.add_shape(type="line", x0=-reach, x1=reach, y0=0, y1=0,
                   line=dict(color=GREY, width=1.5))
     lo, hi = -int(reach), int(reach)
     for tick in range(lo, hi + 1):
         fig.add_shape(type="line", x0=tick, x1=tick, y0=-0.08, y1=0.08,
                       line=dict(color=GREY, width=1))
-        fig.add_annotation(x=tick, y=-0.3, text=str(tick), showarrow=False,
+        fig.add_annotation(x=tick, y=-0.28, text=str(tick), showarrow=False,
                            font=dict(size=10, color=GREY, family=FONT))
-    fig.add_shape(type="line", x0=0, x1=0, y0=-0.08, y1=1.25,
+    fig.add_shape(type="line", x0=0, x1=0, y0=-0.08, y1=1.0,
                   line=dict(color=GREY, width=2, dash="dash"))
-    fig.add_annotation(x=0, y=1.32, text="β = 0 (H₀)", showarrow=False,
+    fig.add_annotation(x=0, y=1.08, text="β = 0 (H₀)", showarrow=False,
                        font=dict(size=11, color=INK, family=FONT))
-    fig.add_shape(type="line", x0=0, x1=t_stat, y0=-0.22, y1=-0.22,
-                  line=dict(color=ORANGE, width=2.5))
+    fig.add_annotation(x=t_stat, y=0.3, ax=0, ay=0.3, xref="x", yref="y",
+                       axref="x", ayref="y", showarrow=True, arrowhead=3,
+                       arrowsize=1, arrowwidth=2.2, arrowcolor=ORANGE, text="")
     fig.add_trace(go.Scatter(x=[t_stat], y=[0], mode="markers",
-                             marker=dict(symbol="diamond", size=12, color=ORANGE),
+                             marker=dict(symbol="diamond", size=13, color=ORANGE),
                              showlegend=False, hoverinfo="skip"))
-    fig.add_annotation(x=t_stat, y=-0.42, text=f"t = {t_stat:.2f} SE",
+    fig.add_annotation(x=t_stat / 2, y=0.5,
+                       text=f"{abs(t_stat):.2f} standard errors from zero",
                        showarrow=False, font=dict(size=12, color=ORANGE, family=FONT))
     fig.update_xaxes(range=[-reach - 0.3, reach + 0.3], showticklabels=False,
-                     showgrid=False, zeroline=False, fixedrange=True)
-    fig.update_yaxes(range=[-0.6, 1.45], showticklabels=False, showgrid=False,
+                     showgrid=False, zeroline=False, fixedrange=True,
+                     title=dict(text="Distance from zero (standard errors)",
+                                font=dict(size=11, color=GREY, family=FONT)))
+    fig.update_yaxes(range=[-0.45, 1.25], showticklabels=False, showgrid=False,
                      zeroline=False, fixedrange=True)
-    fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10),
+    fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=45),
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      showlegend=False, transition=dict(duration=350))
+                      showlegend=False)
     return fig
 
 
-def _render_t_build_scale(t_stat: float, df: int, *, state_key: str, chart_key: str) -> None:
-    """Centered 2-step reveal: the distance on a number line, then (on
-    request) the sampling distribution it sits within."""
-    st.session_state.setdefault(state_key, False)
+def _render_t_build_scale(t_stat: float, *, chart_key: str) -> None:
     _l, mid, _r = st.columns([1, 3, 1])
     with mid:
         st.plotly_chart(
-            _t_build_scale_figure(t_stat, df=df, show_distribution=st.session_state[state_key]),
-            width="stretch", config={"displayModeBar": False, "displaylogo": False}, key=chart_key,
+            _t_build_scale_figure(t_stat), width="stretch",
+            config={"displayModeBar": False, "displaylogo": False}, key=chart_key,
         )
-        if not st.session_state[state_key]:
-            st.button(
-                "Show the sampling distribution ↓", key=f"{state_key}_btn",
-                on_click=lambda: st.session_state.__setitem__(state_key, True),
-            )
 
 
 def _render_ttest_build_case_a() -> None:
-    st.markdown(_TTEST_BUILD_INTUITION, unsafe_allow_html=True)
+    from src.ttest_intro import intro_data
 
-    true_beta = float(st.session_state.get("ttest_why_true_beta", 0.0))
-    stored = st.session_state.get("ttest_why_sample_a")
-    if isinstance(stored, tuple) and stored[0] == true_beta:
-        _, hours, scores = stored
-    else:
-        null_pop = null_population(true_beta)
-        hours, scores = draw_null_sample(null_pop, 100, _null_rng())
-        st.session_state.ttest_why_sample_a = (true_beta, hours, scores)
-
-    result = slope_t_test(hours, scores)
+    x, scores, alphas, betas, index, se = intro_data()
+    result = slope_t_test(x, scores[index])
     if result.beta is None or not result.standard_error:
         st.markdown(
             '<p class="mr-note">Not enough variation in this sample to '
@@ -4717,26 +4699,14 @@ def _render_ttest_build_case_a() -> None:
         )
         return
 
-    left, right = st.columns(2, gap="medium")
-    with left:
-        st.markdown(
-            f'<p class="mr-coef-card"><b>β̂₁</b><br>{result.beta:.3f}</p>',
-            unsafe_allow_html=True,
-        )
-    with right:
-        st.markdown(
-            f'<p class="mr-coef-card"><b>SE(β̂₁)</b><br>{result.standard_error:.3f}</p>',
-            unsafe_allow_html=True,
-        )
+    st.markdown(_ttest_build_steps_html("β̂", result.beta, result.standard_error),
+               unsafe_allow_html=True)
     st.markdown(
         _t_fraction_html(result.beta, result.standard_error, result.t_statistic),
         unsafe_allow_html=True,
     )
-    _render_t_build_scale(
-        result.t_statistic, result.degrees_of_freedom,
-        state_key="ttest_build_show_dist_a", chart_key="ttest_build_scale_a",
-    )
-    st.markdown(_TTEST_BUILD_BRIDGE, unsafe_allow_html=True)
+    _render_t_build_scale(result.t_statistic, chart_key="ttest_build_scale_a")
+    st.markdown(_ttest_build_bridge_html(result.t_statistic), unsafe_allow_html=True)
 
 
 def _attendance_coef_se(sample, scenario: str) -> tuple[float, float]:
@@ -4759,8 +4729,6 @@ def _attendance_coef_se(sample, scenario: str) -> tuple[float, float]:
 def _render_ttest_build_case_b(population) -> None:
     from src.multiple_regression import mr_sample
 
-    st.markdown(_TTEST_BUILD_INTUITION, unsafe_allow_html=True)
-
     scenario = st.segmented_control(
         "Scenario",
         options=[key for key, _ in _TTEST_WHY_SCENARIOS],
@@ -4776,23 +4744,11 @@ def _render_ttest_build_case_b(population) -> None:
     beta2, se2 = _attendance_coef_se(sample, scenario)
     t_stat = beta2 / se2
 
-    left, right = st.columns(2, gap="medium")
-    with left:
-        st.markdown(
-            f'<p class="mr-coef-card"><b>β̂₂ (attendance)</b><br>{beta2:.3f}</p>',
-            unsafe_allow_html=True,
-        )
-    with right:
-        st.markdown(
-            f'<p class="mr-coef-card"><b>SE(β̂₂)</b><br>{se2:.3f}</p>',
-            unsafe_allow_html=True,
-        )
+    st.markdown(_ttest_build_steps_html("β̂₂ (attendance)", beta2, se2),
+               unsafe_allow_html=True)
     st.markdown(_t_fraction_html(beta2, se2, t_stat), unsafe_allow_html=True)
-    _render_t_build_scale(
-        t_stat, sample.n - 3,
-        state_key="ttest_build_show_dist_b", chart_key="ttest_build_scale_b",
-    )
-    st.markdown(_TTEST_BUILD_BRIDGE, unsafe_allow_html=True)
+    _render_t_build_scale(t_stat, chart_key="ttest_build_scale_b")
+    st.markdown(_ttest_build_bridge_html(t_stat), unsafe_allow_html=True)
 
 
 def _render_ttest_build(population) -> None:
