@@ -1733,6 +1733,23 @@ p.fit-why-step-title {
 .fit-slopefit-insight p {
   margin: 0; font-size: 0.86rem; color: #334155; line-height: 1.35rem;
 }
+.corr-key-insight {
+  margin: 0.6rem 0 0.2rem 0; padding: 0.5rem 0.9rem;
+  background: #EFF6FF; border: 1px solid #BFDBFE; border-left: 4px solid #1D4ED8;
+  border-radius: 8px;
+}
+.corr-key-insight .title {
+  margin: 0 0 0.15rem 0; font-size: 0.92rem; font-weight: 800; color: #1E3A8A;
+}
+.corr-key-insight .lede {
+  margin: 0 0 0.35rem 0; font-size: 0.86rem; font-weight: 650; color: #1E3A8A;
+  line-height: 1.3rem;
+}
+.corr-key-insight .row {
+  display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem;
+  font-size: 0.82rem; color: #1E3A8A; font-weight: 500;
+}
+.corr-key-insight .row b { font-weight: 800; }
 .st-key-fit_r_panel { margin: 0; }
 .st-key-fit_r_panel [data-testid="stHorizontalBlock"] {
   gap: 0.75rem !important; align-items: stretch !important;

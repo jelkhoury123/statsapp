@@ -252,8 +252,8 @@ def _render_understanding() -> None:
             "Correlation measures the direction and strength of a linear "
             "relationship between two variables.</p>"
             "<p class='mr-note' style='margin:0 0 0.35rem 0;'>"
-            "Move r from −1 to +1. Watch how the direction and tightness of "
-            "the scatter change.</p>"
+            "Move r from −1 to +1. Watch how the line changes direction and "
+            "how tightly the points cluster around it.</p>"
         ),
         unsafe_allow_html=True,
     )
@@ -321,6 +321,11 @@ def _render_understanding() -> None:
             ),
             unsafe_allow_html=True,
         )
+        st.markdown(
+            '<p class="fit-std-col-lab" style="margin-top:0.4rem;">'
+            "Connection to regression</p>",
+            unsafe_allow_html=True,
+        )
         _l, mid, _r = st.columns([1, 2, 1])
         with mid:
             st.latex(r"\beta^{*} = r \qquad R^2 = r^2")
@@ -337,6 +342,19 @@ def _render_understanding() -> None:
                 ),
                 unsafe_allow_html=True,
             )
+
+    st.markdown(
+        '<div class="corr-key-insight">'
+        '<p class="title">KEY INSIGHT — Understanding correlation</p>'
+        '<p class="lede">The sign of r tells us the direction. The '
+        "magnitude |r| tells us the strength.</p>"
+        '<div class="row">'
+        "<span><b>r &gt; 0</b> → Positive linear relationship</span>"
+        "<span><b>r &lt; 0</b> → Negative linear relationship</span>"
+        "<span><b>r ≈ 0</b> → Little or no linear relationship</span>"
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
 
 
 def _toggle_corr_reveal() -> None:
