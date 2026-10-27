@@ -1440,12 +1440,6 @@ p.fit-why-step-title {
   margin: 0 0 0.5rem 0;
   font-size: 0.9rem; font-weight: 400; color: #334155; line-height: 1.4rem;
 }
-.fit-std-insight {
-  margin: 0.3rem 0 0.2rem 0; padding: 0.3rem 0 0.3rem 0.65rem;
-  border-left: 2px solid #CBD5E1;
-  font-size: 0.88rem; font-weight: 400; color: #334155; line-height: 1.35rem;
-}
-.fit-std-insight b { color: #1E293B; font-weight: 650; }
 .fit-std-note {
   margin: 0.4rem 0 0.3rem 0; padding: 0.45rem 0.65rem;
   background: #EFF6FF; border-left: 3px solid #1D4ED8; border-radius: 6px;
@@ -7432,19 +7426,6 @@ def render_standardisation_subtab(view) -> None:
     sst = total_sum_of_squares(scores)
     r2_a = r_squared(float(ols_a.sse), float(sst))
     r2_b = r_squared(float(ols_b.sse), float(sst))
-
-    dir_a = "increase" if beta_star_a >= 0 else "decrease"
-    dir_b = "increase" if beta_star_b >= 0 else "decrease"
-    st.markdown(
-        tipify(
-            '<p class="fit-std-insight">'
-            f"A 1-SD increase in {label_a} is associated with a "
-            f"<b>{abs(beta_star_a):.3f}-SD {dir_a}</b> in exam score, versus "
-            f"<b>{abs(beta_star_b):.3f} SD</b> for {label_b}."
-            "</p>"
-        ),
-        unsafe_allow_html=True,
-    )
 
     left, right = st.columns(2, gap="medium")
     with left:
