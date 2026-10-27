@@ -1762,6 +1762,9 @@ p.fit-why-step-title {
 }
 .t-understand-hint { margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #6B7280; }
 div[class*="st-key-t_understand_controls_"] { min-height: 150px; }
+div[class*="st-key-t_understand_chart_wrap_"] {
+    position: sticky; top: 8px; z-index: 5; background: #F4F6F8;
+}
 .mr-sub { margin: 0.3rem 0 0.2rem 0; font-size: 0.86rem; font-weight: 650; color: #12263a; }
 .mr-coef {
     margin: 0.3rem 0; padding: 0.4rem 0.6rem; font-size: 0.95rem; font-weight: 650;
@@ -4609,11 +4612,13 @@ def _render_ttest_why(population) -> None:
     render_ttest_intro()
 
 
-def _t_fraction_html(numerator: float, denominator: float, result: float) -> str:
-    """Vertical numerator/denominator fraction — same visual style as the F-test lesson."""
+def _t_fraction_html(numerator: float, denominator: float, result: float, beta_label: str = "β̂") -> str:
+    """Symbolic formula over its numeric substitution — same visual style as the F-test lesson."""
     return (
+        '<p style="text-align:center;margin:0.4rem 0 0 0;font-size:0.92rem;color:#52606D;">'
+        f"t = {beta_label} / SE({beta_label})</p>"
         '<div style="display:flex;align-items:center;justify-content:center;'
-        'gap:0.6rem;margin:0.6rem 0;font-size:1.1rem;color:#12263a;">'
+        'gap:0.6rem;margin:0.2rem 0 0.6rem 0;font-size:1.1rem;color:#12263a;">'
         '<span style="font-weight:700;">t</span><span>=</span>'
         '<div style="display:inline-flex;flex-direction:column;align-items:center;'
         'line-height:1.5;">'
@@ -4814,7 +4819,7 @@ def _t_understand_stage_block_html(
 
 
 def _render_t_understand_body(
-    *, beta: float, se: float, t_stat: float, df: int, suffix: str,
+    *, beta: float, se: float, t_stat: float, df: int, beta_label: str, suffix: str,
 ) -> None:
     from scipy.stats import t as student_t
 
@@ -4824,7 +4829,7 @@ def _render_t_understand_body(
     st.session_state.setdefault(explore_key, float(t_stat))
     stage = int(st.session_state[stage_key])
 
-    st.markdown(_t_fraction_html(beta, se, t_stat), unsafe_allow_html=True)
+    st.markdown(_t_fraction_html(beta, se, t_stat, beta_label), unsafe_allow_html=True)
 
     alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
     explore_t = float(st.session_state[explore_key])
@@ -4849,13 +4854,14 @@ def _render_t_understand_body(
         st.session_state[explore_key] = explore_t
     critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
 
-    _l, mid, _r = st.columns([1, 4, 1])
-    with mid:
-        st.plotly_chart(
-            _t_understand_figure(t_stat=t_stat, df=df, stage=stage, critical=critical,
-                                 explore_t=explore_t if stage >= 3 else None),
-            width="stretch", config=PLOTLY_CONFIG, key=f"ttest_understand_chart_{suffix}",
-        )
+    with st.container(key=f"t_understand_chart_wrap_{suffix}"):
+        _l, mid, _r = st.columns([1, 4, 1])
+        with mid:
+            st.plotly_chart(
+                _t_understand_figure(t_stat=t_stat, df=df, stage=stage, critical=critical,
+                                     explore_t=explore_t if stage >= 3 else None),
+                width="stretch", config=PLOTLY_CONFIG, key=f"ttest_understand_chart_{suffix}",
+            )
 
     exploring = stage >= 3 and abs(explore_t - t_stat) > 1e-9
     actual_p = 2.0 * float(student_t.sf(abs(t_stat), df))
@@ -4907,7 +4913,7 @@ def _render_ttest_understand_case_a() -> None:
         return
     _render_t_understand_body(
         beta=result.beta, se=result.standard_error, t_stat=result.t_statistic,
-        df=result.degrees_of_freedom, suffix="a",
+        df=result.degrees_of_freedom, beta_label="β̂", suffix="a",
     )
 
 
@@ -4929,7 +4935,7 @@ def _render_ttest_understand_case_b(population) -> None:
     beta2, se2 = _attendance_coef_se(sample, scenario)
     df = int(sample.n) - 3
     _render_t_understand_body(
-        beta=beta2, se=se2, t_stat=beta2 / se2, df=df, suffix="b",
+        beta=beta2, se=se2, t_stat=beta2 / se2, df=df, beta_label="β̂₂", suffix="b",
     )
 
 
