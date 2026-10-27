@@ -6768,31 +6768,18 @@ def render_understanding_r2_subtab(view) -> None:
     ols_ssr = float(sst) - ols_sse if np.isfinite(sst) else float("nan")
     ols_r2 = r_squared(ols_sse, sst)
 
-    if step == "predictor":
-        sst_hl = resid_mode == "mean"
-        ssr_hl = resid_mode == "regression"
-        sst_style = (
-            "background:#F3F4F6;border:1px solid #9CA3AF;"
-            if sst_hl else "background:#F1F5F9;border:1px solid #E2E8F0;"
-        )
-        ssr_style = (
-            "background:#FFF7ED;border:1px solid #FDBA74;"
-            if ssr_hl else "background:#F1F5F9;border:1px solid #E2E8F0;"
-        )
-        sst_col, ssr_col = st.columns(2, gap="small")
-        with sst_col:
+    if step == "predictor" and resid_mode in ("mean", "regression"):
+        if resid_mode == "mean":
+            style = "background:#F3F4F6;border:1px solid #9CA3AF;"
+            label = f'SST = Σ(observed − mean)² = <b>{_format_sse(sst)}</b>'
+        else:
+            style = "background:#FFF7ED;border:1px solid #FDBA74;"
+            label = f'SSR = Σ(observed − predicted)² = <b>{_format_sse(ols_sse)}</b>'
+        _l, mid, _r = st.columns([1, 2, 1])
+        with mid:
             st.markdown(
                 '<div class="fit-r2-lesson" style="margin:0.05rem 0;padding:0.35rem 0.55rem;">'
-                f'<p class="formula" style="margin:0;{sst_style}">'
-                f'SST = Σ(observed − mean)² = <b>{_format_sse(sst)}</b></p>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
-        with ssr_col:
-            st.markdown(
-                '<div class="fit-r2-lesson" style="margin:0.05rem 0;padding:0.35rem 0.55rem;">'
-                f'<p class="formula" style="margin:0;{ssr_style}">'
-                f'SSR = Σ(observed − predicted)² = <b>{_format_sse(ols_sse)}</b></p>'
+                f'<p class="formula" style="margin:0;text-align:center;{style}">{label}</p>'
                 "</div>",
                 unsafe_allow_html=True,
             )
