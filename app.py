@@ -950,6 +950,9 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   margin: 0.35rem 0 0 0; text-align: center;
   font-size: 0.85rem; color: #52606D; line-height: 1.4;
 }
+.fit-why-eq-formula {
+  margin: 0.1rem 0; text-align: center; font-size: 1.15rem; font-weight: 700;
+}
 .fit-why-table-wrap {
   height: 380px; overflow-y: auto; border: 1px solid #E2E8F0;
   border-radius: 8px; background: #F8FAFC; padding: 0.3rem 0.6rem;
@@ -961,7 +964,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   color: #475569; font-weight: 700;
 }
 .fit-why-table td { padding: 0.22rem 0.5rem; border-bottom: 1px solid #E2E8F0; }
-div[class*="st-key-fit_why_eq_slot_"] {
+.st-key-fit_why_eq_slot {
   min-height: 5.5rem;
 }
 /* Step 2 — Predictor only: tighter vertical rhythm so the green
@@ -6449,7 +6452,7 @@ def _fit_why_step_figure(sample, step: int, *, x_range, y_range):
 
 def render_why_model_subtab() -> None:
     """Five-step auto-playing lesson: table → scatter → mean → regression → conclusion."""
-    from src.statistical_journey import ORANGE, build_journey_sample
+    from src.statistical_journey import build_journey_sample
 
     st.markdown(
         tipify('<p class="fit-r2-heading">Why do we need a statistical model?</p>'),
@@ -6500,48 +6503,45 @@ def render_why_model_subtab() -> None:
         )
 
     # Fixed-height slot under the chart — reserved on every step so the
-    # Pause/Replay buttons never shift vertically.
-    # Keyed per step so Streamlit mounts a fresh container on every
-    # transition instead of patching the previous one in place — avoids a
-    # brief flash of the old step's content (e.g. the εᵢ caption) during
-    # fast auto-play/replay reruns.
-    with st.container(key=f"fit_why_eq_slot_{step}"):
+    # Pause/Replay buttons never shift vertically. Built as ONE markdown
+    # call (no st.latex / st.columns mixed in) so there is exactly one
+    # element for Streamlit to swap per rerun — multiple interspersed
+    # elements here were letting the previous step's content (e.g. the εᵢ
+    # caption) visually linger during fast auto-play/replay reruns.
+    eq_slot = st.empty()
+    with eq_slot.container(key="fit_why_eq_slot"):
         if step == 2:
-            st.markdown(
+            slot_html = (
                 '<p class="fit-why-eq-caption">Predicting the mean ignores X — '
                 "every student gets the same prediction, no matter how many "
-                "hours they studied.</p>",
-                unsafe_allow_html=True,
+                "hours they studied.</p>"
             )
-        elif step >= 3:
-            from src.statistical_journey import INK
-
-            _l, mid, _r = st.columns([1, 2, 1])
-            with mid:
-                st.latex(rf"\color{{{ORANGE}}}{{\hat{{y}} = \hat{{\alpha}} + \hat{{\beta}}x}}")
-                if step == 4:
-                    st.latex(rf"\color{{{INK}}}{{y_i = \hat{{y}}_i + \varepsilon_i}}")
-            if step == 4:
-                st.markdown(
-                    '<p class="fit-why-eq-caption">ε<sub>i</sub> is the '
-                    "residual — the gap between what we observed and what "
-                    "the model predicts.</p>"
-                    '<div class="fit-r2-lesson" style="margin:0.2rem 0 0 0;'
-                    'padding:0.35rem 0.5rem;"><div class="result" '
-                    'style="margin:0;"><p class="big">Regression uses X to '
-                    "explain variation in Y and improve predictions over "
-                    "the mean.</p></div></div>",
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<p class="fit-why-eq-caption">The regression line lets '
-                    "predictions depend on X — different hours studied now "
-                    "give different predicted scores.</p>",
-                    unsafe_allow_html=True,
-                )
+        elif step == 3:
+            slot_html = (
+                '<p class="fit-why-eq-formula" style="color:#EA580C;">'
+                "ŷ = α̂ + β̂x</p>"
+                '<p class="fit-why-eq-caption">The regression line lets '
+                "predictions depend on X — different hours studied now "
+                "give different predicted scores.</p>"
+            )
+        elif step == 4:
+            slot_html = (
+                '<p class="fit-why-eq-formula" style="color:#EA580C;">'
+                "ŷ = α̂ + β̂x</p>"
+                '<p class="fit-why-eq-formula" style="color:#1F2933;">'
+                "y<sub>i</sub> = ŷ<sub>i</sub> + ε<sub>i</sub></p>"
+                '<p class="fit-why-eq-caption">ε<sub>i</sub> is the '
+                "residual — the gap between what we observed and what "
+                "the model predicts.</p>"
+                '<div class="fit-r2-lesson" style="margin:0.2rem 0 0 0;'
+                'padding:0.35rem 0.5rem;"><div class="result" '
+                'style="margin:0;"><p class="big">Regression uses X to '
+                "explain variation in Y and improve predictions over "
+                "the mean.</p></div></div>"
+            )
         else:
-            st.markdown("&nbsp;", unsafe_allow_html=True)
+            slot_html = "&nbsp;"
+        st.markdown(slot_html, unsafe_allow_html=True)
 
     finished = step >= FIT_WHY_STEPS[-1]
     if "fit_why_playing" not in st.session_state:
