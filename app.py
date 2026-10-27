@@ -1750,6 +1750,8 @@ p.fit-why-step-title {
 .dist-formula .se-key { font-weight: 780; }
 .mr-head { margin: 0 0 0.3rem 0; font-size: 1.15rem; font-weight: 750; color: #12263a; }
 .mr-note { margin: 0.2rem 0; font-size: 0.9rem; line-height: 1.35rem; color: #374151; }
+.t-build-points { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; font-size: 0.9rem; line-height: 1.4rem; color: #374151; }
+.t-build-points li { margin: 0.1rem 0; }
 .mr-sub { margin: 0.3rem 0 0.2rem 0; font-size: 0.86rem; font-weight: 650; color: #12263a; }
 .mr-coef {
     margin: 0.3rem 0; padding: 0.4rem 0.6rem; font-size: 0.95rem; font-weight: 650;
@@ -4617,9 +4619,11 @@ def _t_fraction_html(numerator: float, denominator: float, result: float) -> str
 
 
 _TTEST_BUILD_INTUITION = (
-    '<p class="mr-note">β̂ measures the estimated relationship. SE measures '
-    "the uncertainty surrounding that estimate. t is the distance between "
-    "β̂ and the hypothesised β (zero), measured in standard errors.</p>"
+    '<ul class="t-build-points">'
+    "<li><b>β̂</b> — what we found in this sample.</li>"
+    "<li><b>SE</b> — how much that estimate would bounce around in other samples.</li>"
+    "<li><b>t</b> — how far β̂ is from zero, in standard errors.</li>"
+    "</ul>"
 )
 
 _TTEST_BUILD_BRIDGE = (
