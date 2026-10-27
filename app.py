@@ -6549,6 +6549,21 @@ def render_why_model_subtab() -> None:
         step = 0
     if "fit_why_last_tick" not in st.session_state:
         st.session_state.fit_why_last_tick = time.time()
+    if "fit_why_playing" not in st.session_state:
+        st.session_state.fit_why_playing = True
+    playing = bool(st.session_state.fit_why_playing)
+
+    # Advance BEFORE drawing (not after), so the step that's about to be
+    # shown this tick is already current — otherwise a step advanced at
+    # the end of one run only becomes visible on the *next* tick, which
+    # was silently doubling the hold time for the very first step.
+    if playing and step < FIT_WHY_STEPS[-1]:
+        now = time.time()
+        last_tick = float(st.session_state.get("fit_why_last_tick", now))
+        if now - last_tick >= FIT_WHY_HOLD_SECONDS - 0.05:
+            step = min(step + 1, FIT_WHY_STEPS[-1])
+            st.session_state.fit_why_step = step
+            st.session_state.fit_why_last_tick = now
 
     st.markdown(
         f'<p class="fit-why-step-title">{FIT_WHY_STEP_TITLES[step]}</p>',
@@ -6613,9 +6628,6 @@ def render_why_model_subtab() -> None:
         st.markdown(slot_html, unsafe_allow_html=True)
 
     finished = step >= FIT_WHY_STEPS[-1]
-    if "fit_why_playing" not in st.session_state:
-        st.session_state.fit_why_playing = True
-    playing = bool(st.session_state.fit_why_playing)
 
     btn_col1, btn_col2 = st.columns([1, 1], gap="small")
     with btn_col1:
@@ -6634,16 +6646,6 @@ def render_why_model_subtab() -> None:
             st.button(
                 "Replay ↺", key="fit_why_replay_btn_mid", on_click=_replay_fit_why_step
             )
-
-    if playing and not finished:
-        # Ticked by the fragment's own run_every timer — never a manual
-        # st.rerun() — so advancing here can never trigger a full-page
-        # rerun (which previously let other page content bleed through).
-        now = time.time()
-        last_tick = float(st.session_state.get("fit_why_last_tick", 0.0))
-        if now - last_tick >= FIT_WHY_HOLD_SECONDS - 0.05:
-            st.session_state.fit_why_step = min(step + 1, FIT_WHY_STEPS[-1])
-            st.session_state.fit_why_last_tick = now
 
 
 def render_use_model_subtab(view) -> None:
