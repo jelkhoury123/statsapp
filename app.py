@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from streamlit.errors import StreamlitInvalidLayoutContextError
 
 from src.data_drawer import (
     DRAWER_INTRO,
@@ -5829,8 +5830,18 @@ def _toggle_fit_view_mode() -> None:
 
 
 def _fit_fragment_rerun() -> None:
-    """Rerun only the Fit-the-line fragment (avoids full-page flash)."""
-    st.rerun(scope="fragment")
+    """Rerun only the Fit-the-line fragment (avoids full-page flash).
+
+    scope="fragment" is only valid while a fragment-scoped rerun is already
+    in progress — Streamlit raises StreamlitInvalidLayoutContextError if this
+    fragment happens to be executing as part of a full-app rerun instead
+    (e.g. the interaction that triggered this run wasn't itself scoped to
+    the fragment). Fall back to a full rerun in that case rather than crash.
+    """
+    try:
+        st.rerun(scope="fragment")
+    except StreamlitInvalidLayoutContextError:
+        st.rerun()
 
 
 def _open_understanding_r2() -> None:
