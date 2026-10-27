@@ -942,6 +942,10 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .fit-why-lesson .point.active { border-left-color: #EA580C; }
 .fit-why-lesson .point.active .lab { color: #C2410C; }
 .fit-why-lesson .point.active .txt { color: #1F2933; }
+.fit-why-step-title {
+  margin: 0.1rem 0 0.5rem 0; font-size: 1.05rem; font-weight: 750;
+  color: #12263a;
+}
 .fit-why-eq-caption {
   margin: 0.35rem 0 0 0; text-align: center;
   font-size: 0.85rem; color: #52606D; line-height: 1.4;
@@ -957,7 +961,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   color: #475569; font-weight: 700;
 }
 .fit-why-table td { padding: 0.22rem 0.5rem; border-bottom: 1px solid #E2E8F0; }
-.st-key-fit_why_eq_slot, .st-key-fit_why_eq_slot_empty {
+div[class*="st-key-fit_why_eq_slot_"] {
   min-height: 5.5rem;
 }
 /* Step 2 — Predictor only: tighter vertical rhythm so the green
@@ -6307,6 +6311,14 @@ FIT_WHY_POINTS = (
 # Which FIT_WHY_POINTS bullet is active at each step A..E.
 FIT_WHY_POINT_FOR_STEP = (0, 0, 1, 1, 2)
 
+FIT_WHY_STEP_TITLES = (
+    "We have a data table",
+    "We represent it with a scatter plot",
+    "The baseline prediction is the mean ȳ",
+    "Fit an optimal line in the scatter plot",
+    "Use it for prediction!",
+)
+
 
 def _fit_why_table_html(sample) -> str:
     rows = "".join(
@@ -6456,6 +6468,11 @@ def render_why_model_subtab() -> None:
     parts.append("</div></div>")
     st.markdown(tipify("".join(parts)), unsafe_allow_html=True)
 
+    st.markdown(
+        f'<p class="fit-why-step-title">{FIT_WHY_STEP_TITLES[step]}</p>',
+        unsafe_allow_html=True,
+    )
+
     # Frozen sample — same one used throughout; never regenerated here.
     sample = build_journey_sample()
 
@@ -6484,7 +6501,11 @@ def render_why_model_subtab() -> None:
 
     # Fixed-height slot under the chart — reserved on every step so the
     # Pause/Replay buttons never shift vertically.
-    with st.container(key="fit_why_eq_slot"):
+    # Keyed per step so Streamlit mounts a fresh container on every
+    # transition instead of patching the previous one in place — avoids a
+    # brief flash of the old step's content (e.g. the εᵢ caption) during
+    # fast auto-play/replay reruns.
+    with st.container(key=f"fit_why_eq_slot_{step}"):
         if step == 2:
             st.markdown(
                 '<p class="fit-why-eq-caption">Predicting the mean ignores X — '
