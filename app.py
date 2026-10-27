@@ -4670,14 +4670,14 @@ def _t_understand_figure(
     grid = np.linspace(-_T_DIST_X_MAX, _T_DIST_X_MAX, 500)
     density = student_t.pdf(grid, df)
     peak = float(density.max()) if density.size else 1.0
-    y_top = peak * 1.35
+    y_top = peak * 1.5
     active_t = explore_t if (stage >= 3 and explore_t is not None) else t_stat
     fig = go.Figure()
 
     fig.add_vline(x=0, line_color=GREY, line_width=2, line_dash="dash")
-    fig.add_annotation(x=0, y=y_top, yanchor="top", text="β = 0 (H₀)",
+    fig.add_annotation(x=0, y=y_top * 0.95, yanchor="top", text="β = 0 (H₀)",
                        showarrow=False, font=dict(size=11, color=INK, family=FONT))
-    obs_label_y = peak * 1.12
+    obs_label_y = peak * 1.15
 
     if stage >= 4 and critical is not None and critical <= _T_DIST_X_MAX:
         for mask in (grid <= -critical, grid >= critical):
@@ -4739,7 +4739,7 @@ def _t_understand_figure(
                      range=[-_T_DIST_X_MAX, _T_DIST_X_MAX])
     fig.update_yaxes(range=[0, y_top], showticklabels=False, zeroline=False)
     fig.update_layout(
-        template="plotly_white", height=height, margin=dict(l=20, r=20, t=30, b=45),
+        template="plotly_white", height=height, margin=dict(l=20, r=20, t=40, b=45),
         font=dict(family=FONT, color=INK, size=12), showlegend=False,
     )
     return fig
@@ -4832,20 +4832,19 @@ def _render_t_understand_body(
     # display:none) hides them before their stage without collapsing space.
     alpha_key = f"t_understand_alpha_{suffix}"
     slider_key = f"t_understand_slider_{suffix}"
-    if stage < 4:
-        st.markdown(f'<style>.st-key-{alpha_key} {{ visibility: hidden; }}</style>',
-                   unsafe_allow_html=True)
-    if stage < 3:
-        st.markdown(f'<style>.st-key-{slider_key} {{ visibility: hidden; }}</style>',
-                   unsafe_allow_html=True)
+    hide_rules = "".join([
+        f'.st-key-{alpha_key} {{ visibility: hidden; }}' if stage < 4 else "",
+        f'.st-key-{slider_key} {{ visibility: hidden; }}' if stage < 3 else "",
+    ])
+    st.markdown(f"<style>{hide_rules}</style>", unsafe_allow_html=True)
 
     left, center, right = st.columns([0.20, 0.55, 0.25], gap="medium")
 
     with left:
         alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
-        st.markdown('<p class="t-understand-mini-label">Significance (α)</p>',
-                   unsafe_allow_html=True)
         with st.container(key=alpha_key):
+            st.markdown('<p class="t-understand-mini-label">Significance (α)</p>',
+                       unsafe_allow_html=True)
             alpha = st.radio(
                 "Significance level", options=_T_DIST_ALPHA_OPTIONS,
                 index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
@@ -4853,9 +4852,9 @@ def _render_t_understand_body(
                 label_visibility="collapsed",
             )
         explore_t = float(st.session_state[explore_key])
-        st.markdown('<p class="t-understand-mini-label">Explore t (hypothetical)</p>',
-                   unsafe_allow_html=True)
         with st.container(key=slider_key):
+            st.markdown('<p class="t-understand-mini-label">Explore t (hypothetical)</p>',
+                       unsafe_allow_html=True)
             explore_t = st.slider(
                 "Explore t", min_value=-6.0, max_value=6.0, value=explore_t, step=0.05,
                 key=f"{explore_key}_slider", label_visibility="collapsed",
