@@ -8218,7 +8218,11 @@ def _render_fitting_line_subtab(
     )
     _l, mid, _r = st.columns([1, 2, 1])
     with mid:
-        st.latex(r"\text{SSR} = \sum (y_i - \hat{y}_i)^2 \qquad R^2 = 1 - \dfrac{\text{SSR}}{\text{SST}}")
+        st.latex(
+            r"\text{SSR} = \sum (y_i - \hat{y}_i)^2 \qquad "
+            r"\text{SST} = \sum (y_i - \bar{y})^2 \qquad "
+            r"R^2 = 1 - \dfrac{\text{SSR}}{\text{SST}}"
+        )
 
     try_line_active = bool(st.session_state.get("fit_try_line_active", False))
     if not try_line_active:
