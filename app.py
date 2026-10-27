@@ -4613,20 +4613,26 @@ def _render_ttest_why(population) -> None:
 
 
 def _t_fraction_html(numerator: float, denominator: float, result: float, beta_label: str = "β̂") -> str:
-    """Symbolic formula over its numeric substitution — same visual style as the F-test lesson."""
+    """One inline chain: symbolic fraction = numeric fraction = result."""
+
+    def stacked(top: str, bottom: str) -> str:
+        return (
+            '<div style="display:inline-flex;flex-direction:column;align-items:center;'
+            'line-height:1.5;">'
+            f'<span style="padding:0 0.3rem;">{top}</span>'
+            '<span style="border-top:1.5px solid #374151;width:100%;"></span>'
+            f'<span style="padding:0 0.3rem;">{bottom}</span>'
+            "</div>"
+        )
+
     return (
-        '<p style="text-align:center;margin:0.4rem 0 0 0;font-size:0.92rem;color:#52606D;">'
-        f"t = {beta_label} / SE({beta_label})</p>"
         '<div style="display:flex;align-items:center;justify-content:center;'
-        'gap:0.6rem;margin:0.2rem 0 0.6rem 0;font-size:1.1rem;color:#12263a;">'
+        'gap:0.6rem;margin:0.6rem 0;font-size:1.1rem;color:#12263a;">'
         '<span style="font-weight:700;">t</span><span>=</span>'
-        '<div style="display:inline-flex;flex-direction:column;align-items:center;'
-        'line-height:1.5;">'
-        f'<span style="padding:0 0.3rem;">{numerator:.3f}</span>'
-        '<span style="border-top:1.5px solid #374151;width:100%;"></span>'
-        f'<span style="padding:0 0.3rem;">{denominator:.3f}</span>'
-        "</div>"
-        "<span>=</span>"
+        + stacked(beta_label, f"SE({beta_label})")
+        + "<span>=</span>"
+        + stacked(f"{numerator:.3f}", f"{denominator:.3f}")
+        + "<span>=</span>"
         f'<span style="font-weight:800;color:#EA580C;font-size:1.3rem;">{result:.3f}</span>'
         "</div>"
     )
