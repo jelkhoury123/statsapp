@@ -1501,25 +1501,25 @@ p.fit-why-step-title {
 }
 .fit-std-same { color: #047857; font-weight: 700; }
 .fit-r2-lesson {
-  margin: 0.35rem 0 0.2rem 0; padding: 0.65rem 0.8rem 0.7rem;
+  margin: 0.3rem 0 0.15rem 0; padding: 0.5rem 0.8rem 0.55rem;
   background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
   border: 1px solid #E2E8F0; border-radius: 10px;
 }
 .fit-r2-lesson h3 {
-  margin: 0 0 0.35rem 0; font-size: 1.05rem; font-weight: 750; color: #0F172A;
+  margin: 0 0 0.2rem 0; font-size: 1rem; font-weight: 750; color: #0F172A;
 }
 .fit-r2-lesson p {
-  margin: 0 0 0.4rem 0; font-size: 0.9rem; color: #334155; line-height: 1.4rem;
+  margin: 0 0 0.25rem 0; font-size: 0.88rem; color: #334155; line-height: 1.3rem;
 }
 .fit-r2-lesson .formula {
-  margin: 0.25rem 0 0.45rem 0; padding: 0.4rem 0.55rem;
+  margin: 0.15rem 0 0.3rem 0; padding: 0.3rem 0.55rem;
   background: #F1F5F9; border-radius: 7px; border: 1px solid #E2E8F0;
-  font-size: 0.92rem; font-weight: 650; color: #1E3A8A;
-  font-variant-numeric: tabular-nums; line-height: 1.4rem;
+  font-size: 0.9rem; font-weight: 650; color: #1E3A8A;
+  font-variant-numeric: tabular-nums; line-height: 1.3rem;
 }
 .fit-r2-lesson .formula b { color: #1D4ED8; font-weight: 780; }
 .fit-r2-lesson .note {
-  margin: 0.15rem 0 0 0; font-size: 0.82rem; color: #64748B; line-height: 1.3rem;
+  margin: 0.1rem 0 0 0; font-size: 0.78rem; color: #64748B; line-height: 1.2rem;
 }
 .fit-r2-math-heading {
   margin: 0.4rem 0 0.1rem 0; font-size: 0.72rem; font-weight: 780;
@@ -1595,20 +1595,20 @@ p.fit-why-step-title {
 }
 .st-key-fit_r2_math .katex { font-size: 0.92em; }
 .fit-r2-lesson .metrics {
-  display: flex; flex-wrap: wrap; gap: 0.55rem 1.1rem; margin: 0.2rem 0 0.35rem 0;
-  font-size: 0.9rem; font-variant-numeric: tabular-nums; color: #0F172A;
+  display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin: 0.1rem 0 0.2rem 0;
+  font-size: 0.86rem; font-variant-numeric: tabular-nums; color: #0F172A;
 }
 .fit-r2-lesson .metrics b { font-weight: 780; }
 .fit-r2-lesson .takeaway {
-  margin: 0.5rem 0 0 0; padding: 0.45rem 0.65rem;
+  margin: 0.3rem 0 0 0; padding: 0.3rem 0.65rem;
   background: #EFF6FF; border-left: 3px solid #93C5FD; border-radius: 6px;
 }
 .fit-r2-lesson .takeaway .lab {
-  margin: 0 0 0.1rem 0; font-size: 0.72rem; font-weight: 780;
+  margin: 0 0 0.05rem 0; font-size: 0.7rem; font-weight: 780;
   letter-spacing: 0.06em; text-transform: uppercase; color: #1D4ED8;
 }
 .fit-r2-lesson .takeaway p {
-  margin: 0; font-size: 0.88rem; color: #1E3A8A; line-height: 1.35rem;
+  margin: 0; font-size: 0.84rem; color: #1E3A8A; line-height: 1.25rem;
 }
 .fit-r2-lesson .compare {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.9rem;
@@ -1637,8 +1637,8 @@ p.fit-why-step-title {
   margin: 0; font-size: 1.15rem; font-weight: 780; color: #15803D;
 }
 .fit-r2-bar {
-  display: flex; width: 100%; height: 1.4rem; border-radius: 7px;
-  margin: 0.35rem 0 0.4rem 0; background: #E2E8F0;
+  display: flex; width: 100%; height: 1.3rem; border-radius: 7px;
+  margin: 0.2rem 0 0.25rem 0; background: #E2E8F0;
 }
 .fit-r2-bar .explained {
   background: #3B82F6; color: white; font-size: 0.72rem; font-weight: 700;
@@ -6730,6 +6730,8 @@ def render_understanding_r2_subtab(view) -> None:
         chart_height -= 50
     elif step == "baseline":
         chart_height -= 45
+    elif step == "explained":
+        chart_height -= 70
     st.plotly_chart(
         r2_lesson_scatter(
             hours=view.x,
