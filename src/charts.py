@@ -1794,7 +1794,7 @@ def _add_coefficient_geometry(
                 x=[0.0],
                 y=[alpha],
                 mode="markers",
-                name="Intercept α<sup>^</sup>",
+                name="Intercept α<sup>ˆ</sup>",
                 marker=dict(
                     size=14,
                     color="#0F766E",
@@ -1802,7 +1802,7 @@ def _add_coefficient_geometry(
                     line=dict(width=1.5, color="white"),
                 ),
                 hovertemplate=(
-                    f"Intercept α<sup>^</sup> = {_format_quantity(alpha)}<br>"
+                    f"Intercept α<sup>ˆ</sup> = {_format_quantity(alpha)}<br>"
                     f"Predicted {y_title} when predictor = 0"
                     "<extra></extra>"
                 ),
@@ -1812,7 +1812,7 @@ def _add_coefficient_geometry(
             dict(
                 x=0.0,
                 y=alpha,
-                text=f"Intercept α<sup>^</sup> = {_format_quantity(alpha)}",
+                text=f"Intercept α<sup>ˆ</sup> = {_format_quantity(alpha)}",
                 showarrow=True,
                 arrowhead=2,
                 ax=28,
@@ -1830,7 +1830,7 @@ def _add_coefficient_geometry(
         if not zero_in_x:
             reason.append("X = 0 is outside the observed X range")
         if zero_in_x and not alpha_in_y:
-            reason.append("α<sup>^</sup> is outside the visible Y range")
+            reason.append("α<sup>ˆ</sup> is outside the visible Y range")
         reason_text = "; ".join(reason) if reason else "Intercept lies outside this window"
         annotations.append(
             dict(
@@ -1843,7 +1843,7 @@ def _add_coefficient_geometry(
                 text=(
                     "<b>Intercept inset</b> "
                     "<span style='color:#7B8794'>(schematic)</span><br>"
-                    f"α<sup>^</sup> = {_format_quantity(alpha)} at X = 0<br>"
+                    f"α<sup>ˆ</sup> = {_format_quantity(alpha)} at X = 0<br>"
                     f"Predicted {y_title} when predictor = 0<br>"
                     f"<span style='color:#9B6B2F'>{reason_text}</span>"
                 ),
@@ -1899,7 +1899,7 @@ def _add_coefficient_geometry(
                 y=0.84,
                 xanchor="left",
                 yanchor="middle",
-                text="α<sup>^</sup>",
+                text="α<sup>ˆ</sup>",
                 showarrow=False,
                 font=dict(size=10, color="#0F766E", family=FONT),
             )
@@ -1959,7 +1959,7 @@ def _add_coefficient_geometry(
         dict(
             x=xb,
             y=0.5 * (yb + yc),
-            text=f"β<sup>^</sup> = {_format_quantity(beta)}",
+            text=f"β<sup>ˆ</sup> = {_format_quantity(beta)}",
             showarrow=False,
             xanchor="left",
             xshift=6,
