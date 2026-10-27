@@ -918,8 +918,8 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
   margin: 0.05rem 0 0 0; text-align: center;
   font-size: 0.74rem; color: #64748B; line-height: 1.15rem;
 }
-.fit-why-step-title {
-  margin: 3rem 0 0.5rem 0; font-size: 1.05rem; font-weight: 750;
+p.fit-why-step-title {
+  margin: 3rem 0 0.5rem 0 !important; font-size: 1.05rem; font-weight: 750;
   color: #12263a;
 }
 .fit-why-eq-caption {
