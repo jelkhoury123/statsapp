@@ -6631,7 +6631,7 @@ def render_why_model_subtab() -> None:
     if playing and not finished:
         time.sleep(FIT_WHY_HOLD_SECONDS)
         st.session_state.fit_why_step = min(step + 1, FIT_WHY_STEPS[-1])
-        st.rerun()
+        st.rerun(scope="fragment")
 
 
 def render_use_model_subtab(view) -> None:
