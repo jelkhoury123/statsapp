@@ -7386,8 +7386,8 @@ def render_standardisation_subtab(view) -> None:
     st.markdown(
         tipify(
             '<p class="fit-std-banner">'
-            "Converting to standard deviations puts every predictor on the "
-            "same scale, so their coefficients become directly comparable."
+            "Standardisation just changes the unit of distance — from an "
+            "arbitrary unit (hours, %) to standard deviations."
             "</p>"
         ),
         unsafe_allow_html=True,
