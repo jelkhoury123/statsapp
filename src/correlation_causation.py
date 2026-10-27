@@ -366,27 +366,18 @@ def _render_causation() -> None:
         tipify(
             "<p style='margin:0.2rem 0 0.35rem 0;color:#475569;font-weight:400;"
             "font-size:0.9rem;line-height:1.35rem;'>"
-            "Classic illustration: ice cream sales and drowning incidents, "
-            "across a simulated season.</p>"
+            "Ice cream sales and drownings rise together. Does buying ice "
+            "cream cause drownings?</p>"
         ),
         unsafe_allow_html=True,
     )
     temp_shift = st.slider(
-        "Temperature shift (°C relative to a mild season)",
+        "Temperature (°C)",
         min_value=-8.0,
         max_value=8.0,
         value=0.0,
         step=0.5,
         key="corr_temp_shift",
-        help="Shifts the simulated temperature distribution for this illustration.",
-    )
-    st.markdown(
-        tipify(
-            '<p class="fit-std-note">This shifts the simulated temperature '
-            "distribution for this illustration — it is not a real-world "
-            "causal experiment.</p>"
-        ),
-        unsafe_allow_html=True,
     )
     temp, ice, drown = ice_cream_scene(
         N_SCENE, seed=DEFAULT_SEED + 17, temp_shift=float(temp_shift)
@@ -406,7 +397,7 @@ def _render_causation() -> None:
                 beta=float(fit.beta),
                 x_title="Ice cream sales (illustrative)",
                 y_title="Drownings (illustrative)",
-                title="Ice cream vs drownings",
+                title="Ice cream sales vs drownings",
                 height=380,
             ),
             width="stretch",
@@ -416,16 +407,8 @@ def _render_causation() -> None:
         st.markdown(
             tipify(
                 '<p class="fit-std-slope">'
-                f"r = <b>{_fmt(r_hat)}</b> &nbsp;·&nbsp; R² = <b>{_fmt(r2)}</b><br>"
-                f"β̂ = <b>{_fmt(fit.beta)}</b> drownings per unit ice cream sales"
+                f"r = <b>{_fmt(r_hat)}</b> &nbsp;·&nbsp; R² = <b>{_fmt(r2)}</b>"
                 "</p>"
-            ),
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            tipify(
-                "<p style='color:#334155;font-weight:400;font-size:0.88rem;'>"
-                "<b>Does selling more ice cream cause more drownings?</b></p>"
             ),
             unsafe_allow_html=True,
         )
@@ -441,7 +424,7 @@ def _render_causation() -> None:
                 title=(
                     "Same points, coloured by temperature"
                     if revealed
-                    else "Reveal the hidden variable to see more"
+                    else "What explains this relationship?"
                 ),
                 height=380,
                 color_by=temp if revealed else None,
@@ -459,7 +442,7 @@ def _render_causation() -> None:
             )
         else:
             st.button(
-                "Reveal the hidden variable",
+                "Reveal temperature",
                 key="corr_reveal_btn",
                 type="primary",
                 on_click=_toggle_corr_reveal,
@@ -469,16 +452,15 @@ def _render_causation() -> None:
         st.markdown(
             tipify(
                 '<div class="fit-r2-lesson" style="padding:0.55rem 0.7rem;">'
-                "<p style='font-weight:400;color:#334155;'>No — both rise when "
-                "it is hot. Temperature is the hidden variable driving both "
-                "series:</p>"
-                "<p style='margin:0.3rem 0;font-weight:400;color:#334155;'>"
-                "Temperature → Ice cream sales<br>"
-                "Temperature → Swimming → Drownings</p>"
-                '<p class="fit-std-note" style="margin-bottom:0;">A model can '
-                "predict Y from X with high R² even when X does not cause Y. "
-                "Move the temperature slider — both series move together "
-                "because of the shared driver.</p>"
+                '<div class="result" style="margin:0;">'
+                '<p class="big">Hot weather increases both ice cream sales '
+                "and swimming activity. More swimming can lead to more "
+                "drownings.</p>"
+                "</div>"
+                "<p style='margin:0.35rem 0 0 0;font-weight:400;"
+                "color:#334155;font-size:0.86rem;'>Correlation does not "
+                "establish causation. A third variable may explain why two "
+                "things move together.</p>"
                 "</div>"
             ),
             unsafe_allow_html=True,
