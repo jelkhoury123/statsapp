@@ -1761,7 +1761,6 @@ p.fit-why-step-title {
     font-weight: 650; font-size: 0.92rem; color: #12263a; line-height: 1.35rem;
 }
 .t-understand-hint { margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #6B7280; }
-div[class*="st-key-t_understand_controls_"] { min-height: 150px; }
 div[class*="st-key-t_understand_chart_wrap_"] {
     position: sticky; top: 8px; z-index: 5; background: #F4F6F8;
 }
@@ -4804,7 +4803,6 @@ def _t_understand_stage_block_html(
             f"±{critical:.3f} fall in the rejection regions."
         )
     else:
-        verdict = "reject H₀" if reject_actual else "fail to reject H₀"
         conclusion = (
             "We reject H₀. The observed slope is unusually far from zero "
             "under the assumption that the true slope is zero."
@@ -4814,10 +4812,10 @@ def _t_understand_stage_block_html(
         )
         caveat = "" if reject_actual else " This does not prove that the true slope equals zero."
         body = (
-            f'<p class="mr-stat">Observed t: <b>{t_stat:.3f}</b><br>'
-            f"Degrees of freedom: <b>{df}</b><br>"
-            f"p-value: <b>{_p_text(actual_p)}</b><br>"
-            f"Significance level: <b>{alpha:.2f}</b></p>"
+            f'<p class="mr-stat">Observed t: <b>{t_stat:.3f}</b> &nbsp;·&nbsp; '
+            f"df: <b>{df}</b> &nbsp;·&nbsp; "
+            f"p-value: <b>{_p_text(actual_p)}</b> &nbsp;·&nbsp; "
+            f"α: <b>{alpha:.2f}</b></p>"
             f'<p class="t-understand-conclusion">{conclusion}{caveat}</p>'
         )
         return f'<p class="t-understand-head">{title}</p>{body}'
@@ -4837,27 +4835,27 @@ def _render_t_understand_body(
 
     st.markdown(_t_fraction_html(beta, se, t_stat, beta_label), unsafe_allow_html=True)
 
+    # Both controls render on every stage (greyed out before their stage) so
+    # the chart below never shifts position as stages reveal new controls.
     alpha = float(st.session_state.get("ttest_dist_alpha", 0.05))
     explore_t = float(st.session_state[explore_key])
-    with st.container(key=f"t_understand_controls_{suffix}", border=False):
-        if stage >= 4:
-            alpha = st.radio(
-                "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS,
-                index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
-                format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
-            )
-        if stage >= 3:
-            explore_t = st.slider(
-                "Explore a different t value", min_value=-6.0, max_value=6.0,
-                value=explore_t, step=0.05, key=f"{explore_key}_slider",
-            )
-            st.markdown(
-                '<p class="t-understand-hint">Moving this explores a '
-                "hypothetical t-statistic — it does not change the actual "
-                "sample or its result.</p>",
-                unsafe_allow_html=True,
-            )
-        st.session_state[explore_key] = explore_t
+    alpha = st.radio(
+        "Significance level (α)", options=_T_DIST_ALPHA_OPTIONS,
+        index=_T_DIST_ALPHA_OPTIONS.index(alpha) if alpha in _T_DIST_ALPHA_OPTIONS else 1,
+        format_func=lambda a: f"α = {a:.2f}", key="ttest_dist_alpha", horizontal=True,
+        disabled=stage < 4,
+    )
+    explore_t = st.slider(
+        "Explore a different t value", min_value=-6.0, max_value=6.0,
+        value=explore_t, step=0.05, key=f"{explore_key}_slider", disabled=stage < 3,
+    )
+    st.markdown(
+        '<p class="t-understand-hint">Moving this explores a hypothetical '
+        "t-statistic — it does not change the actual sample or its "
+        "result.</p>",
+        unsafe_allow_html=True,
+    )
+    st.session_state[explore_key] = explore_t
     critical = float(student_t.ppf(1.0 - alpha / 2.0, df))
 
     with st.container(key=f"t_understand_chart_wrap_{suffix}"):
