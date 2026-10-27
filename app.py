@@ -1276,16 +1276,18 @@ p.fit-why-step-title {
 .fit-predict-eq { font-size: 0.82rem; font-weight: 650; color: #9A3412; }
 .fit-predict-eq b { color: #EA580C; font-weight: 780; }
 .fit-predict-warn {
-  margin: 0.15rem 0 0 0;
-  padding: 0.35rem 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 650;
-  line-height: 1.25rem;
-  color: #9A3412;
-  background: #FFF7ED;
-  border-left: 3px solid #EA580C;
-  border-radius: 4px;
+  margin: 0.4rem 0 0 0;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3rem;
+  color: #FFFFFF;
+  background: #DC2626;
+  border: 1px solid #991B1B;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(153, 27, 27, 0.35);
 }
+.fit-predict-warn::before { content: "⚠ "; }
 .fit-explain-student {
   margin: 0; font-size: 0.9rem; font-weight: 750; color: #0F172A;
   line-height: 1.75rem; white-space: nowrap;
