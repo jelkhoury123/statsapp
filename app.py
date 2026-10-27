@@ -4622,6 +4622,44 @@ _TTEST_BUILD_INTUITION = (
     "β̂ and the hypothesised β (zero), measured in standard errors.</p>"
 )
 
+_TTEST_BUILD_BRIDGE = (
+    '<p class="mr-note">Next: is that distance large enough to be '
+    "surprising if the true β really were zero?</p>"
+)
+
+
+def _t_build_scale_figure(t_stat: float, height: int = 170) -> go.Figure:
+    """A number line in SE units showing how far t̂ sits from the null."""
+    reach = max(3.5, abs(t_stat) + 1.2)
+    fig = go.Figure()
+    fig.add_shape(type="line", x0=-reach, x1=reach, y0=0, y1=0,
+                  line=dict(color=GREY, width=1.5))
+    lo, hi = -int(reach), int(reach)
+    for tick in range(lo, hi + 1):
+        fig.add_shape(type="line", x0=tick, x1=tick, y0=-0.08, y1=0.08,
+                      line=dict(color=GREY, width=1))
+        fig.add_annotation(x=tick, y=-0.3, text=str(tick), showarrow=False,
+                           font=dict(size=10, color=GREY, family=FONT))
+    fig.add_shape(type="line", x0=0, x1=0, y0=-0.08, y1=1.0,
+                  line=dict(color=GREY, width=2, dash="dash"))
+    fig.add_annotation(x=0, y=1.1, text="β = 0 (H₀)", showarrow=False,
+                       font=dict(size=11, color=INK, family=FONT))
+    fig.add_shape(type="line", x0=0, x1=t_stat, y0=0.55, y1=0.55,
+                  line=dict(color=ORANGE, width=2.5))
+    fig.add_trace(go.Scatter(x=[t_stat], y=[0], mode="markers",
+                             marker=dict(symbol="diamond", size=12, color=ORANGE),
+                             showlegend=False, hoverinfo="skip"))
+    fig.add_annotation(x=t_stat, y=0.78, text=f"t = {t_stat:.2f} SE",
+                       showarrow=False, font=dict(size=12, color=ORANGE, family=FONT))
+    fig.update_xaxes(range=[-reach - 0.3, reach + 0.3], showticklabels=False,
+                     showgrid=False, zeroline=False, fixedrange=True)
+    fig.update_yaxes(range=[-0.5, 1.35], showticklabels=False, showgrid=False,
+                     zeroline=False, fixedrange=True)
+    fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      showlegend=False)
+    return fig
+
 
 def _render_ttest_build_case_a() -> None:
     st.markdown(_TTEST_BUILD_INTUITION, unsafe_allow_html=True)
@@ -4659,6 +4697,11 @@ def _render_ttest_build_case_a() -> None:
         _t_fraction_html(result.beta, result.standard_error, result.t_statistic),
         unsafe_allow_html=True,
     )
+    st.plotly_chart(
+        _t_build_scale_figure(result.t_statistic), width="stretch",
+        config={"displayModeBar": False, "displaylogo": False}, key="ttest_build_scale_a",
+    )
+    st.markdown(_TTEST_BUILD_BRIDGE, unsafe_allow_html=True)
 
 
 def _attendance_coef_se(sample, scenario: str) -> tuple[float, float]:
@@ -4710,6 +4753,11 @@ def _render_ttest_build_case_b(population) -> None:
             unsafe_allow_html=True,
         )
     st.markdown(_t_fraction_html(beta2, se2, t_stat), unsafe_allow_html=True)
+    st.plotly_chart(
+        _t_build_scale_figure(t_stat), width="stretch",
+        config={"displayModeBar": False, "displaylogo": False}, key="ttest_build_scale_b",
+    )
+    st.markdown(_TTEST_BUILD_BRIDGE, unsafe_allow_html=True)
 
 
 def _render_ttest_build(population) -> None:

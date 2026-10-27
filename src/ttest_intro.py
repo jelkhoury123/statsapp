@@ -58,7 +58,7 @@ def intro_figure(step: int) -> go.Figure:
             fig.add_scatter(x=[0, 10], y=[45, 45], mode="lines", name="If true β = 0",
                             line=dict(color=GREY, width=3, dash="dash"))
         fig.add_scatter(x=x, y=alphas[index] + observed * x, mode="lines",
-                        name=f"Our fitted slope β̂ = {observed:.2f}",
+                        name=f"Our fitted slope β<sup>^</sup> = {observed:.2f}",
                         line=dict(color=ORANGE, width=3))
         fig.update_xaxes(title="Hours studied", range=[0, 10])
         fig.update_yaxes(title="Exam score", range=[20, 70])
@@ -77,10 +77,10 @@ def intro_figure(step: int) -> go.Figure:
         if step == 4:
             fig.add_vline(x=observed, line=dict(color=ORANGE, width=3))
             fig.add_annotation(x=observed, y=0.72, yref="paper",
-                               text=f"Our estimate<br>β̂ = {observed:.2f}", showarrow=True,
+                               text=f"Our estimate<br>β<sup>^</sup> = {observed:.2f}", showarrow=True,
                                ax=65, ay=-35, arrowcolor=ORANGE,
                                font=dict(color=ORANGE, size=14, family=FONT), bgcolor="white")
-        fig.update_xaxes(title="Estimated slope β̂ across samples", range=[-reach, reach])
+        fig.update_xaxes(title="Estimated slope β<sup>^</sup> across samples", range=[-reach, reach])
         fig.update_yaxes(title="Density", range=[0, 1.25 * density.max()], showticklabels=False)
     fig.update_layout(
         height=380, margin=dict(l=50, r=24, t=35, b=65),
