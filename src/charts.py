@@ -2107,6 +2107,7 @@ def fitting_scatter(
     prediction_alpha: float | None = None,
     prediction_beta: float | None = None,
     show_line: bool = True,
+    show_mean_component: bool = True,
 ) -> go.Figure:
     """Candidate regression line fitted to a fixed set of observations."""
     fig = go.Figure()
@@ -2252,7 +2253,53 @@ def fitting_scatter(
                 )
             )
     explain_annotations: list[dict] = []
-    if explain_x is not None and explain_y is not None and explain_yhat is not None:
+    if explain_x is not None and explain_y is not None and explain_yhat is not None and not show_mean_component:
+        # Simple actual-vs-predicted compare: no sample-mean decomposition,
+        # just a single residual segment and the two points it connects.
+        fig.add_trace(
+            go.Scatter(
+                x=[explain_x, explain_x],
+                y=[explain_yhat, explain_y],
+                mode="lines",
+                name="Residual",
+                line=dict(color=ORANGE, width=2.5, dash="dot"),
+                hovertemplate=(
+                    f"Residual Y − Ŷ = {explain_y - explain_yhat:+.2f}<extra></extra>"
+                ),
+                showlegend=False,
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[explain_x],
+                y=[explain_yhat],
+                mode="markers+text",
+                name="Predicted Ŷ",
+                text=["Ŷ"],
+                textposition="middle left",
+                textfont=dict(size=12, color=ORANGE, family=FONT),
+                marker=dict(size=12, color=ORANGE, symbol="diamond", line=dict(width=1.5, color="white")),
+                hovertemplate=f"Predicted Ŷ = {explain_yhat:.2f}<extra></extra>",
+                showlegend=False,
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[explain_x],
+                y=[explain_y],
+                mode="markers+text",
+                name="Actual Y",
+                text=["Y"],
+                textposition="middle right",
+                textfont=dict(size=12, color=BLUE, family=FONT),
+                marker=dict(size=14, color=BLUE, symbol="circle", line=dict(width=2.0, color="white")),
+                hovertemplate=(
+                    f"Actual Y = {explain_y:.2f}<br>Predicted Ŷ = {explain_yhat:.2f}<extra></extra>"
+                ),
+                showlegend=False,
+            )
+        )
+    elif explain_x is not None and explain_y is not None and explain_yhat is not None:
         # EXPLAIN palette matches the panel: mean grey, model BLUE, residual ORANGE.
         mean_colour = "#64748B"
         # Horizontal dashed sample mean — only while a student is selected

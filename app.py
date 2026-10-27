@@ -6544,6 +6544,7 @@ def render_use_model_subtab(view) -> None:
             prediction_x=predict_x,
             prediction_alpha=alpha if predict_x is not None else None,
             prediction_beta=beta if predict_x is not None else None,
+            show_mean_component=False,
         ),
         width="stretch",
         config=PLOTLY_CONFIG,
