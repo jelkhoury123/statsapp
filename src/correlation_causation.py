@@ -632,21 +632,34 @@ def _render_control() -> None:
     )
 
     with st.expander("Show regression details", expanded=False):
+        r2_b = float(model_b.r_squared)
         st.markdown(
             tipify(
-                '<p class="fit-std-slope">'
-                "Drownings ~ Ice cream sales<br>"
-                f"β̂<sub>ice</sub> = <b>{_fmt(beta_ice_a)}</b><br>"
-                f"R² = <b>{_fmt(r2_a)}</b>"
-                "</p>"
-                '<p class="fit-std-slope">'
-                "Drownings ~ Ice cream + Temperature<br>"
-                f"β̂<sub>ice</sub> = <b>{_fmt(beta_ice_b)}</b> "
-                "<span class='fit-std-same'>(= slope of the "
-                "partial-regression line)</span><br>"
-                f"β̂<sub>temp</sub> = <b>{_fmt(beta_temp_b)}</b><br>"
-                f"R² = <b>{_fmt(model_b.r_squared)}</b>"
-                "</p>"
+                '<table class="fit-r2-summary-table">'
+                "<thead><tr><th>Metric</th><th>Simple regression</th>"
+                "<th>Multiple regression</th></tr></thead>"
+                "<tbody>"
+                "<tr><td>Ice cream coefficient (β₁)</td>"
+                f"<td>{beta_ice_a:+.3f}</td>"
+                f"<td>{beta_ice_b:+.3f}</td></tr>"
+                "<tr><td>Temperature coefficient (β₂)</td>"
+                "<td>—</td>"
+                f"<td>{beta_temp_b:+.3f}</td></tr>"
+                "<tr><td>R²</td>"
+                f"<td>{_fmt(r2_a)}</td>"
+                f"<td>{_fmt(r2_b)}</td></tr>"
+                "</tbody></table>"
+            ),
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            tipify(
+                "<p style='margin:0.35rem 0 0 0;color:#475569;font-weight:400;"
+                "font-size:0.84rem;line-height:1.28rem;'>Adding temperature "
+                f"increases R² from <b>{_fmt(r2_a)}</b> to <b>{_fmt(r2_b)}</b>, "
+                "meaning the multiple regression explains more of the "
+                "variation in drownings. However, a higher R² does not "
+                "establish causation.</p>"
             ),
             unsafe_allow_html=True,
         )
