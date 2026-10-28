@@ -472,10 +472,8 @@ def _render_control() -> None:
         tipify(
             "<p style='margin:0.2rem 0 0.35rem 0;color:#475569;font-weight:400;"
             "font-size:0.9rem;line-height:1.35rem;'>"
-            "Same illustrative world: temperature causes both ice cream sales and "
-            "drownings; ice cream has no direct causal effect on drownings. "
-            "Compare the simple regression with the association that remains "
-            "after removing temperature's influence from both variables.</p>"
+            "Ice cream sales and drownings rise together. What happens when "
+            "we remove the influence of temperature?</p>"
         ),
         unsafe_allow_html=True,
     )
@@ -498,7 +496,7 @@ def _render_control() -> None:
     left, right = st.columns(2, gap="medium")
     with left:
         st.markdown(
-            '<p class="fit-std-col-lab">Simple regression</p>',
+            '<p class="fit-std-col-lab">1. Before: A strong positive relationship</p>',
             unsafe_allow_html=True,
         )
         st.plotly_chart(
@@ -517,18 +515,13 @@ def _render_control() -> None:
             key="corr_model_a",
         )
         st.markdown(
-            tipify(
-                '<p class="fit-std-slope">'
-                "Drownings ~ Ice cream sales<br>"
-                f"β̂<sub>ice</sub> = <b>{_fmt(beta_ice_a)}</b><br>"
-                f"R² = <b>{_fmt(r2_a)}</b>"
-                "</p>"
-            ),
+            f'<p class="fit-std-slope" style="text-align:center;">'
+            f"Ice cream slope = <b>{_fmt(beta_ice_a)}</b></p>",
             unsafe_allow_html=True,
         )
     with right:
         st.markdown(
-            '<p class="fit-std-col-lab">Partial regression — temperature removed</p>',
+            '<p class="fit-std-col-lab">2. After: The relationship almost disappears</p>',
             unsafe_allow_html=True,
         )
         st.plotly_chart(
@@ -537,8 +530,8 @@ def _render_control() -> None:
                 drown_resid,
                 alpha=float(partial_fit.alpha),
                 beta=float(partial_fit.beta),
-                x_title="Ice cream sales (residualised against temperature)",
-                y_title="Drownings (residualised against temperature)",
+                x_title="Ice cream sales unexplained by temperature",
+                y_title="Drownings unexplained by temperature",
                 title="Residuals after removing temperature",
                 height=340,
             ),
@@ -547,39 +540,52 @@ def _render_control() -> None:
             key="corr_model_b",
         )
         st.markdown(
+            f'<p class="fit-std-slope" style="text-align:center;">'
+            f"Ice cream slope = <b>{_fmt(beta_ice_b)}</b></p>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        '<div class="fit-r2-lesson" style="padding:0.55rem 0.7rem;">'
+        '<div class="result" style="margin:0;">'
+        f'<p class="big">BEFORE: {_fmt(beta_ice_a, 3)} → '
+        f"AFTER: {_fmt(beta_ice_b, 3)}</p>"
+        "</div>"
+        "<p style='margin:0.35rem 0 0 0;font-weight:400;color:#334155;"
+        "font-size:0.86rem;'>Once temperature is accounted for, ice cream "
+        "sales have almost no remaining linear association with "
+        "drownings.</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        tipify(
+            "<p style='margin:0.4rem 0 0.2rem 0;color:#475569;font-weight:400;"
+            "font-size:0.86rem;line-height:1.3rem;'>Controlling for "
+            "temperature means comparing what remains of ice cream sales "
+            "and drownings after removing the part associated with "
+            "temperature. The right chart shows precisely these remaining "
+            "variations.</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Show regression details", expanded=False):
+        st.markdown(
             tipify(
+                '<p class="fit-std-slope">'
+                "Drownings ~ Ice cream sales<br>"
+                f"β̂<sub>ice</sub> = <b>{_fmt(beta_ice_a)}</b><br>"
+                f"R² = <b>{_fmt(r2_a)}</b>"
+                "</p>"
                 '<p class="fit-std-slope">'
                 "Drownings ~ Ice cream + Temperature<br>"
                 f"β̂<sub>ice</sub> = <b>{_fmt(beta_ice_b)}</b> "
-                f"<span class='fit-std-same'>(= slope of the partial-regression line)</span><br>"
+                "<span class='fit-std-same'>(= slope of the "
+                "partial-regression line)</span><br>"
                 f"β̂<sub>temp</sub> = <b>{_fmt(beta_temp_b)}</b><br>"
                 f"R² = <b>{_fmt(model_b.r_squared)}</b>"
                 "</p>"
             ),
             unsafe_allow_html=True,
         )
-
-    shrink = abs(beta_ice_a) - abs(beta_ice_b)
-    st.markdown(
-        tipify(
-            '<div class="fit-r2-lesson" style="padding:0.55rem 0.7rem;">'
-            "<p style='font-weight:400;color:#334155;'>The apparent positive "
-            "association largely disappears after controlling for "
-            "temperature: the ice-cream coefficient moves from "
-            f"<b>{_fmt(beta_ice_a)}</b> to <b>{_fmt(beta_ice_b)}</b>"
-            + (
-                f" (shrinks by about {_fmt(shrink)})."
-                if shrink > 0.02
-                else "."
-            )
-            + " This is not exactly zero, and controlling for a measured "
-            "confounder does not by itself prove causation.</p>"
-            '<p class="fit-std-note" style="margin-bottom:0;">The '
-            "multiple-regression slope on ice cream is the association "
-            "<em>holding temperature constant</em> — that is what "
-            "\"controlling for\" a predictor means, and it is exactly what "
-            "the partial-regression plot above shows.</p>"
-            "</div>"
-        ),
-        unsafe_allow_html=True,
-    )
