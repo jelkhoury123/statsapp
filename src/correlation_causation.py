@@ -527,18 +527,13 @@ def _render_control() -> None:
             key="corr_model_a",
         )
         st.markdown(
-            tipify(
-                '<p class="fit-std-slope">Simple regression<br>'
-                "Drownings = α + β₁ × Ice cream<br>"
-                f"β₁ = <b>{beta_ice_a:+.3f}</b></p>"
-                "<p style='margin:0.2rem 0 0;color:#475569;font-weight:400;"
-                "font-size:0.82rem;line-height:1.25rem;'>Higher ice cream "
-                "sales are associated with more drownings. Temperature "
-                "influences both variables but is absent from this "
-                "model.</p>"
-            ),
+            '<div class="corr-coef-card">'
+            '<p class="lab">Without controlling</p>'
+            f'<p class="val">β₁ = {beta_ice_a:+.3f}</p>'
+            "</div>",
             unsafe_allow_html=True,
         )
+        st.latex(r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} + \varepsilon")
 
     with right:
         st.markdown(
@@ -588,70 +583,28 @@ def _render_control() -> None:
                 key="corr_model_b",
             )
             st.markdown(
-                tipify(
-                    '<p class="fit-std-slope">'
-                    f"Ice cream slope = <b>{beta_ice_b:+.3f}</b></p>"
-                    "<p style='margin:0.2rem 0 0;color:#475569;font-weight:400;"
-                    "font-size:0.82rem;line-height:1.25rem;'>Each point now "
-                    "represents what remains of both variables after "
-                    "accounting for their relationships with temperature. "
-                    "The slope of this residual plot equals the ice cream "
-                    "coefficient in the multiple regression.</p>"
-                ),
+                '<div class="corr-coef-card highlight">'
+                '<p class="lab">Controlling for temperature</p>'
+                f'<p class="val">β₁ = {beta_ice_b:+.3f}</p>'
+                "</div>",
                 unsafe_allow_html=True,
+            )
+            st.latex(
+                r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} "
+                r"\textcolor{#1D4ED8}{+\ \beta_2 \times \text{Temperature}} "
+                r"+ \varepsilon"
             )
 
     if not revealed:
         return
 
     st.markdown(
-        '<div class="corr-coef-compare">'
-        '<div class="card">'
-        '<p class="lab">Without controlling</p>'
-        f'<p class="val">β₁ = {beta_ice_a:+.3f}</p>'
-        "</div>"
-        '<div class="arrow">↓</div>'
-        '<div class="card highlight">'
-        '<p class="lab">Controlling for temperature</p>'
-        f'<p class="val">β₁ = {beta_ice_b:+.3f}</p>'
-        "</div></div>"
-        "<p style='text-align:center;margin:0.3rem 0 0 0;color:#334155;"
-        "font-weight:650;font-size:0.86rem;'>The positive association "
-        "largely disappears.</p>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<p class="fit-std-col-lab" style="margin-top:0.6rem;">'
-        "How do we control for temperature?</p>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
         tipify(
-            "<p style='color:#475569;font-weight:400;font-size:0.84rem;"
-            "line-height:1.28rem;margin:0 0 0.3rem 0;'>We introduce "
-            "temperature as a second predictor.</p>"
-        ),
-        unsafe_allow_html=True,
-    )
-    _l, mid, _r = st.columns([1, 3, 1])
-    with mid:
-        st.latex(r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} + \varepsilon")
-        st.latex(
-            r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} "
-            r"+ \beta_2 \times \text{Temperature} + \varepsilon"
-        )
-    st.markdown(
-        tipify(
-            "<p style='color:#475569;font-weight:400;font-size:0.84rem;"
-            "line-height:1.28rem;margin:0.3rem 0 0 0;'>Now β₁ measures the "
-            "association between ice cream sales and drownings "
-            "<b>holding temperature constant</b> — the central meaning of "
-            "a coefficient in multiple regression. We are not deleting "
-            "temperature from the observations; we are including it in the "
-            "model so its association with drownings is accounted for "
-            "separately. The partial-regression chart above is simply a "
-            "visual representation of this adjustment.</p>"
+            "<p style='text-align:center;margin:0.5rem 0 0 0;color:#334155;"
+            "font-weight:400;font-size:0.86rem;line-height:1.3rem;'>Adding "
+            "temperature as a second predictor allows us to measure the "
+            "association between ice cream sales and drownings while "
+            "holding temperature constant.</p>"
         ),
         unsafe_allow_html=True,
     )
