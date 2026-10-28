@@ -467,13 +467,21 @@ def _render_causation() -> None:
         )
 
 
+def _toggle_control_reveal() -> None:
+    st.session_state.corr_control_revealed = True
+
+
 def _render_control() -> None:
     st.markdown(
         tipify(
-            "<p style='margin:0.2rem 0 0.35rem 0;color:#475569;font-weight:400;"
-            "font-size:0.9rem;line-height:1.35rem;'>"
-            "Ice cream sales and drownings rise together. What happens when "
-            "we remove the influence of temperature?</p>"
+            '<p class="fit-std-col-lab" style="font-size:0.78rem;">'
+            "Why does adding temperature change our regression?</p>"
+            "<p style='margin:0.1rem 0 0.35rem 0;color:#475569;font-weight:400;"
+            "font-size:0.88rem;line-height:1.3rem;'>Ice cream sales and "
+            "drownings rise together. But hotter weather increases both ice "
+            "cream consumption and swimming activity.<br>Our first "
+            "regression ignores temperature. What happens when we account "
+            "for it?</p>"
         ),
         unsafe_allow_html=True,
     )
@@ -493,10 +501,14 @@ def _render_control() -> None:
     drown_resid = _residualize(drown, temp)
     partial_fit = fit_ols(ice_resid, drown_resid)
 
+    revealed = bool(st.session_state.get("corr_control_revealed", False))
+
+    # Permanent two-column layout — the left column's content and key never
+    # change with reveal state, so that chart never resizes or shifts.
     left, right = st.columns(2, gap="medium")
     with left:
         st.markdown(
-            '<p class="fit-std-col-lab">1. Before: A strong positive relationship</p>',
+            '<p class="fit-std-col-lab">STEP 1 — Ignoring temperature</p>',
             unsafe_allow_html=True,
         )
         st.plotly_chart(
@@ -515,58 +527,152 @@ def _render_control() -> None:
             key="corr_model_a",
         )
         st.markdown(
-            f'<p class="fit-std-slope" style="text-align:center;">'
-            f"Ice cream slope = <b>{_fmt(beta_ice_a)}</b></p>",
-            unsafe_allow_html=True,
-        )
-    with right:
-        st.markdown(
-            '<p class="fit-std-col-lab">2. After: The relationship almost disappears</p>',
-            unsafe_allow_html=True,
-        )
-        st.plotly_chart(
-            correlation_scatter(
-                ice_resid,
-                drown_resid,
-                alpha=float(partial_fit.alpha),
-                beta=float(partial_fit.beta),
-                x_title="Ice cream sales unexplained by temperature",
-                y_title="Drownings unexplained by temperature",
-                title="Residuals after removing temperature",
-                height=340,
+            tipify(
+                '<p class="fit-std-slope">Simple regression<br>'
+                "Drownings = α + β₁ × Ice cream<br>"
+                f"β₁ = <b>{beta_ice_a:+.3f}</b></p>"
+                "<p style='margin:0.2rem 0 0;color:#475569;font-weight:400;"
+                "font-size:0.82rem;line-height:1.25rem;'>Higher ice cream "
+                "sales are associated with more drownings. Temperature "
+                "influences both variables but is absent from this "
+                "model.</p>"
             ),
-            width="stretch",
-            config=PLOTLY_CONFIG,
-            key="corr_model_b",
-        )
-        st.markdown(
-            f'<p class="fit-std-slope" style="text-align:center;">'
-            f"Ice cream slope = <b>{_fmt(beta_ice_b)}</b></p>",
             unsafe_allow_html=True,
         )
 
+    with right:
+        st.markdown(
+            '<p class="fit-std-col-lab">STEP 2 — Controlling for temperature</p>',
+            unsafe_allow_html=True,
+        )
+        if not revealed:
+            st.markdown(
+                tipify(
+                    "<p style='font-weight:650;color:#1E3A8A;font-size:0.86rem;"
+                    "margin:0 0 0.15rem 0;'>What does controlling mean?</p>"
+                    "<p style='color:#475569;font-weight:400;font-size:0.84rem;"
+                    "line-height:1.28rem;margin:0 0 0.35rem 0;'>Imagine "
+                    "comparing days with the same temperature. If two "
+                    "equally hot days have different ice cream sales, do we "
+                    "still observe more drownings on the day with higher "
+                    "sales? That is what controlling for temperature "
+                    "asks.</p>"
+                    "<p style='color:#475569;font-weight:400;font-size:0.84rem;"
+                    "line-height:1.28rem;margin:0;'>We want to isolate the "
+                    "relationship between ice cream sales and drownings, "
+                    "independently of their shared association with "
+                    "temperature.</p>"
+                ),
+                unsafe_allow_html=True,
+            )
+            st.button(
+                "Show the relationship after controlling for temperature",
+                key="corr_control_reveal_btn",
+                type="primary",
+                on_click=_toggle_control_reveal,
+            )
+        else:
+            st.plotly_chart(
+                correlation_scatter(
+                    ice_resid,
+                    drown_resid,
+                    alpha=float(partial_fit.alpha),
+                    beta=float(partial_fit.beta),
+                    x_title="Ice cream sales unexplained by temperature",
+                    y_title="Drownings unexplained by temperature",
+                    title="Residuals after removing temperature",
+                    height=340,
+                ),
+                width="stretch",
+                config=PLOTLY_CONFIG,
+                key="corr_model_b",
+            )
+            st.markdown(
+                tipify(
+                    '<p class="fit-std-slope">'
+                    f"Ice cream slope = <b>{beta_ice_b:+.3f}</b></p>"
+                    "<p style='margin:0.2rem 0 0;color:#475569;font-weight:400;"
+                    "font-size:0.82rem;line-height:1.25rem;'>Each point now "
+                    "represents what remains of both variables after "
+                    "accounting for their relationships with temperature. "
+                    "The slope of this residual plot equals the ice cream "
+                    "coefficient in the multiple regression.</p>"
+                ),
+                unsafe_allow_html=True,
+            )
+
+    if not revealed:
+        return
+
     st.markdown(
-        '<div class="fit-r2-lesson" style="padding:0.55rem 0.7rem;">'
-        '<div class="result" style="margin:0;">'
-        f'<p class="big">BEFORE: {_fmt(beta_ice_a, 3)} → '
-        f"AFTER: {_fmt(beta_ice_b, 3)}</p>"
+        '<div class="corr-coef-compare">'
+        '<div class="card">'
+        '<p class="lab">Without controlling</p>'
+        f'<p class="val">β₁ = {beta_ice_a:+.3f}</p>'
         "</div>"
-        "<p style='margin:0.35rem 0 0 0;font-weight:400;color:#334155;"
-        "font-size:0.86rem;'>Once temperature is accounted for, ice cream "
-        "sales have almost no remaining linear association with "
-        "drownings.</p>"
-        "</div>",
+        '<div class="arrow">↓</div>'
+        '<div class="card highlight">'
+        '<p class="lab">Controlling for temperature</p>'
+        f'<p class="val">β₁ = {beta_ice_b:+.3f}</p>'
+        "</div></div>"
+        "<p style='text-align:center;margin:0.3rem 0 0 0;color:#334155;"
+        "font-weight:650;font-size:0.86rem;'>The positive association "
+        "largely disappears.</p>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<p class="fit-std-col-lab" style="margin-top:0.6rem;">'
+        "How do we control for temperature?</p>",
         unsafe_allow_html=True,
     )
     st.markdown(
         tipify(
-            "<p style='margin:0.4rem 0 0.2rem 0;color:#475569;font-weight:400;"
-            "font-size:0.86rem;line-height:1.3rem;'>Controlling for "
-            "temperature means comparing what remains of ice cream sales "
-            "and drownings after removing the part associated with "
-            "temperature. The right chart shows precisely these remaining "
-            "variations.</p>"
+            "<p style='color:#475569;font-weight:400;font-size:0.84rem;"
+            "line-height:1.28rem;margin:0 0 0.3rem 0;'>We introduce "
+            "temperature as a second predictor.</p>"
         ),
+        unsafe_allow_html=True,
+    )
+    _l, mid, _r = st.columns([1, 3, 1])
+    with mid:
+        st.latex(r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} + \varepsilon")
+        st.latex(
+            r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} "
+            r"+ \beta_2 \times \text{Temperature} + \varepsilon"
+        )
+    st.markdown(
+        tipify(
+            "<p style='color:#475569;font-weight:400;font-size:0.84rem;"
+            "line-height:1.28rem;margin:0.3rem 0 0 0;'>Now β₁ measures the "
+            "association between ice cream sales and drownings "
+            "<b>holding temperature constant</b> — the central meaning of "
+            "a coefficient in multiple regression. We are not deleting "
+            "temperature from the observations; we are including it in the "
+            "model so its association with drownings is accounted for "
+            "separately. The partial-regression chart above is simply a "
+            "visual representation of this adjustment.</p>"
+        ),
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="fit-r2-lesson" style="padding:0.55rem 0.7rem;margin-top:0.5rem;">'
+        '<div class="result" style="margin:0;text-align:left;">'
+        '<p class="big" style="font-size:0.92rem;">KEY INSIGHT</p>'
+        "<p style='margin:0.15rem 0 0 0;font-size:0.85rem;font-weight:600;"
+        "color:#166534;line-height:1.3rem;'>A simple regression measures "
+        "the overall association between X and Y. A multiple regression "
+        "measures the association between X and Y holding the other "
+        "included predictors constant. Adding a relevant predictor can "
+        "dramatically change a regression coefficient.</p>"
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p style="text-align:center;margin:0.4rem 0 0 0;font-weight:800;'
+        'color:#1D4ED8;font-size:0.84rem;letter-spacing:0.03em;">'
+        "NEXT: MULTIPLE REGRESSION →</p>",
         unsafe_allow_html=True,
     )
 

@@ -1767,6 +1767,24 @@ p.fit-why-step-title {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 0.6rem; min-height: 380px; text-align: center;
 }
+.corr-coef-compare {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  margin: 0.5rem auto 0 auto; max-width: 380px;
+}
+.corr-coef-compare .card {
+  width: 100%; text-align: center; padding: 0.4rem 0.7rem;
+  border-radius: 8px; background: #F8FAFC; border: 1px solid #E2E8F0;
+}
+.corr-coef-compare .card.highlight { background: #EFF6FF; border-color: #93C5FD; }
+.corr-coef-compare .card .lab {
+  margin: 0 0 0.1rem 0; font-size: 0.72rem; font-weight: 800;
+  letter-spacing: 0.04em; color: #64748B; text-transform: uppercase;
+}
+.corr-coef-compare .card.highlight .lab { color: #1D4ED8; }
+.corr-coef-compare .card .val {
+  margin: 0; font-size: 1.05rem; font-weight: 800; color: #0F172A;
+}
+.corr-coef-compare .arrow { font-size: 1.1rem; color: #64748B; line-height: 1; }
 .st-key-fit_r_panel { margin: 0; }
 .st-key-fit_r_panel [data-testid="stHorizontalBlock"] {
   gap: 0.75rem !important; align-items: stretch !important;
