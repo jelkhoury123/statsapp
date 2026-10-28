@@ -362,15 +362,6 @@ def _toggle_corr_reveal() -> None:
 
 
 def _render_causation() -> None:
-    st.markdown(
-        tipify(
-            "<p style='margin:0.2rem 0 0.35rem 0;color:#475569;font-weight:400;"
-            "font-size:0.9rem;line-height:1.35rem;'>"
-            "Ice cream sales and drownings rise together. Does selling ice "
-            "cream cause drownings?</p>"
-        ),
-        unsafe_allow_html=True,
-    )
     revealed = bool(st.session_state.get("corr_hidden_revealed", False))
 
     # Fixed draw — identical before and after reveal, so clicking Reveal
@@ -415,9 +406,9 @@ def _render_causation() -> None:
                     drown,
                     alpha=float(fit.alpha),
                     beta=float(fit.beta),
-                    x_title="Ice cream sales",
-                    y_title="Drownings",
-                    title="Same points, coloured by temperature",
+                    x_title="Ice cream sales (illustrative)",
+                    y_title="Drownings (illustrative)",
+                    title="The missing variable: Temperature",
                     height=380,
                     color_by=temp,
                     color_title="Temp °C",
@@ -430,8 +421,13 @@ def _render_causation() -> None:
         else:
             with st.container(key="corr_reveal_prompt"):
                 st.markdown(
-                    '<p class="fit-std-slope" style="font-size:0.95rem;">'
-                    "What could explain this relationship?</p>",
+                    '<p class="fit-std-slope" style="font-size:0.95rem;'
+                    'font-weight:650;margin-bottom:0.3rem;">Ice cream sales '
+                    "and drownings rise together. Does one cause the "
+                    "other?</p>"
+                    '<p class="fit-std-slope" style="font-size:0.95rem;'
+                    'font-weight:650;">What third variable might explain '
+                    "both?</p>",
                     unsafe_allow_html=True,
                 )
                 st.button(
@@ -445,17 +441,10 @@ def _render_causation() -> None:
         st.markdown(
             tipify(
                 "<p style='margin:0.5rem 0 0.3rem 0;color:#334155;font-weight:400;"
-                "font-size:0.88rem;line-height:1.3rem;'>Hotter weather increases "
-                "both ice cream sales and swimming activity — and more swimming "
-                "exposure can lead to more drownings.</p>"
+                "font-size:0.88rem;line-height:1.3rem;'>Hot weather increases "
+                "ice cream sales and swimming activity. More swimming can "
+                "lead to more drownings.</p>"
             ),
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            '<div class="fit-r2-lesson" style="padding:0.5rem 0.7rem;">'
-            '<div class="result" style="margin:0;">'
-            '<p class="big">Correlation does not imply causation.</p>'
-            "</div></div>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -467,6 +456,13 @@ def _render_causation() -> None:
             "<div></div><div class=\"arrow\">↓</div>"
             '<div></div><div class="node">Drownings</div>'
             "</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="fit-r2-lesson" style="padding:0.5rem 0.7rem;">'
+            '<div class="result" style="margin:0;">'
+            '<p class="big">CORRELATION DOES NOT IMPLY CAUSATION.</p>'
+            "</div></div>",
             unsafe_allow_html=True,
         )
 
