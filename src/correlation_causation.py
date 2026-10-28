@@ -602,7 +602,9 @@ def _render_control() -> None:
         tipify(
             "<p style='text-align:center;margin:0.5rem 0 0 0;color:#334155;"
             "font-weight:400;font-size:0.86rem;line-height:1.3rem;'>Adding "
-            "temperature as a second predictor allows us to measure the "
+            "temperature as a second predictor changes the ice cream "
+            f"coefficient from <b>{beta_ice_a:+.3f}</b> to "
+            f"<b>{beta_ice_b:+.3f}</b>. Controlling means measuring the "
             "association between ice cream sales and drownings while "
             "holding temperature constant.</p>"
         ),
