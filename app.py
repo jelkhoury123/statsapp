@@ -140,8 +140,6 @@ from src.sampling_distributions import (
     normal_frequency,
     one_sample_for_size,
     one_sample_standard_errors,
-    population_benchmark,
-    benchmark_is_cached,
     relative_se_error,
 )
 SAMPLE_SIZES = [10, 20, 30, 50, 100, 200, 500, 1000, 5000]
@@ -824,8 +822,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     display: flex;
     flex-direction: column;
 }
-.st-key-dist_layout > [data-testid="stLayoutWrapper"]:has(.st-key-dist_workspace),
-.st-key-dist_layout > [data-testid="stLayoutWrapper"]:has(.st-key-one_workspace) {
+.st-key-dist_layout > [data-testid="stLayoutWrapper"]:has(.st-key-dist_workspace) {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     display: flex;
@@ -864,32 +861,9 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.dist-legend),
 .st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.dist-conclusion),
 .st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.se-table),
-.st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.t-panel),
-.st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.se-discover),
-.st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.one-col-head) {
+.st-key-dist_layout [data-testid="stMarkdownContainer"]:has(.t-panel) {
     margin-bottom: 0 !important;
 }
-.one-col-head { margin: 0; }
-.one-col-head .title { margin: 0; font-size: 0.95rem; font-weight: 750; color: #12263a; }
-.one-col-head .sub { margin: 0.05rem 0 0 0; font-size: 0.82rem; color: #52606D; line-height: 1.2rem; }
-.se-discover { margin: 0.1rem 0 0 0; }
-.se-discover .kicker { margin: 0 0 0.15rem 0; font-size: 0.82rem; font-weight: 750; letter-spacing: 0.04em; color: #12263a; }
-.se-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem; }
-.se-card { border: 1px solid #E6EAF0; border-radius: 8px; padding: 0.3rem 0.55rem; background: #F8FAFC; }
-.se-card .lab { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; color: #52606D; line-height: 1.15rem; }
-.se-card .val { display: block; margin-top: 0.1rem; font-size: 1.35rem; font-weight: 780; font-variant-numeric: tabular-nums; }
-.se-card.bench .val { color: #EA580C; }
-.se-card.ref .val { color: #4B5563; }
-.se-card.est .val { color: #1D4ED8; }
-.se-bars { display: flex; flex-direction: column; gap: 0.28rem; margin: 0.35rem 0 0 0; }
-.se-bar-row { display: grid; grid-template-columns: 9.5rem 1fr; gap: 0.45rem; align-items: center; }
-.se-bar-row .name { font-size: 0.78rem; font-weight: 650; color: #52606D; }
-.se-bar-track { height: 13px; background: #EEF1F4; border-radius: 4px; overflow: hidden; }
-.se-bar-fill { display: block; height: 100%; border-radius: 4px; min-width: 0; }
-.se-bar-fill.bench { background: #EA580C; }
-.se-bar-fill.ref { background: #6B7280; }
-.se-bar-fill.est { background: #1D4ED8; }
-.se-error { margin: 0.15rem 0 0 0; font-size: 0.95rem; font-weight: 700; color: #12263a; }
 .se-close { margin: 0.1rem 0 0 0; font-size: 0.88rem; line-height: 1.25rem; color: #374151; }
 .dist-intro-sub { margin: 0.05rem 0 0.15rem 0; font-size: 0.9rem; line-height: 1.25rem; color: #52606D; }
 .t-panel { margin: 0.15rem 0 0 0; color: #1F2933; }
@@ -2080,16 +2054,6 @@ p.fit-why-step-title {
 .mr-df-chain span.result { font-weight: 750; color: #1E3A8A; background: #DBEAFE; border-color: #93C5FD; }
 .mr-df-explainer .mr-df-note { margin: 0.25rem 0; font-size: 0.82rem; color: #52606D; line-height: 1.3rem; }
 .mr-df-explainer .mr-df-note b { color: #1E3A8A; }
-.se-ingredients {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 0.8rem;
-    margin: 0.05rem 0 0 0;
-}
-.se-ingredient { font-size: 0.86rem; line-height: 1.2rem; color: #374151; }
-.se-ingredient .ing-title { margin: 0; font-weight: 700; color: #12263a; font-size: 0.88rem; }
-.se-ingredient .ing-desc { margin: 0.05rem 0; font-size: 0.78rem; color: #52606D; line-height: 1.15rem; }
-.se-ingredient .ing-value { margin: 0; font-size: 0.86rem; }
 .se-table { width: 100%; border-collapse: collapse; margin: 0.35rem 0 0.1rem 0; font-size: 0.92rem; }
 .se-table caption { caption-side: top; text-align: left; font-weight: 750; color: #12263a; font-size: 1rem; padding-bottom: 0.25rem; }
 .se-table th, .se-table td { padding: 0.22rem 0.75rem; text-align: right; border-bottom: 1px solid #e6eaf0; }
@@ -2144,7 +2108,6 @@ p.fit-why-step-title {
         flex: none !important;
         height: 320px !important;
     }
-    .st-key-one_scatter, .st-key-one_alpha, .st-key-one_beta { height: auto !important; }
 }
 .journey-hero {
   margin: 0 0 0.45rem 0;
@@ -4224,8 +4187,12 @@ _ONE_BETA_NOTE = None
 _ONE_LEGEND = None
 _DIST_SCATTER_HEIGHT = 515
 _DIST_HIST_HEIGHT = 480
-_ONE_SCATTER_HEIGHT = 205
-_ONE_BETA_HEIGHT = 205
+# Estimating Standard Error reuses the exact same chart heights as Sampling
+# Variability (and the same dist_workspace/dist_scatter/dist_hists/dist_beta
+# container keys in _render_estimate_se) so both tabs' charts sit at
+# identical positions and sizes when switching between them.
+_ONE_SCATTER_HEIGHT = _DIST_SCATTER_HEIGHT
+_ONE_BETA_HEIGHT = _DIST_HIST_HEIGHT
 _ONE_HIST_HEIGHT = 230
 
 
@@ -4291,83 +4258,48 @@ def _se_intervals_html(benchmark_se, repeated_sd, estimated) -> str:
     )
 
 
-def _se_ingredients_html(error) -> str:
-    """The two SE ingredients (s, Sxx) side by side, with the formula below."""
+def _se_summary_html(error, display_experiment) -> str:
+    """Compact formula panel + three values + one takeaway, plus (once
+    repeated samples exist at the same noise level and n) a two-line
+    comparison against the empirical sampling distribution. Replaces the
+    old ingredient cards and three-metric-card discovery panel.
+    """
     if error is None or error.residual_sd is None or error.sxx is None or error.se_beta is None:
-        residual = sxx_text = "—"
-        result = "—"
-    else:
-        residual = f"{error.residual_sd:.3f}"
-        sxx_text = f"{error.sxx:.2f}"
-        result = _dist_number(error.se_beta)
-    return (
-        '<div class="se-ingredients">'
-        '<div class="se-ingredient">'
-        '<p class="ing-title">1. Residual scatter (s)</p>'
-        '<p class="ing-desc">How far observations fall from the line. '
-        "More scatter → greater uncertainty.</p>"
-        f'<p class="ing-value">s = <b>{residual}</b></p>'
-        "</div>"
-        '<div class="se-ingredient">'
-        '<p class="ing-title">2. Spread of X (S<sub>xx</sub>)</p>'
-        '<p class="ing-desc">How widely X is distributed. More spread → '
-        "greater precision.</p>"
-        f'<p class="ing-value">S<sub>xx</sub> = <b>{sxx_text}</b></p>'
-        "</div>"
-        "</div>"
+        return '<p class="dist-hint">Draw a sample above to see the standard-error calculation.</p>'
+    residual = f"{error.residual_sd:.3f}"
+    sxx_text = f"{error.sxx:.2f}"
+    se_text = _dist_number(error.se_beta)
+    html = (
         '<p class="dist-formula">'
         f'<span class="se-key">SE({_BETA_HAT}) = s / √S<sub>xx</sub> = '
         f"{residual} / √{sxx_text} = "
-        f'<span class="se-final">{result}</span></span></p>'
+        f'<span class="se-final">{se_text}</span></span></p>'
+        '<p class="dist-stat">'
+        f"<span>Residual SD: <b>{residual}</b> exam points</span>"
+        f"<span>Spread of X: S<sub>xx</sub> = <b>{sxx_text}</b> hours²</span>"
+        f"<span>Estimated slope SE: <b>{se_text}</b> exam points/hour</span>"
+        "</p>"
+        '<p class="dist-takeaway">More residual scatter increases slope '
+        "uncertainty. More spread in X or more observations reduces it.</p>"
     )
-
-
-def _discovery_html(error, benchmark_se, benchmark_repetitions, experiment) -> str:
-    se_beta = None if error is None else error.se_beta
-    repeated = estimate_sd(experiment.betas)
-    error_text = _signed_percent(relative_se_error(se_beta, benchmark_se))
-    repeated_n = int(experiment.n_repetitions)
-    observed_n = f"{repeated_n:,}" if repeated_n > 0 else "—"
-    return (
-        '<div class="se-discover">'
-        '<p class="kicker">HOW CLOSE CAN ONE SAMPLE GET?</p>'
-        '<div class="se-cards">'
-        '<div class="se-card bench">'
-        f'<span class="lab">Reference SE<br>({benchmark_repetitions:,} samples)</span>'
-        f'<span class="val">{_dist_number(benchmark_se)}</span>'
-        "</div>"
-        '<div class="se-card ref">'
-        f'<span class="lab">SD of estimated slopes<br>({observed_n} samples)</span>'
-        f'<span class="val">{_dist_number(repeated)}</span>'
-        "</div>"
-        '<div class="se-card est">'
-        '<span class="lab">Estimated SE<br>(one sample)</span>'
-        f'<span class="val">{_dist_number(se_beta)}</span>'
-        "</div>"
-        "</div>"
-        f'<p class="se-error">One-sample estimation error: {error_text}</p>'
-        "</div>"
-    )
+    observed_sd = estimate_sd(display_experiment.betas)
+    if observed_sd is not None:
+        html += (
+            '<p class="dist-stat compare">'
+            f'<span>Observed SD of simulated slopes: <span class="est">{_dist_number(observed_sd)}</span></span><br>'
+            f'<span>Estimated SE from one sample: <span class="est">{se_text}</span></span>'
+            "</p>"
+            '<p class="dist-hint">Repeated sampling reveals the variability of '
+            "slope estimates. The standard-error formula estimates that "
+            "variability using only one sample.</p>"
+        )
+    return html
 
 
 _ONE_INTRO = (
     '<div class="dist-step-one"></div>'
     '<p class="dist-intro">How can one sample reveal the uncertainty of '
     "its slope?</p>"
-)
-
-_ONE_LEFT_HEAD = (
-    '<div class="one-col-head">'
-    '<p class="title">WHAT IF WE COULD DRAW 1,000 SAMPLES?</p>'
-    '<p class="sub">Repeated samples reveal how much the estimated slope varies.</p>'
-    "</div>"
-)
-
-_ONE_RIGHT_HEAD = (
-    '<div class="one-col-head">'
-    '<p class="title">WHAT CAN WE LEARN FROM JUST ONE SAMPLE?</p>'
-    '<p class="sub">Residual noise and the spread of X let us estimate the same uncertainty.</p>'
-    "</div>"
 )
 
 
@@ -5633,37 +5565,19 @@ def _render_estimate_se(population, rng: np.random.Generator) -> None:
         population.y_range,
         cache_key=population.sha256,
     )
-    if not benchmark_is_cached(population.sha256, experiment.sample_size):
-        with st.spinner("Computing the population benchmark…"):
-            benchmark = population_benchmark(
-                population.hours_studied,
-                population.exam_score,
-                experiment.sample_size,
-                population.sha256,
-            )
-    else:
-        benchmark = population_benchmark(
-            population.hours_studied,
-            population.exam_score,
-            experiment.sample_size,
-            population.sha256,
-        )
-    with st.container(key="one_workspace"):
-        chart_col, hist_col = st.columns([50, 50], gap="small", vertical_alignment="top")
+    # Same workspace/column/container keys as Sampling Variability, so both
+    # tabs' charts share the exact same CSS geometry (widths, heights,
+    # positions) and never shift when switching between them.
+    with st.container(key="dist_workspace"):
+        chart_col, hist_col = st.columns([1, 1], gap="small", vertical_alignment="top")
         with chart_col:
-            st.markdown(_ONE_RIGHT_HEAD, unsafe_allow_html=True)
-            with st.container(key="one_scatter"):
+            with st.container(key="dist_scatter"):
                 error = _paint_one_sample_scatter(population, display_one, cloud)
         with hist_col:
-            st.markdown(_ONE_LEFT_HEAD, unsafe_allow_html=True)
-            with st.container(key="one_beta"):
-                _paint_one_sample_hist(population, display_experiment)
-    st.markdown(_se_ingredients_html(error), unsafe_allow_html=True)
-    scaled_benchmark_se = None if benchmark.se_beta is None else float(noise_level) * benchmark.se_beta
-    st.markdown(
-        _discovery_html(error, scaled_benchmark_se, benchmark.repetitions, display_experiment),
-        unsafe_allow_html=True,
-    )
+            with st.container(key="dist_hists"):
+                with st.container(key="dist_beta"):
+                    _paint_one_sample_hist(population, display_experiment)
+    st.markdown(_se_summary_html(error, display_experiment), unsafe_allow_html=True)
 
 
 @st.fragment(key="dist_ttest")
