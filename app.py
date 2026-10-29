@@ -77,6 +77,7 @@ from src.fitting_line import (
     interactive_n_cap,
     lm_summary_stats,
     ols_fit,
+    pearson_r,
     poor_candidate_line,
     predicted_scores,
     r_lm_commands,
@@ -1517,6 +1518,20 @@ p.fit-why-step-title {
 .fit-std-interp {
   margin: 0.15rem 0 0 0; font-size: 0.8rem; color: #52606D; line-height: 1.25rem;
 }
+.fit-std-stage-head {
+  margin: 0 0 0.3rem 0; font-size: 1.0rem; font-weight: 760; color: #12263a;
+}
+.fit-std-takeaway {
+  margin: 0.4rem 0 0 0; padding: 0.4rem 0.65rem;
+  background: #ECFDF5; border-left: 3px solid #059669; border-radius: 6px;
+  font-size: 0.84rem; color: #065F46; line-height: 1.3rem;
+}
+.fit-std-transition {
+  margin: 0.35rem 0 0 0; font-size: 0.82rem; font-style: italic;
+  color: #475569; line-height: 1.3rem;
+}
+.st-key-fit_std_panel { min-height: 460px; }
+.st-key-fit_std_stage_grid [data-testid="stHorizontalBlock"] { align-items: stretch; }
 .st-key-fit_std_grid [data-testid="stHorizontalBlock"] { align-items: stretch; }
 .st-key-fit_std_grid [data-testid="stColumn"] {
   display: flex; flex-direction: column; height: 100%;
@@ -7117,8 +7132,15 @@ def _std_compact_scatter(
     key: str,
     marker_color: str = BLUE,
     line_color: str | None = None,
+    height: int = 230,
+    x_range: list[float] | None = None,
+    y_range: list[float] | None = None,
 ) -> None:
-    """Small teaching scatter for one predictor → outcome pair."""
+    """Small teaching scatter for one predictor → outcome pair.
+
+    Fixed height (and, when given, fixed axis ranges) so the chart's box
+    never resizes or shifts as stages/toggle change — only its contents do.
+    """
     line_color = line_color or marker_color
     n = int(np.asarray(x).size)
     size, opacity = _std_marker_size_opacity(n, combined=False)
@@ -7129,7 +7151,7 @@ def _std_compact_scatter(
         beta=float(beta),
         show_residuals=False,
         show_coefficients=False,
-        height=180,
+        height=height,
         x_title=x_title,
         y_title=y_title,
         title=title,
@@ -7141,97 +7163,22 @@ def _std_compact_scatter(
         if len(fig.data) > 1:
             fig.data[1].line.color = line_color
             fig.data[1].line.width = 3.4
-    fig.update_layout(showlegend=False, margin=dict(l=40, r=6, t=24, b=32))
-    fig.update_xaxes(tickmode="auto", nticks=5, showgrid=True)
-    fig.update_yaxes(tickmode="auto", nticks=5, showgrid=True)
-    st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG, key=key)
-
-
-def _std_dual_z_overlay(
-    *,
-    z_a,
-    z_b,
-    z_scores,
-    ols_a,
-    ols_b,
-    label_a: str,
-    label_b: str,
-    key: str = "fit_std_z",
-) -> None:
-    """Overlay two different standardised regressions on shared z-axes."""
-    za = np.asarray(z_a, dtype=np.float64)
-    zb = np.asarray(z_b, dtype=np.float64)
-    zy = np.asarray(z_scores, dtype=np.float64)
-    n = int(za.size)
-    size, opacity = _std_marker_size_opacity(n, combined=True)
-    fig = go.Figure()
-    fig.add_scatter(
-        x=za,
-        y=zy,
-        mode="markers",
-        name=label_a,
-        marker=dict(size=size, color=_std_rgba(BLUE, opacity), line=dict(width=0)),
-    )
-    fig.add_scatter(
-        x=zb,
-        y=zy,
-        mode="markers",
-        name=label_b,
-        marker=dict(size=size, color=_std_rgba(ORANGE, opacity), line=dict(width=0)),
-    )
-    for z_x, fit, name, color, dash in (
-        (za, ols_a, f"OLS · {label_a}", BLUE, "solid"),
-        (zb, ols_b, f"OLS · {label_b}", ORANGE, "dash"),
-    ):
-        if z_x.size == 0:
-            continue
-        x_line = np.array([float(np.min(z_x)), float(np.max(z_x))])
-        fig.add_scatter(
-            x=x_line,
-            y=float(fit.alpha) + float(fit.beta) * x_line,
-            mode="lines",
-            name=name,
-            line=dict(color=color, width=3.6, dash=dash),
-        )
-    z_all = np.concatenate([za, zb]) if zb.size else za
-    zx0, zx1, zx_ticks = _std_z_axis_range(z_all)
-    zy0, zy1, zy_ticks = _std_z_axis_range(zy)
+    fig.update_layout(showlegend=False, margin=dict(l=40, r=6, t=24, b=32), uirevision=key)
     fig.update_xaxes(
-        title_text="Predictor (standard deviations from mean)",
-        title_font=dict(size=10),
-        range=[zx0, zx1],
-        tickmode="array",
-        tickvals=zx_ticks,
-        ticktext=[str(t) for t in zx_ticks],
+        tickmode="auto" if x_range is None else "array",
+        nticks=5,
         showgrid=True,
-        zeroline=True,
-        zerolinewidth=1.4,
+        range=x_range,
+        autorange=x_range is None,
+        tickvals=[int(v) for v in np.arange(np.ceil(x_range[0]), np.floor(x_range[1]) + 1)] if x_range else None,
     )
     fig.update_yaxes(
-        title_text="Exam score (standard deviations)",
-        title_font=dict(size=10),
-        range=[zy0, zy1],
-        tickmode="array",
-        tickvals=zy_ticks,
-        ticktext=[str(t) for t in zy_ticks],
+        tickmode="auto" if y_range is None else "array",
+        nticks=5,
         showgrid=True,
-        zeroline=True,
-        zerolinewidth=1.4,
-    )
-    fig.update_layout(
-        title="Both relationships on the same standardised scale",
-        height=360,
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=-0.16,
-            x=0,
-            font=dict(size=10),
-        ),
-        margin=dict(l=48, r=8, t=26, b=50),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
+        range=y_range,
+        autorange=y_range is None,
+        tickvals=[int(v) for v in np.arange(np.ceil(y_range[0]), np.floor(y_range[1]) + 1)] if y_range else None,
     )
     st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG, key=key)
 
@@ -7266,22 +7213,6 @@ def _std_comparison_insight(
         "Standardised coefficients are comparable because both predictors "
         "and the outcome are measured in standard-deviation units."
     )
-
-
-def _std_ensure_predictor_keys() -> tuple[str, str]:
-    """Return distinct Predictor A / B keys with defaults Hours / Attendance."""
-    keys = list(STD_PREDICTOR_KEYS)
-    if "fit_std_pred_a" not in st.session_state or st.session_state.fit_std_pred_a not in keys:
-        st.session_state.fit_std_pred_a = "hours_studied"
-    if "fit_std_pred_b" not in st.session_state or st.session_state.fit_std_pred_b not in keys:
-        st.session_state.fit_std_pred_b = "attendance"
-    if st.session_state.fit_std_pred_a == st.session_state.fit_std_pred_b:
-        # Keep A; pick the first other option for B.
-        for key in keys:
-            if key != st.session_state.fit_std_pred_a:
-                st.session_state.fit_std_pred_b = key
-                break
-    return st.session_state.fit_std_pred_a, st.session_state.fit_std_pred_b
 
 
 # Standalone conceptual illustration: slope vs. fit quality. Uses its own
@@ -7461,34 +7392,21 @@ def render_slope_vs_fit_subtab() -> None:
 
 
 
+_STD_N_STAGES = 4
+
+
+def _std_replay() -> None:
+    st.session_state.fit_std_stage = 1
+    st.session_state.fit_std_view = "Original"
+
+
 def render_standardisation_subtab(view) -> None:
-    """Compare two Students predictors of exam score in raw vs standardised units."""
+    """Four-stage interactive walkthrough: why raw coefficients aren't
+    comparable, how z-scores fix that, and the β*=r=√R² identities — using
+    the Students sample's Hours studied and Attendance predictors.
+    """
     st.markdown(
         tipify('<p class="fit-r2-heading">Standardisation</p>'),
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        tipify(
-            '<p class="fit-std-banner">'
-            "Standardisation allows us to compare variables measured in "
-            "different units by expressing them in standard deviations."
-            "</p>"
-        ),
-        unsafe_allow_html=True,
-    )
-    _l, mid, _r = st.columns([1, 2, 1])
-    with mid:
-        st.latex(r"z = \dfrac{x - \text{mean}}{\text{standard deviation}}")
-    st.markdown(
-        tipify(
-            '<div class="fit-std-intro-row">'
-            "<span><b>Centre:</b> Subtract the mean → the new mean is 0.</span>"
-            "<span><b>Scale:</b> Divide by the standard deviation → the new "
-            "standard deviation is 1.</span>"
-            "</div>"
-            '<p class="fit-std-note">Fully standardised coefficients (β*) '
-            "standardise <b>both</b> the predictor (X) and the outcome (Y).</p>"
-        ),
         unsafe_allow_html=True,
     )
 
@@ -7500,24 +7418,16 @@ def render_standardisation_subtab(view) -> None:
         )
         return
 
-    _std_ensure_predictor_keys()
-    label_of = {key: STD_PREDICTOR_META[key][0] for key in STD_PREDICTOR_KEYS}
-    unit_of = {key: STD_PREDICTOR_META[key][1] for key in STD_PREDICTOR_KEYS}
-
-    # Resolve the current predictor pair from session state before the
-    # selector widgets render, so the conclusion can sit directly below
-    # the introduction.
-    pred_a = st.session_state.fit_std_pred_a
-    options_b = [key for key in STD_PREDICTOR_KEYS if key != pred_a]
-    if st.session_state.get("fit_std_pred_b") not in options_b:
-        st.session_state.fit_std_pred_b = options_b[0]
-    pred_b = st.session_state.fit_std_pred_b
+    pred_a, pred_b = "hours_studied", "attendance"
+    label_a, label_b = STD_PREDICTOR_META[pred_a][0], STD_PREDICTOR_META[pred_b][0]
+    unit_a, unit_b = STD_PREDICTOR_META[pred_a][1], STD_PREDICTOR_META[pred_b][1]
 
     scores = np.asarray(sample["exam_score"], dtype=np.float64)
     x_a = np.asarray(sample[pred_a], dtype=np.float64)
     x_b = np.asarray(sample[pred_b], dtype=np.float64)
-    label_a, label_b = label_of[pred_a], label_of[pred_b]
 
+    # All regression/standardisation quantities are computed once, directly
+    # from the sample — nothing displayed below is hardcoded.
     ols_a = ols_fit(x_a, scores)
     ols_b = ols_fit(x_b, scores)
     z_a, z_b, z_y = zscore(x_a), zscore(x_b), zscore(scores)
@@ -7529,164 +7439,190 @@ def render_standardisation_subtab(view) -> None:
     sst = total_sum_of_squares(scores)
     r2_a = r_squared(float(ols_a.sse), float(sst))
     r2_b = r_squared(float(ols_b.sse), float(sst))
+    r_a = pearson_r(x_a, scores)
+    r_b = pearson_r(x_b, scores)
 
-    with st.container(key="fit_std_grid"):
-        left, right = st.columns(2, gap="medium")
-        with left:
-            st.markdown(
-                '<p class="fit-std-col-lab">Original units</p>',
-                unsafe_allow_html=True,
-            )
-            st.selectbox(
-                "Predictor A",
-                options=list(STD_PREDICTOR_KEYS),
-                format_func=lambda key: label_of[key],
-                key="fit_std_pred_a",
-            )
-            _std_compact_scatter(
-                x=x_a,
-                y=scores,
-                alpha=float(ols_a.alpha),
-                beta=float(ols_a.beta),
-                x_title=label_a,
-                y_title="Exam score",
-                title=f"{label_a} → Exam score",
-                key="fit_std_orig_a",
-                marker_color=BLUE,
-            )
-            st.markdown(
-                tipify(
-                    '<p class="fit-std-slope">'
-                    f"β̂ = <b>{_format_coef(ols_a.beta)}</b> {unit_of[pred_a]} "
-                    f"| R² = <b>{_format_r_squared(r2_a)}</b>"
-                    "</p>"
-                ),
-                unsafe_allow_html=True,
-            )
-            st.selectbox(
-                "Predictor B",
-                options=options_b,
-                format_func=lambda key: label_of[key],
-                key="fit_std_pred_b",
-            )
-            _std_compact_scatter(
-                x=x_b,
-                y=scores,
-                alpha=float(ols_b.alpha),
-                beta=float(ols_b.beta),
-                x_title=label_b,
-                y_title="Exam score",
-                title=f"{label_b} → Exam score",
-                key="fit_std_orig_b",
-                marker_color=ORANGE,
-            )
-            st.markdown(
-                tipify(
-                    '<p class="fit-std-slope">'
-                    f"β̂ = <b>{_format_coef(ols_b.beta)}</b> {unit_of[pred_b]} "
-                    f"| R² = <b>{_format_r_squared(r2_b)}</b>"
-                    "</p>"
-                ),
-                unsafe_allow_html=True,
-            )
+    st.session_state.setdefault("fit_std_stage", 1)
+    st.session_state.setdefault("fit_std_view", "Original")
+    stage = int(st.session_state.fit_std_stage)
 
-        with right:
-            st.markdown(
-                '<p class="fit-std-col-lab">Standardised units</p>',
-                unsafe_allow_html=True,
-            )
-            _std_dual_z_overlay(
-                z_a=z_a,
-                z_b=z_b,
-                z_scores=z_y,
-                ols_a=ols_za,
-                ols_b=ols_zb,
-                label_a=label_a,
-                label_b=label_b,
-                key=f"fit_std_z_{pred_a}_{pred_b}",
-            )
-            st.markdown(
-                tipify(
-                    '<p class="fit-std-slope">'
-                    f"<b>{label_a}</b> · β* = <b>{_format_coef(float(ols_za.beta))}</b> "
-                    f"| R² = <b>{_format_r_squared(r2_a)}</b><br>"
-                    f"<b>{label_b}</b> · β* = <b>{_format_coef(float(ols_zb.beta))}</b> "
-                    f"| R² = <b>{_format_r_squared(r2_b)}</b>"
-                    "</p>"
-                ),
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                tipify(
-                    '<p class="fit-std-interp">A standardised coefficient '
-                    "measures the change in Y, in standard deviations, "
-                    "associated with a one-standard-deviation increase in X."
-                    "</p>"
-                    f'<p class="fit-std-interp">{_std_comparison_insight(key_a=pred_a, key_b=pred_b, star_a=beta_star_a, star_b=beta_star_b)}</p>'
-                ),
-                unsafe_allow_html=True,
-            )
-
+    # The toggle only matters from stage 2 onward; a scoped visibility rule
+    # (not disabled=) hides it earlier without shifting anything below it.
+    toggle_key = "fit_std_view_toggle"
+    hide_toggle = stage < 2
     st.markdown(
-        '<div class="fit-r2-concl"><b>Key insight:</b> Standardisation makes '
-        "regression coefficients comparable across different units. It "
-        "changes their numerical values but leaves R² and the underlying "
-        "fit unchanged.</div>",
+        f'<style>.st-key-{toggle_key}, .st-key-{toggle_key} * '
+        f'{{ visibility: hidden !important; }}</style>' if hide_toggle else "",
         unsafe_allow_html=True,
     )
-
-    # Concrete observation for the z-score walkthrough (near the sample median).
-    x_bar_a = float(np.mean(x_a))
-    example_i = int(np.argmin(np.abs(x_a - float(np.median(x_a)))))
-    x_obs = float(x_a[example_i])
-    z_obs = float(z_a[example_i])
-
-    with st.expander("How is standardisation calculated?", expanded=False):
-        form_l, form_r = st.columns(2, gap="small")
-        with form_l:
-            with st.container(border=False):
-                st.markdown(
-                    '<div class="fit-std-formula-pane">'
-                    '<p class="fit-std-col-lab">Standardising a value</p>'
-                    "</div>",
-                    unsafe_allow_html=True,
-                )
-                st.latex(r"z = \dfrac{x - \overline{x}}{\mathrm{SD}(X)}")
-                st.latex(
-                    rf"z = \dfrac{{{_format_coef(x_obs)} - {_format_coef(x_bar_a)}}}"
-                    rf"{{{_format_coef(sx_a)}}} = {_format_coef(z_obs)}"
-                )
-                st.caption(f"One observation from {label_a} in the current sample.")
-        with form_r:
-            with st.container(border=False):
-                st.markdown(
-                    '<div class="fit-std-formula-pane">'
-                    '<p class="fit-std-col-lab">Standardising a regression slope</p>'
-                    "</div>",
-                    unsafe_allow_html=True,
-                )
-                st.latex(
-                    r"\beta^{*} = \hat{\beta}\,\dfrac{\mathrm{SD}(X)}{\mathrm{SD}(Y)}"
-                )
-                st.latex(
-                    rf"\beta^{{*}} = {_format_coef(ols_a.beta)}\times"
-                    rf"\dfrac{{{_format_coef(sx_a)}}}{{{_format_coef(sy)}}} ="
-                    rf" {_format_coef(beta_star_a)}"
-                )
-                st.caption(f"Using {label_a} → Exam score.")
-        st.caption(
-            f"Both methods use {label_a} and yield β* = {_format_coef(beta_star_a)}."
+    with st.container(key=toggle_key):
+        view_choice = st.radio(
+            "Units",
+            options=("Original", "Standardised"),
+            index=0 if st.session_state.fit_std_view == "Original" else 1,
+            key="fit_std_view_radio",
+            horizontal=True,
+            label_visibility="collapsed",
         )
+    if not hide_toggle:
+        st.session_state.fit_std_view = view_choice
+    standardised = bool(not hide_toggle and st.session_state.fit_std_view == "Standardised")
+
+    with st.container(key="fit_std_stage_grid"):
+        left, right = st.columns([3, 2], gap="medium")
+        with left:
+            if standardised:
+                zx0, zx1, _ = _std_z_axis_range(np.concatenate([z_a, z_b]))
+                zy0, zy1, _ = _std_z_axis_range(z_y)
+                _std_compact_scatter(
+                    x=z_a, y=z_y, alpha=float(ols_za.alpha), beta=float(ols_za.beta),
+                    x_title=f"{label_a} (z-score)", y_title="Exam score (z-score)",
+                    title=f"{label_a} → Exam score", key="fit_std_chart_a",
+                    marker_color=BLUE, x_range=[zx0, zx1], y_range=[zy0, zy1],
+                )
+                _std_compact_scatter(
+                    x=z_b, y=z_y, alpha=float(ols_zb.alpha), beta=float(ols_zb.beta),
+                    x_title=f"{label_b} (z-score)", y_title="Exam score (z-score)",
+                    title=f"{label_b} → Exam score", key="fit_std_chart_b",
+                    marker_color=ORANGE, x_range=[zx0, zx1], y_range=[zy0, zy1],
+                )
+            else:
+                _std_compact_scatter(
+                    x=x_a, y=scores, alpha=float(ols_a.alpha), beta=float(ols_a.beta),
+                    x_title=label_a, y_title="Exam score",
+                    title=f"{label_a} → Exam score", key="fit_std_chart_a",
+                    marker_color=BLUE,
+                )
+                _std_compact_scatter(
+                    x=x_b, y=scores, alpha=float(ols_b.alpha), beta=float(ols_b.beta),
+                    x_title=label_b, y_title="Exam score",
+                    title=f"{label_b} → Exam score", key="fit_std_chart_b",
+                    marker_color=ORANGE,
+                )
+
+        with right:
+            with st.container(key="fit_std_panel", border=False):
+                if stage == 1:
+                    st.markdown(
+                        '<p class="fit-std-stage-head">Can we compare these '
+                        "coefficients?</p>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        tipify(
+                            '<p class="fit-std-slope">'
+                            f"{label_a} · β̂ = <b>{_format_coef(ols_a.beta)}</b> {unit_a}<br>"
+                            f"{label_b} · β̂ = <b>{_format_coef(ols_b.beta)}</b> {unit_b}"
+                            "</p>"
+                            f'<p class="fit-std-interp">Does {_format_coef(ols_a.beta)} '
+                            f"&gt; {_format_coef(ols_b.beta)} mean studying is a "
+                            "stronger predictor than attendance?</p>"
+                            '<p class="fit-std-note">Not directly — the two '
+                            "coefficients are measured in different units "
+                            "(exam points per hour vs. exam points per percentage "
+                            "point), so their raw sizes cannot be compared.</p>"
+                        ),
+                        unsafe_allow_html=True,
+                    )
+                elif stage == 2:
+                    st.markdown(
+                        '<p class="fit-std-stage-head">Putting both predictors '
+                        "on the same scale</p>",
+                        unsafe_allow_html=True,
+                    )
+                    st.latex(r"z = \dfrac{x - \text{mean}}{\text{standard deviation}}")
+                    st.markdown(
+                        tipify(
+                            '<p class="fit-std-interp">'
+                            "<b>Centre:</b> subtract the mean → the new mean is 0.<br>"
+                            "<b>Scale:</b> divide by the standard deviation → the new "
+                            "standard deviation is 1."
+                            "</p>"
+                            '<p class="fit-std-note">Standardisation changes the '
+                            "units, not the underlying relationship.</p>"
+                            '<p class="fit-std-interp">Use the toggle above the '
+                            "charts to switch both predictors and the outcome to "
+                            "standardised (z-score) units, and watch the same "
+                            "observations and fitted lines reappear on the new "
+                            "scale.</p>"
+                        ),
+                        unsafe_allow_html=True,
+                    )
+                elif stage == 3:
+                    st.markdown(
+                        '<p class="fit-std-stage-head">Compare the '
+                        "relationships</p>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        tipify(
+                            '<table class="fit-r2-summary-table">'
+                            "<thead><tr><th>Predictor</th><th>β*</th><th>R²</th></tr></thead>"
+                            "<tbody>"
+                            f"<tr><td>{label_a}</td><td>{_format_coef(beta_star_a)}</td>"
+                            f"<td>{_format_r_squared(r2_a)}</td></tr>"
+                            f"<tr><td>{label_b}</td><td>{_format_coef(beta_star_b)}</td>"
+                            f"<td>{_format_r_squared(r2_b)}</td></tr>"
+                            "</tbody></table>"
+                            '<p class="fit-std-interp">A one-standard-deviation '
+                            f"increase in study hours predicts a "
+                            f"<b>{_format_coef(beta_star_a)}</b>-standard-deviation "
+                            "increase in exam score. For attendance, the "
+                            f"corresponding increase is <b>{_format_coef(beta_star_b)}"
+                            "</b> standard deviations.</p>"
+                            f'<p class="fit-std-takeaway">{_std_comparison_insight(key_a=pred_a, key_b=pred_b, star_a=beta_star_a, star_b=beta_star_b)} '
+                            "(This reflects association, not causation.)</p>"
+                        ),
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.markdown(
+                        '<p class="fit-std-stage-head">Connecting β*, correlation '
+                        "and R²</p>",
+                        unsafe_allow_html=True,
+                    )
+                    st.latex(r"\beta^{*} = r \qquad R^{2} = r^{2} = (\beta^{*})^{2}")
+                    st.markdown(
+                        tipify(
+                            '<p class="fit-std-slope">'
+                            f"{label_a} · {_format_coef(beta_star_a)}² ≈ "
+                            f"{_format_r_squared(r2_a)} (r = {_format_coef(r_a)})<br>"
+                            f"{label_b} · {_format_coef(beta_star_b)}² ≈ "
+                            f"{_format_r_squared(r2_b)} (r = {_format_coef(r_b)})"
+                            "</p>"
+                            '<p class="fit-std-interp">Standardisation reveals the '
+                            "connection between regression slopes, correlation and "
+                            "explained variance. This β* = r identity holds for "
+                            "simple regression with an intercept — it does "
+                            "<b>not</b> generally hold in multiple regression.</p>"
+                            '<p class="fit-std-takeaway">Standardisation makes '
+                            "coefficients comparable by expressing variables in "
+                            "standard deviations. It changes their numerical scale "
+                            "but not the underlying relationships.</p>"
+                            '<p class="fit-std-transition">Comparing predictors '
+                            "individually is useful — but what happens when both "
+                            "predictors enter the same model?</p>"
+                        ),
+                        unsafe_allow_html=True,
+                    )
+
+    prev_col, next_col, replay_col, indicator_col = st.columns([1, 1, 1, 2])
+    with prev_col:
+        if st.button("← Previous", key="fit_std_stage_prev", disabled=stage <= 1):
+            st.session_state.fit_std_stage = max(1, stage - 1)
+            st.rerun()
+    with next_col:
+        if st.button("Next →", key="fit_std_stage_next", disabled=stage >= _STD_N_STAGES):
+            st.session_state.fit_std_stage = min(_STD_N_STAGES, stage + 1)
+            st.rerun()
+    with replay_col:
+        if st.button("Replay ↺", key="fit_std_stage_replay", on_click=_std_replay):
+            st.rerun()
+    with indicator_col:
         st.markdown(
-            '<p class="fit-std-col-lab">Why R² does not change</p>',
+            f'<p class="mr-note" style="text-align:right;margin-top:0.4rem;">'
+            f"Stage {stage} of {_STD_N_STAGES}</p>",
             unsafe_allow_html=True,
-        )
-        st.latex(r"\beta^{*} = r(X,Y) \qquad R^2 = (\beta^{*})^2")
-        st.caption(
-            "In simple regression, the standardised slope equals the "
-            "correlation between X and Y. Standardising rescales both "
-            "variables by constants, which rescales the line but not how "
-            "tightly points cluster around it — so R² is unchanged."
         )
 
 
