@@ -4079,16 +4079,24 @@ def _distribution_scatter_figure(population, experiment, cloud: str):
     ), latest_beta
 
 
-def _paint_scatter(population, experiment, cloud: str) -> None:
-    """Scatter + both regression lines, under one key that never changes.
+def _paint_scatter(slot, population, experiment, cloud: str) -> None:
+    """Scatter + both regression lines, redrawn into a persistent
+    `st.empty()` placeholder with no explicit `key`.
 
-    A constant `key` across reruns is what lets Streamlit update the
-    existing chart's data in place instead of unmounting and remounting a
-    fresh component — remounting (a different key every call) is what
-    caused the visible flash during repeated draws.
+    `slot` (an `st.empty()` created once, outside any animation loop) is
+    what lets repeated calls update the existing chart in place instead of
+    unmounting and remounting it — an explicit, per-call `key` is what
+    caused the earlier flash; a changing `key` forces a fresh component
+    every time, and even a *stable* key can't be reused across multiple
+    calls within one script run (Streamlit treats it as a duplicate
+    element). `st.empty()` has no such restriction: redrawing into the
+    same placeholder is exactly the mechanism Streamlit provides for
+    smooth, flash-free live updates.
     """
     scatter, _ = _distribution_scatter_figure(population, experiment, cloud)
-    st.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key="dist_scatter_chart")
+    with slot.container():
+        st.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG)
+        st.markdown('<p class="dist-sd">&nbsp;</p>', unsafe_allow_html=True)
 
 
 _REPEATED_SAMPLING_AUTO_SHOW_THRESHOLD = 100
@@ -4101,9 +4109,10 @@ def _repeated_sampling_auto_show(experiment) -> bool:
     )
 
 
-def _paint_beta_histogram(population, experiment, *, show_normal: bool, show_2se: bool) -> None:
+def _paint_beta_histogram(slot, population, experiment, *, show_normal: bool, show_2se: bool) -> None:
     """Sampling distribution of β̂ — thin wrapper fixing the labels for this page."""
     _paint_histogram(
+        slot,
         values=experiment.betas,
         edges=experiment.beta_edges,
         population_value=population.beta,
@@ -4120,6 +4129,7 @@ def _paint_beta_histogram(population, experiment, *, show_normal: bool, show_2se
 
 
 def _paint_histogram(
+    slot,
     *,
     values,
     edges,
@@ -4134,8 +4144,9 @@ def _paint_histogram(
     height: int | None = None,
     show_2se: bool = False,
 ) -> None:
-    """Rendered under one constant key (see `_paint_scatter`) so repeated
-    draws update this chart's data in place rather than remounting it."""
+    """Rendered into a persistent `st.empty()` placeholder (see
+    `_paint_scatter`) so repeated draws update this chart's data in place
+    rather than remounting it."""
     mean = estimate_mean(values)
     spread = estimate_sd(values)
     normal_x = None
@@ -4167,12 +4178,6 @@ def _paint_histogram(
         show_2se=show_2se,
         se_label="±1 SE ≈ 68%",
     )
-    st.plotly_chart(figure, width="stretch", config=PLOTLY_CONFIG, key="dist_hist_chart")
-    st.markdown(
-        '<p class="dist-hint">Each bar counts how many samples produced an '
-        "estimated slope in that range.</p>",
-        unsafe_allow_html=True,
-    )
     stats = (
         '<p class="dist-stat">'
         f'<span class="pop">{true_label} {population_value:.3f}</span>'
@@ -4180,7 +4185,14 @@ def _paint_histogram(
         f"<span>{sd_label} {_dist_number(estimate_sd(values))}</span>"
         "</p>"
     )
-    st.markdown(stats, unsafe_allow_html=True)
+    with slot.container():
+        st.plotly_chart(figure, width="stretch", config=PLOTLY_CONFIG)
+        st.markdown(
+            '<p class="dist-hint">Each bar counts how many samples produced an '
+            "estimated slope in that range.</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(stats, unsafe_allow_html=True)
 _DIST_BETA_NOTE = None
 _ONE_ALPHA_NOTE = None
 _ONE_BETA_NOTE = None
@@ -5401,6 +5413,30 @@ def _dist_learned_html(population, experiment) -> str:
     )
 
 
+def _dist_animation_plan(added: int) -> tuple[list[int], float]:
+    """(samples drawn per animation frame, pause between frames in seconds).
+
+    Matches the spec's timing table: Draw 1 is a single visible update;
+    Draw 10 shows all ten regressions at ~300ms apart; Draw 100 shows all
+    hundred at ~50ms apart; Draw 1,000 batches several samples per frame
+    so the whole animation still finishes in ~5 seconds, while the
+    histogram keeps visibly accumulating and the scatter keeps showing
+    successive samples (never jumping straight to the final one).
+    """
+    if added <= 0:
+        return [], 0.0
+    if added == 1:
+        return [1], 0.0
+    if added <= 100:
+        pause = 0.30 if added <= 10 else 0.05
+        return [1] * added, pause
+    pause = 0.05
+    frame_count = max(1, round(5.0 / pause))
+    base, extra = divmod(added, frame_count)
+    sizes = [base + (1 if i < extra else 0) for i in range(frame_count)]
+    return [size for size in sizes if size > 0], pause
+
+
 @st.fragment(key="dist_repeated")
 def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
     """Repeated sampling controls + charts (fragment-scoped to avoid page flash)."""
@@ -5433,6 +5469,7 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
         draw_1000 = st.button("Draw 1,000", key="dist_draw_1000", width=118)
         reset = st.button("Reset", key="dist_reset", width=84)
 
+    added = 0
     if reset:
         experiment = new_experiment(
             int(sample_size),
@@ -5442,22 +5479,9 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
             population.beta,
         )
     else:
-        # One atomic batch update — never an intermediate frame per sample —
-        # keeps this responsive even at 1,000 draws, and (together with the
-        # stable chart keys in _paint_scatter/_paint_beta_histogram) is what
-        # eliminates the flash: nothing here unmounts a chart mid-update.
         added = 1000 if draw_1000 else 100 if draw_100 else 10 if draw_10 else 1 if draw_1 else 0
-        if added:
-            experiment = add_draws(
-                experiment,
-                population.hours_studied,
-                population.exam_score,
-                added,
-                rng,
-            )
-    st.session_state.dist_experiment = experiment
-    st.markdown(_dist_status(experiment), unsafe_allow_html=True)
 
+    status_slot = st.empty()
     cloud = population_cloud_image(
         population.hours_studied,
         population.exam_score,
@@ -5465,17 +5489,44 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
         population.y_range,
         cache_key=population.sha256,
     )
-    auto_show = _repeated_sampling_auto_show(experiment)
+    # The chart/column structure (and the st.empty() slots inside it) is
+    # created exactly once, outside the frame loop below, so animating a
+    # draw never unmounts or recreates either chart — only the content of
+    # these two slots is replaced, frame by frame.
     with st.container(key="dist_workspace"):
         chart_col, hist_col = st.columns([1, 1], gap="small", vertical_alignment="top")
         with chart_col:
             with st.container(key="dist_scatter"):
-                _paint_scatter(population, experiment, cloud)
-                st.markdown('<p class="dist-sd">&nbsp;</p>', unsafe_allow_html=True)
+                scatter_slot = st.empty()
         with hist_col:
             with st.container(key="dist_hists"):
                 with st.container(key="dist_beta"):
-                    _paint_beta_histogram(population, experiment, show_normal=auto_show, show_2se=auto_show)
+                    hist_slot = st.empty()
+
+    def _paint_frame(exp) -> None:
+        status_slot.markdown(_dist_status(exp), unsafe_allow_html=True)
+        auto_show = _repeated_sampling_auto_show(exp)
+        _paint_scatter(scatter_slot, population, exp, cloud)
+        _paint_beta_histogram(hist_slot, population, exp, show_normal=auto_show, show_2se=auto_show)
+
+    frame_sizes, pause = _dist_animation_plan(added)
+    if not frame_sizes:
+        _paint_frame(experiment)
+    else:
+        last = len(frame_sizes) - 1
+        for index, batch in enumerate(frame_sizes):
+            experiment = add_draws(
+                experiment,
+                population.hours_studied,
+                population.exam_score,
+                batch,
+                rng,
+            )
+            _paint_frame(experiment)
+            if index < last:
+                time.sleep(pause)
+    st.session_state.dist_experiment = experiment
+
     st.markdown(
         tipify(_dist_learned_html(population, experiment)),
         unsafe_allow_html=True,
