@@ -130,7 +130,7 @@ from src.null_slope import (
 )
 from src.sampling import draw_sample
 from src.sampling_distributions import (
-    animated_draws,
+    add_draws,
     can_show_normal,
     estimate_mean,
     estimate_sd,
@@ -1916,6 +1916,12 @@ p.fit-why-step-title {
   font-size: 0.96rem; line-height: 1.3rem;
 }
 .dist-note-line { margin: 0.2rem 0 0 0; color: #374151; font-size: 0.9rem; line-height: 1.3rem; }
+.dist-learned-list {
+  margin: 0.15rem 0 0 1.1rem; padding: 0; color: #374151;
+  font-size: 0.9rem; line-height: 1.35rem;
+}
+.dist-learned-list li { margin: 0.1rem 0; }
+.dist-learned-list b { color: #12263a; }
 .dist-transition {
   margin: 0.5rem 0 0 0; padding-top: 0.4rem; border-top: 1px solid #E2E8F0;
   color: #64748B; font-style: italic; font-size: 0.86rem; line-height: 1.3rem;
@@ -4060,16 +4066,6 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
             st.caption(SELECTION_NOTE)
 
 
-def _dist_pause(added: int, gaps: int) -> float:
-    if gaps <= 0:
-        return 0.0
-    if added <= 10:
-        return 0.12
-    if added <= 100:
-        return 0.07
-    return 2.2 / gaps
-
-
 def _dist_number(value: float | None) -> str:
     if value is None or not np.isfinite(value):
         return "—"
@@ -4120,13 +4116,16 @@ def _distribution_scatter_figure(population, experiment, cloud: str):
     ), latest_beta
 
 
-def _paint_scatter_only(population, experiment, cloud: str, *, suffix: str) -> None:
+def _paint_scatter(population, experiment, cloud: str) -> None:
+    """Scatter + both regression lines, under one key that never changes.
+
+    A constant `key` across reruns is what lets Streamlit update the
+    existing chart's data in place instead of unmounting and remounting a
+    fresh component — remounting (a different key every call) is what
+    caused the visible flash during repeated draws.
+    """
     scatter, _ = _distribution_scatter_figure(population, experiment, cloud)
-    chart_key = f"dist_scatter_{suffix}"
-    if _DIST_SCATTER is None:
-        st.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key=chart_key)
-    else:
-        _DIST_SCATTER.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key=chart_key)
+    st.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key="dist_scatter_chart")
 
 
 _REPEATED_SAMPLING_AUTO_SHOW_THRESHOLD = 100
@@ -4139,18 +4138,9 @@ def _repeated_sampling_auto_show(experiment) -> bool:
     )
 
 
-def _paint_distributions(
-    population, experiment, cloud: str, *, highlight: bool, suffix: str, show_normal: bool, show_2se: bool = False
-) -> None:
-    """Step 1: scatter of lines (left) and sampling distribution of β̂ (right)."""
-    scatter, latest_beta = _distribution_scatter_figure(population, experiment, cloud)
-    chart_key = f"dist_scatter_{suffix}"
-    if _DIST_SCATTER is None:
-        st.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key=chart_key)
-    else:
-        _DIST_SCATTER.plotly_chart(scatter, width="stretch", config=PLOTLY_CONFIG, key=chart_key)
+def _paint_beta_histogram(population, experiment, *, show_normal: bool, show_2se: bool) -> None:
+    """Sampling distribution of β̂ — thin wrapper fixing the labels for this page."""
     _paint_histogram(
-        _DIST_BETA,
         values=experiment.betas,
         edges=experiment.beta_edges,
         population_value=population.beta,
@@ -4160,8 +4150,6 @@ def _paint_distributions(
         mean_label=f"Mean {_BETA_HAT}",
         sd_label=f"SD({_BETA_HAT})",
         show_normal=show_normal,
-        highlight=latest_beta if highlight else None,
-        suffix=f"beta_{suffix}",
         decimals=3,
         height=_DIST_HIST_HEIGHT,
         show_2se=show_2se,
@@ -4169,7 +4157,6 @@ def _paint_distributions(
 
 
 def _paint_histogram(
-    slot,
     *,
     values,
     edges,
@@ -4180,12 +4167,12 @@ def _paint_histogram(
     mean_label,
     sd_label,
     show_normal,
-    highlight,
-    suffix,
     decimals,
     height: int | None = None,
     show_2se: bool = False,
 ) -> None:
+    """Rendered under one constant key (see `_paint_scatter`) so repeated
+    draws update this chart's data in place rather than remounting it."""
     mean = estimate_mean(values)
     spread = estimate_sd(values)
     normal_x = None
@@ -4209,13 +4196,19 @@ def _paint_histogram(
         normal_x=normal_x,
         normal_y=normal_y,
         normal_visible=bool(show_normal),
-        highlight=highlight,
         mean=mean,
         standard_error=spread,
         decimals=decimals,
         height=_DIST_HIST_HEIGHT if height is None else int(height),
-        uirevision=f"dist-hist-{suffix}",
+        uirevision="dist-hist",
         show_2se=show_2se,
+        se_label="±1 SE ≈ 68%",
+    )
+    st.plotly_chart(figure, width="stretch", config=PLOTLY_CONFIG, key="dist_hist_chart")
+    st.markdown(
+        '<p class="dist-hint">Each bar counts how many samples produced an '
+        "estimated slope in that range.</p>",
+        unsafe_allow_html=True,
     )
     stats = (
         '<p class="dist-stat">'
@@ -4224,22 +4217,7 @@ def _paint_histogram(
         f"<span>{sd_label} {_dist_number(estimate_sd(values))}</span>"
         "</p>"
     )
-    if slot is None:
-        st.plotly_chart(
-            figure, width="stretch", config=PLOTLY_CONFIG, key=f"dist_hist_{suffix}"
-        )
-        st.markdown(stats, unsafe_allow_html=True)
-        return
-    with slot.container():
-        st.plotly_chart(
-            figure, width="stretch", config=PLOTLY_CONFIG, key=f"dist_hist_{suffix}"
-        )
-        st.markdown(stats, unsafe_allow_html=True)
-
-
-_DIST_SCATTER = None
-_DIST_SCATTER_NOTE = None
-_DIST_BETA = None
+    st.markdown(stats, unsafe_allow_html=True)
 _DIST_BETA_NOTE = None
 _ONE_ALPHA_NOTE = None
 _ONE_BETA_NOTE = None
@@ -5466,13 +5444,37 @@ def _sampling_status_row(population, experiment) -> None:
     )
 
 
+def _dist_learned_html(population, experiment) -> str:
+    """Compact, dynamic summary of the simulation so far — replaces the old
+    fixed explanatory paragraphs with values computed from the live data."""
+    mean = estimate_mean(experiment.betas)
+    sd = estimate_sd(experiment.betas)
+    shape_line = ""
+    if _repeated_sampling_auto_show(experiment):
+        shape_line = (
+            "<li><b>Shape:</b> as more samples are drawn, the distribution "
+            "becomes approximately bell-shaped.</li>"
+        )
+    return (
+        '<p class="dist-note-heading">What have we learned?</p>'
+        '<ul class="dist-learned-list">'
+        f"<li><b>Centre:</b> mean estimated slope = {_dist_number(mean)}, "
+        f"compared with true β = {population.beta:.3f}.</li>"
+        f"<li><b>Spread:</b> SD of estimated slopes = {_dist_number(sd)}.</li>"
+        f"{shape_line}"
+        "</ul>"
+        '<p class="dist-takeaway">Takeaway: different random samples '
+        "produce different regression estimates, even though the underlying "
+        "population relationship remains unchanged.</p>"
+    )
+
+
 @st.fragment(key="dist_repeated")
 def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
     """Repeated sampling controls + charts (fragment-scoped to avoid page flash)."""
     # Marker for CSS: let this step grow to its natural height (the added
     # explanatory text is taller than the old fixed-viewport layout).
     st.markdown('<div class="dist-step-repeated"></div>', unsafe_allow_html=True)
-    global _DIST_SCATTER, _DIST_SCATTER_NOTE, _DIST_BETA
     experiment = _dist_experiment(population)
     pending_n = st.session_state.get("dist_sample_size", experiment.sample_size)
     experiment = experiment_for_sample_size(
@@ -5484,8 +5486,6 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
         population.beta,
     )
     _sampling_status_row(population, experiment)
-    added = 0
-    frames: list = []
     toolbar = st.container(horizontal=True, vertical_alignment="bottom", gap="small", wrap=False)
     with toolbar:
         sample_size = st.select_slider(
@@ -5495,16 +5495,12 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
             key="dist_sample_size",
             width=220,
         )
-        if st.button("Draw 1", key="dist_draw_1", width=88):
-            added = 1
-        if st.button("Draw 10", key="dist_draw_10", width=96):
-            added = 10
-        if st.button("Draw 100", key="dist_draw_100", width=104):
-            added = 100
-        if st.button("Draw 1,000", key="dist_draw_1000", width=118):
-            added = 1000
+        draw_1 = st.button("Draw 1", key="dist_draw_1", width=88)
+        draw_10 = st.button("Draw 10", key="dist_draw_10", width=96)
+        draw_100 = st.button("Draw 100", key="dist_draw_100", width=104)
+        draw_1000 = st.button("Draw 1,000", key="dist_draw_1000", width=118)
         reset = st.button("Reset", key="dist_reset", width=84)
-    status = st.empty()
+
     if reset:
         experiment = new_experiment(
             int(sample_size),
@@ -5513,17 +5509,23 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
             population.alpha,
             population.beta,
         )
-        added = 0
-    if added:
-        frames = animated_draws(
-            experiment,
-            population.hours_studied,
-            population.exam_score,
-            added,
-            rng,
-        )
-        experiment = frames[-1]
+    else:
+        # One atomic batch update — never an intermediate frame per sample —
+        # keeps this responsive even at 1,000 draws, and (together with the
+        # stable chart keys in _paint_scatter/_paint_beta_histogram) is what
+        # eliminates the flash: nothing here unmounts a chart mid-update.
+        added = 1000 if draw_1000 else 100 if draw_100 else 10 if draw_10 else 1 if draw_1 else 0
+        if added:
+            experiment = add_draws(
+                experiment,
+                population.hours_studied,
+                population.exam_score,
+                added,
+                rng,
+            )
     st.session_state.dist_experiment = experiment
+    st.markdown(_dist_status(experiment), unsafe_allow_html=True)
+
     cloud = population_cloud_image(
         population.hours_studied,
         population.exam_score,
@@ -5531,88 +5533,19 @@ def _render_repeated_sampling(population, rng: np.random.Generator) -> None:
         population.y_range,
         cache_key=population.sha256,
     )
-    animate = bool(frames)
-    snapshots = frames or [experiment]
+    auto_show = _repeated_sampling_auto_show(experiment)
     with st.container(key="dist_workspace"):
         chart_col, hist_col = st.columns([1, 1], gap="small", vertical_alignment="top")
-        if animate:
-            with chart_col:
-                with st.container(key="dist_scatter"):
-                    _DIST_SCATTER = st.empty()
-                    _DIST_SCATTER_NOTE = st.empty()
-            with hist_col:
-                with st.container(key="dist_hists"):
-                    with st.container(key="dist_beta"):
-                        _DIST_BETA = st.empty()
-            _DIST_SCATTER_NOTE.markdown('<p class="dist-sd">&nbsp;</p>', unsafe_allow_html=True)
-            for index, snapshot in enumerate(snapshots):
-                status.markdown(_dist_status(snapshot), unsafe_allow_html=True)
-                auto_show = _repeated_sampling_auto_show(snapshot)
-                _paint_distributions(
-                    population,
-                    snapshot,
-                    cloud,
-                    highlight=index == len(snapshots) - 1,
-                    suffix=str(index),
-                    show_normal=auto_show,
-                    show_2se=auto_show,
-                )
-                if index < len(snapshots) - 1:
-                    time.sleep(_dist_pause(added, len(snapshots) - 1))
-            time.sleep(0.35)
-            auto_show = _repeated_sampling_auto_show(experiment)
-            _paint_distributions(
-                population,
-                experiment,
-                cloud,
-                highlight=False,
-                suffix="settled",
-                show_normal=auto_show,
-                show_2se=auto_show,
-            )
-        else:
-            _DIST_SCATTER = None
-            _DIST_BETA = None
-            status.markdown(_dist_status(experiment), unsafe_allow_html=True)
-            with chart_col:
-                with st.container(key="dist_scatter"):
-                    _paint_scatter_only(population, experiment, cloud, suffix="live")
-                    st.markdown('<p class="dist-sd">&nbsp;</p>', unsafe_allow_html=True)
-            with hist_col:
-                with st.container(key="dist_hists"):
-                    with st.container(key="dist_beta"):
-                        auto_show = _repeated_sampling_auto_show(experiment)
-                        _paint_histogram(
-                            None,
-                            values=experiment.betas,
-                            edges=experiment.beta_edges,
-                            population_value=population.beta,
-                            title=f"Sampling distribution of {_BETA_HAT}",
-                            x_title=f"Estimated slope {_BETA_HAT}",
-                            true_label="True β",
-                            mean_label=f"Mean {_BETA_HAT}",
-                            sd_label=f"SD({_BETA_HAT})",
-                            show_normal=auto_show,
-                            highlight=None,
-                            suffix="beta_live",
-                            decimals=3,
-                            height=_DIST_HIST_HEIGHT,
-                            show_2se=auto_show,
-                        )
-    st.markdown('<p class="dist-note">&nbsp;</p>', unsafe_allow_html=True)
+        with chart_col:
+            with st.container(key="dist_scatter"):
+                _paint_scatter(population, experiment, cloud)
+                st.markdown('<p class="dist-sd">&nbsp;</p>', unsafe_allow_html=True)
+        with hist_col:
+            with st.container(key="dist_hists"):
+                with st.container(key="dist_beta"):
+                    _paint_beta_histogram(population, experiment, show_normal=auto_show, show_2se=auto_show)
     st.markdown(
-        tipify(
-            '<p class="dist-note-heading">Why do the estimates form a '
-            "bell curve?</p>"
-            "<p class=\"dist-note-line\">Every sample contains different "
-            f"students, producing a different estimated slope {_BETA_HAT}.</p>"
-            '<p class="dist-note-line">Across thousands of samples, these '
-            "estimates form an approximately normal distribution centered "
-            "on the true population slope β.</p>"
-            '<p class="dist-note-line">The width of this distribution '
-            "measures how much a slope estimate varies from sample to "
-            f"sample. This variability is its standard error.</p>"
-        ),
+        tipify(_dist_learned_html(population, experiment)),
         unsafe_allow_html=True,
     )
     st.markdown(
