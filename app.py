@@ -153,7 +153,7 @@ MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
     ("journey", "The Statistical Journey"),
     ("fitting", "Simple Linear Regression"),
     ("correlation", "Correlation & Causation"),
-    ("sampling", "Sampling & Standard Error"),
+    ("sampling", "Sampling & Uncertainty"),
     ("multiple_regression", "Multiple Regression"),
     ("ttest", "The t-test"),
     ("f_tests", "The F-test"),
@@ -162,9 +162,9 @@ MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
 MAIN_LAB_TAB_LABELS = dict(MAIN_LAB_TABS)
 
 SAMPLING_INFERENCE_SUBTABS: tuple[tuple[str, str], ...] = (
-    ("one_sample", "One Sample"),
-    ("repeated", "Repeated Sampling"),
-    ("estimate_se", "Estimate SE from One Sample"),
+    ("one_sample", "Draw a Sample"),
+    ("repeated", "Sampling Variability"),
+    ("estimate_se", "Estimating Standard Error"),
 )
 SAMPLING_INFERENCE_SUB_LABELS = dict(SAMPLING_INFERENCE_SUBTABS)
 
@@ -468,6 +468,22 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .intro-grid .est { color: #1D4ED8; font-weight: 680; }
 .intro-grid .pop { color: #EA580C; font-weight: 650; }
 .intro-grid .diff { color: #374151; font-weight: 600; }
+/* The coefficient grid now lives in the ~35%-wide right panel rather than
+   a full-width header strip, so its fixed rem widths need to shrink to fit. */
+.st-key-intro_panel .intro-stats { height: auto; margin: 0.5rem 0 0 0; }
+.st-key-intro_panel .intro-sample-line { gap: 1.2rem; font-size: 0.85rem; }
+.st-key-intro_panel .intro-grid {
+    grid-template-columns: 5.6rem 1fr 1fr;
+    column-gap: 0.7rem;
+    height: auto;
+    row-gap: 0.3rem;
+    font-size: 0.82rem;
+    margin-top: 0.3rem;
+}
+.st-key-intro_panel .intro-grid .cell {
+    grid-template-columns: 1.3rem 0.7rem 1fr;
+    column-gap: 0.1rem;
+}
 .line-legend {
     display: flex;
     align-items: center;
@@ -487,6 +503,11 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 }
 .line-legend .swatch.pop { background: #EA580C; }
 .line-legend .swatch.est { background: #1D4ED8; }
+.line-legend .swatch.dot {
+    width: 0.65rem; height: 0.65rem; border-radius: 50%; margin-right: 0.45rem;
+}
+.line-legend .swatch.obs-pop { background: #9CA3AF; }
+.line-legend .swatch.obs-est { background: #1D4ED8; }
 .st-key-intro_view_data { display: flex; justify-content: flex-end; }
 .chart-title {
     color: #12263a;
@@ -521,14 +542,21 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     display: none !important;
 }
 .st-key-intro_layout {
-    /* Nav sits above this block; Load Dataset shares the status row. */
+    /* Nav sits above this block; Load Dataset shares the status row. The
+    chart area (the flexible part of this box) is cut by ~20vh versus the
+    full-bleed single-chart layout, since the chart now shares the row
+    with the explanation panel instead of filling it. */
     flex: none !important;
-    height: calc(100dvh - 6.6rem) !important;
-    max-height: calc(100dvh - 6.6rem) !important;
+    height: calc(100dvh - 6.6rem - 20vh) !important;
+    max-height: calc(100dvh - 6.6rem - 20vh) !important;
     min-height: 0 !important;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+.st-key-intro_panel {
+    overflow-y: auto;
+    padding-right: 0.2rem;
 }
 .st-key-intro_layout > [data-testid="stVerticalBlock"] {
     gap: 0.45rem !important;
@@ -2918,6 +2946,64 @@ def _information_strip(population, view: IntroductionView) -> str:
     )
 
 
+def _intro_panel_objective_html(population, view: IntroductionView) -> str:
+    """Stage-dependent objective/explanation text for the right-hand panel.
+
+    The stage is read entirely from `view` (no separate stage counter): no
+    sample → Draw; sample but no fit → Estimate is next; fit but not
+    revealed → this is an estimate; revealed → Compare to the truth.
+    """
+    degenerate = view.fit is not None and view.fit.degenerate
+    if view.sample is None:
+        head = "Why draw a sample?"
+        body = (
+            '<p class="fit-std-interp">Each grey point is one student. The '
+            f"population contains <b>{population.n:,}</b> students.</p>"
+            '<p class="fit-std-note">We cannot generally observe the entire '
+            "population in real statistical investigations — so we draw a "
+            "random sample instead.</p>"
+        )
+    elif degenerate:
+        head = "This sample can't be fit"
+        body = (
+            '<p class="fit-std-note">This sample has no variation in hours '
+            "studied, so a line cannot be fit. Draw a new sample to "
+            "continue.</p>"
+        )
+    elif view.fit is None:
+        head = "Estimate a regression from this sample"
+        body = (
+            f'<p class="fit-std-interp"><b>{view.sample.n:,}</b> students are '
+            "highlighted in blue.</p>"
+            '<p class="fit-std-note">Click <b>Estimate regression</b> to fit '
+            "a line using only these sampled observations.</p>"
+        )
+    elif not view.population_revealed:
+        head = "The sample regression is an estimate"
+        body = (
+            '<p class="fit-std-interp">This line is fitted using only the '
+            f"{view.sample.n:,} sampled students. It estimates — but will "
+            "not generally equal — the true population relationship.</p>"
+            '<p class="fit-std-note">Click <b>Show population regression</b> '
+            "to compare it with the truth.</p>"
+        )
+    else:
+        head = "Compare the estimate to the truth"
+        body = (
+            '<p class="fit-std-interp">The population regression describes '
+            "the true conditional mean relationship. The sample regression "
+            "estimates that relationship using only the selected "
+            "observations.</p>"
+            '<p class="fit-std-takeaway">A sample regression is an estimate, '
+            "not the truth. Different random samples generally produce "
+            "different estimates of the same population relationship.</p>"
+            '<p class="fit-std-transition">Was this sample unusually '
+            "accurate, or would another sample produce different "
+            "estimates?</p>"
+        )
+    return f'<p class="fit-std-stage-head">{head}</p>{body}'
+
+
 _SORT_COLUMNS = {
     "ID": "student_id",
     "Hours": "hours_studied",
@@ -3607,7 +3693,7 @@ def _render_sampling_lab_data_panel(population) -> None:
         sample_size = getattr(experiment, "sample_size", sample_size)
     if x_values is None or y_values is None:
         st.caption(
-            "Draw a sample in Sampling & Standard Error to inspect its observations. "
+            "Draw a sample in Sampling & Uncertainty to inspect its observations. "
             f"The lab samples from the fixed population of {population.n:,} students."
         )
         return
@@ -3740,13 +3826,22 @@ def _render_sample_table(population, view, selected_ids: tuple[int, ...]) -> Non
             st.code(R_COMMANDS, language="r")
 
 
-def _line_legend() -> str:
-    """Fixed caption for the two lines. It does not change height when a line appears."""
+def _line_legend(*, has_sample: bool, show_sample_line: bool, show_population_line: bool) -> str:
+    """Legend for the chart. All four entries keep their place (fixed-height
+    row, never reflowed) but only the ones currently on the chart are
+    visible — matching the progressive-disclosure convention used elsewhere.
+    """
+    def entry(swatch_cls: str, label: str, visible: bool) -> str:
+        style = "" if visible else ' style="visibility:hidden"'
+        return f'<span{style}><span class="swatch {swatch_cls}"></span>{label}</span>'
+
     return (
         '<div class="line-legend">'
-        '<span><span class="swatch pop"></span>Population regression (true)</span>'
-        '<span><span class="swatch est"></span>Sample regression (estimated)</span>'
-        "</div>"
+        + entry("dot obs-pop", "Population observations", True)
+        + entry("dot obs-est", "Sample observations", has_sample)
+        + entry("est", "Sample regression (estimated)", show_sample_line)
+        + entry("pop", "Population regression (true)", show_population_line)
+        + "</div>"
     )
 
 
@@ -3791,6 +3886,17 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                 gap="small",
                 wrap=False,
             )
+            # Progressive disclosure: each later action is hidden (not just
+            # disabled) until the previous one has happened, so the student
+            # is never shown a control they can't yet use.
+            intro_hide_rules = "".join([
+                '.st-key-intro_btn_estimate, .st-key-intro_btn_estimate * '
+                '{ visibility: hidden !important; }' if not has_sample else "",
+                '.st-key-intro_btn_show, .st-key-intro_btn_show * '
+                '{ visibility: hidden !important; }' if not fitted else "",
+            ])
+            if intro_hide_rules:
+                st.markdown(f"<style>{intro_hide_rules}</style>", unsafe_allow_html=True)
             with toolbar:
                 st.select_slider(
                     "Sample size",
@@ -3805,21 +3911,22 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                     disabled=generator is None,
                     wrap=False,
                 )
-                estimate_clicked = st.button(
-                    "Estimate regression",
-                    type="primary" if has_sample and not fitted else "secondary",
-                    key="intro_estimate",
-                    disabled=not (has_sample and not fitted),
-                    wrap=False,
-                )
-                show_clicked = st.button(
-                    "Hide population regression" if revealed else "Show population regression",
-                    type="primary" if fitted and not revealed else "secondary",
-                    key="intro_show",
-                    disabled=not fitted,
-                    wrap=False,
-                )
-            st.markdown(_information_strip(population, view), unsafe_allow_html=True)
+                with st.container(key="intro_btn_estimate"):
+                    estimate_clicked = st.button(
+                        "Estimate regression",
+                        type="primary" if has_sample and not fitted else "secondary",
+                        key="intro_estimate",
+                        disabled=not (has_sample and not fitted),
+                        wrap=False,
+                    )
+                with st.container(key="intro_btn_show"):
+                    show_clicked = st.button(
+                        "Hide population regression" if revealed else "Show population regression",
+                        type="primary" if fitted and not revealed else "secondary",
+                        key="intro_show",
+                        disabled=not fitted,
+                        wrap=False,
+                    )
 
         if draw_clicked and generator is not None:
             _apply_intro_new_sample(population, view, generator)
@@ -3880,19 +3987,36 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
         figure.layout.height = None
 
         with st.container(key="intro_workspace"):
-            _chart_header()
-            st.markdown(_line_legend(), unsafe_allow_html=True)
-            with st.container(key="intro_chart_frame"):
-                st.plotly_chart(
-                    figure,
-                    width="stretch",
-                    height="stretch",
-                    config=PLOTLY_CONFIG,
-                    on_select="rerun",
-                    selection_mode="points",
-                    key="intro_chart",
+            chart_col, panel_col = st.columns([0.65, 0.35], gap="medium")
+            with chart_col:
+                _chart_header()
+                st.markdown(
+                    _line_legend(
+                        has_sample=view.sample is not None,
+                        show_sample_line=show_sample_line,
+                        show_population_line=view.population_revealed,
+                    ),
+                    unsafe_allow_html=True,
                 )
-            st.caption(_introduction_step(view))
+                with st.container(key="intro_chart_frame"):
+                    st.plotly_chart(
+                        figure,
+                        width="stretch",
+                        height="stretch",
+                        config=PLOTLY_CONFIG,
+                        on_select="rerun",
+                        selection_mode="points",
+                        key="intro_chart",
+                    )
+                st.caption(_introduction_step(view))
+            with panel_col:
+                with st.container(key="intro_panel"):
+                    st.markdown(_intro_panel_objective_html(population, view), unsafe_allow_html=True)
+                    if view.fit is not None and not view.fit.degenerate:
+                        st.latex(r"\hat{Y} = \hat{\alpha} + \hat{\beta}X")
+                    if view.population_revealed:
+                        st.latex(r"E[Y \mid X] = \alpha + \beta X")
+                    st.markdown(_information_strip(population, view), unsafe_allow_html=True)
         if drawer_open:
             _dataset_overlay_dialog(
                 "intro",
@@ -4548,11 +4672,11 @@ def _render_null_slope(sample_size: int, draw: bool, true_beta: float) -> None:
 
 
 def render_sampling_inference_tab(population, rng: np.random.Generator) -> None:
-    """Sampling & Standard Error: One Sample plus the repeated/estimate-SE steps."""
+    """Sampling & Uncertainty: Draw a Sample plus the repeated/estimate-SE steps."""
     if st.session_state.get("sampling_inference_sub") not in SAMPLING_INFERENCE_SUB_LABELS:
         st.session_state.sampling_inference_sub = "one_sample"
     sub = st.segmented_control(
-        "Sampling & Standard Error section",
+        "Sampling & Uncertainty section",
         options=[key for key, _ in SAMPLING_INFERENCE_SUBTABS],
         format_func=lambda key: SAMPLING_INFERENCE_SUB_LABELS[key],
         key="sampling_inference_sub",
