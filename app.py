@@ -428,9 +428,9 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     font-variant-numeric: tabular-nums;
 }
 .intro-coef-table th, .intro-coef-table td {
-    padding: 0.3rem 0.4rem;
+    padding: 0.25rem 0.35rem;
     text-align: right;
-    border-bottom: 1px solid #E2E8F0;
+    font-variant-numeric: tabular-nums;
 }
 .intro-coef-table th:first-child, .intro-coef-table td:first-child {
     text-align: left;
@@ -441,7 +441,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: #6b7280;
-    border-bottom: 2px solid #CBD5E1;
+    border-bottom: 1.5px solid #CBD5E1;
 }
 .intro-coef-table tr.est td:first-child { color: #1D4ED8; font-weight: 650; }
 .intro-coef-table tr.est td:not(:first-child) { color: #1D4ED8; font-weight: 680; }
@@ -449,7 +449,6 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
 .intro-coef-table tr.pop td:not(:first-child) { color: #EA580C; font-weight: 650; }
 .intro-coef-table tr.diff td:first-child { color: #6b7280; font-weight: 500; }
 .intro-coef-table tr.diff td:not(:first-child) { color: #374151; font-weight: 600; }
-.intro-coef-table tr:last-child td { border-bottom: none; }
 .line-legend {
     display: flex;
     align-items: center;
@@ -513,27 +512,72 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     /* Nav sits above this block; Load Dataset shares the status row. The
     chart area (the flexible part of this box) is cut by ~20vh versus the
     full-bleed single-chart layout, since the chart now shares the row
-    with the explanation panel instead of filling it. */
+    with the explanation panel instead of filling it. Overflow is visible
+    (not hidden): the chart's own size is set explicitly below and never
+    depends on this, but the right panel's content must never be clipped
+    if a stage needs a touch more than the nominal chart height. */
     flex: none !important;
     height: calc(100dvh - 6.6rem - 20vh) !important;
-    max-height: calc(100dvh - 6.6rem - 20vh) !important;
     min-height: 0 !important;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
 }
 .st-key-intro_panel {
-    overflow-y: auto;
-    padding-right: 0.2rem;
+    overflow: visible;
+}
+/* Right-panel spacing/typography for Draw a Sample only (scoped to this
+   container key so Standardisation's shared .fit-std-* classes are
+   untouched): 16px after headings, 12px between related elements, 24px
+   before a new section (equations/table), 16px above the takeaway. */
+.st-key-intro_panel [data-testid="stElementContainer"] {
+    margin-bottom: 0.75rem;
+}
+.st-key-intro_panel [data-testid="stElementContainer"]:last-child {
+    margin-bottom: 0;
+}
+.st-key-intro_panel .fit-std-stage-head {
+    margin: 0 0 1rem 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+.st-key-intro_panel .fit-std-interp,
+.st-key-intro_panel .fit-std-note {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 400;
+}
+.st-key-intro_panel .fit-std-note {
+    padding: 0.5rem 0.7rem;
+}
+.st-key-intro_panel .fit-std-takeaway {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    font-weight: 550;
+    line-height: 1.5;
+}
+.st-key-intro_panel .fit-std-transition {
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+.st-key-intro_panel [data-testid="stElementContainer"]:has(.katex-display) {
+    margin: 1.5rem 0 0.75rem 0;
+}
+.st-key-intro_panel .katex-display {
+    font-size: 1.15rem;
+    margin: 0 !important;
+}
+.st-key-intro_panel [data-testid="stElementContainer"]:has(.intro-coef-table) {
+    margin-top: 1.5rem;
 }
 .st-key-intro_layout > [data-testid="stVerticalBlock"] {
     gap: 0.45rem !important;
     min-height: 0 !important;
     height: 100% !important;
-    max-height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 /* Header keeps natural height; never shrink under the chart. */
 .st-key-intro_layout [data-testid="stElementContainer"]:has(.st-key-intro_header),
@@ -551,7 +595,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 .st-key-intro_workspace,
 .st-key-intro_workspace > [data-testid="stLayoutWrapper"],
@@ -2842,18 +2886,11 @@ _ALPHA_HAT = "α\u0302"
 _BETA_HAT = "β\u0302"
 
 
-def _introduction_step(view: IntroductionView) -> str:
-    if view.sample is None:
-        return "The cloud is every student. Draw a sample to estimate a regression."
-    if view.fit is not None and view.fit.degenerate:
-        return "This sample has no variation in hours studied, so a line cannot be fit."
-    if view.fit is None and view.population_revealed:
-        return "New sample highlighted. The population line stays. Estimate this sample next."
-    if view.fit is None:
-        return "Blue points are a sample drawn without replacement. Estimate its regression."
-    if not view.population_revealed:
-        return "The blue line uses only this sample. Show the population regression to compare."
-    return f"The orange line is the population regression. The blue line is this sample. {_ALPHA_HAT} − α and {_BETA_HAT} − β are sampling error."
+def _intro_chart_caption() -> str:
+    """Short, stage-invariant caption. The right panel carries the stage
+    narrative, so this only states what the caption itself is for: that
+    chart points are clickable — never repeated elsewhere."""
+    return "Click a point to inspect it."
 
 
 def _signed_label(value: str) -> str:
@@ -2913,8 +2950,8 @@ def _intro_panel_objective_html(population, view: IntroductionView) -> str:
             '<p class="fit-std-stage-head">Why draw a sample?</p>'
             '<p class="fit-std-interp">Each grey point represents one '
             f"student in a population of {population.n:,}.</p>"
-            '<p class="fit-std-note">We usually cannot observe the entire '
-            "population, so we estimate its characteristics from a random "
+            '<p class="fit-std-note">We usually cannot observe everyone, so '
+            "we estimate population characteristics from a random "
             "sample.</p>"
         )
     if degenerate:
@@ -3941,7 +3978,7 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                         selection_mode="points",
                         key="intro_chart",
                     )
-                st.caption(_introduction_step(view))
+                st.caption(_intro_chart_caption())
             with panel_col:
                 with st.container(key="intro_panel"):
                     st.markdown(_intro_panel_objective_html(population, view), unsafe_allow_html=True)
@@ -3956,9 +3993,10 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                             "regression to compare.</p>",
                             unsafe_allow_html=True,
                         )
+                        st.markdown(_intro_coef_table_html(population, view), unsafe_allow_html=True)
                     elif fitted_ok and view.population_revealed:
                         st.latex(r"\hat{Y} = \hat{\alpha} + \hat{\beta}X")
-                        st.latex(r"E[Y \mid X] = \alpha + \beta X")
+                        st.latex(r"\hat{Y}_{\text{population}} = \alpha + \beta X")
                         st.markdown(_intro_coef_table_html(population, view), unsafe_allow_html=True)
                         st.markdown(
                             '<p class="fit-std-takeaway">Different random '
@@ -4013,7 +4051,9 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                 "coefficients, fitted on all 100,000 students. "
                 f"**{_ALPHA_HAT} − α** and **{_BETA_HAT} − β** are the sample estimate "
                 "minus the population coefficient. They fill in when the population "
-                "line is revealed."
+                "line is revealed. **Y_mean** is the average population outcome at a "
+                "given X — the population regression traces how that average changes "
+                "with X."
             )
             st.caption(population_cloud_caption(population.n))
             st.caption(DRAWER_INTRO)
@@ -7463,7 +7503,7 @@ def _std_replay() -> None:
     st.session_state.fit_std_stage = 1
     st.session_state.fit_std_view_radio = "Original"
     st.session_state.fit_std_stage2_choice = "Original"
-    st.session_state.fit_std_stage_prev = 1
+    st.session_state.fit_std_stage_entered = 1
 
 
 def render_standardisation_subtab(view) -> None:
@@ -7511,7 +7551,7 @@ def render_standardisation_subtab(view) -> None:
     st.session_state.setdefault("fit_std_stage", 1)
     st.session_state.setdefault("fit_std_view_radio", "Original")
     st.session_state.setdefault("fit_std_stage2_choice", "Original")
-    st.session_state.setdefault("fit_std_stage_prev", 1)
+    st.session_state.setdefault("fit_std_stage_entered", 1)
     stage = int(st.session_state.fit_std_stage)
 
     # Units follow the stage on entry: Original in stage 1, the student's
@@ -7519,14 +7559,17 @@ def render_standardisation_subtab(view) -> None:
     # from stage 3 on — but the toggle stays live in 2-4 so the student can
     # still flip it manually to compare. This only fires once per transition
     # (not on every rerun), so a manual flip inside stage 3/4 isn't undone.
-    if stage != int(st.session_state.fit_std_stage_prev):
+    # (Note: this tracking key must never collide with a widget's own key,
+    # e.g. the "← Previous" button's key="fit_std_stage_prev" — that
+    # collision previously raised StreamlitValueAssignmentNotAllowedError.)
+    if stage != int(st.session_state.fit_std_stage_entered):
         if stage == 1:
             st.session_state.fit_std_view_radio = "Original"
         elif stage == 2:
             st.session_state.fit_std_view_radio = st.session_state.fit_std_stage2_choice
         else:
             st.session_state.fit_std_view_radio = "Standardised"
-        st.session_state.fit_std_stage_prev = stage
+        st.session_state.fit_std_stage_entered = stage
 
     # The toggle only matters from stage 2 onward; a scoped visibility rule
     # (not disabled=) hides it earlier without shifting anything below it.
