@@ -416,78 +416,46 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     height: auto !important;
     min-height: 1.4rem !important;
 }
-.st-key-intro_layout [data-testid="stMarkdownContainer"]:has(.intro-stats) {
+.st-key-intro_layout [data-testid="stMarkdownContainer"]:has(.intro-coef-table) {
     margin: 0 0 0.15rem 0 !important;
     padding: 0 !important;
 }
-.intro-stats {
-    height: 6.35rem;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.intro-sample-line {
-    display: flex;
-    gap: 2.75rem;
-    height: 1.3rem;
-    align-items: baseline;
-    font-size: 0.92rem;
-}
-.intro-sample-line .k { color: #6b7280; font-weight: 500; }
-.intro-sample-line .v {
-    color: #12263a;
-    font-weight: 650;
+.intro-coef-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.3rem 0 0 0;
+    font-size: 0.88rem;
     font-variant-numeric: tabular-nums;
 }
-.intro-grid {
-    display: grid;
-    grid-template-columns: 10.25rem 12.5rem 12.5rem;
-    column-gap: 2.25rem;
-    align-items: center;
-    height: 4.7rem;
-    font-size: 0.92rem;
-    font-variant-numeric: tabular-nums;
+.intro-coef-table th, .intro-coef-table td {
+    padding: 0.3rem 0.4rem;
+    text-align: right;
+    border-bottom: 1px solid #E2E8F0;
 }
-.intro-grid .colhead {
-    color: #6b7280;
+.intro-coef-table th:first-child, .intro-coef-table td:first-child {
+    text-align: left;
+}
+.intro-coef-table th {
     font-size: 0.68rem;
-    font-weight: 650;
-    letter-spacing: 0.07em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6b7280;
+    border-bottom: 2px solid #CBD5E1;
 }
-.intro-grid .rowlabel { color: #6b7280; font-weight: 500; }
-.intro-grid .rowlabel.strong { color: #1D4ED8; font-weight: 650; }
-.intro-grid .rowlabel.pop-label { color: #EA580C; font-weight: 650; }
-.intro-grid .cell {
-    display: grid;
-    grid-template-columns: 1.7rem 0.9rem 4.8rem;
-    align-items: baseline;
-    column-gap: 0.15rem;
-}
-.intro-grid .num { text-align: right; }
-.intro-grid .est { color: #1D4ED8; font-weight: 680; }
-.intro-grid .pop { color: #EA580C; font-weight: 650; }
-.intro-grid .diff { color: #374151; font-weight: 600; }
-/* The coefficient grid now lives in the ~35%-wide right panel rather than
-   a full-width header strip, so its fixed rem widths need to shrink to fit. */
-.st-key-intro_panel .intro-stats { height: auto; margin: 0.5rem 0 0 0; }
-.st-key-intro_panel .intro-sample-line { gap: 1.2rem; font-size: 0.85rem; }
-.st-key-intro_panel .intro-grid {
-    grid-template-columns: 5.6rem 1fr 1fr;
-    column-gap: 0.7rem;
-    height: auto;
-    row-gap: 0.3rem;
-    font-size: 0.82rem;
-    margin-top: 0.3rem;
-}
-.st-key-intro_panel .intro-grid .cell {
-    grid-template-columns: 1.3rem 0.7rem 1fr;
-    column-gap: 0.1rem;
-}
+.intro-coef-table tr.est td:first-child { color: #1D4ED8; font-weight: 650; }
+.intro-coef-table tr.est td:not(:first-child) { color: #1D4ED8; font-weight: 680; }
+.intro-coef-table tr.pop td:first-child { color: #EA580C; font-weight: 650; }
+.intro-coef-table tr.pop td:not(:first-child) { color: #EA580C; font-weight: 650; }
+.intro-coef-table tr.diff td:first-child { color: #6b7280; font-weight: 500; }
+.intro-coef-table tr.diff td:not(:first-child) { color: #374151; font-weight: 600; }
+.intro-coef-table tr:last-child td { border-bottom: none; }
 .line-legend {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    gap: 1rem;
     height: 1.15rem;
     margin: 0;
     color: #374151;
@@ -661,6 +629,19 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     max-height: 100% !important;
 }
 .st-key-intro_layout [data-testid="stCaptionContainer"] { margin-bottom: 0 !important; }
+/* Keep the two trailing expanders discreet and compact, never drawing
+   attention away from the chart above — content/behaviour unchanged. */
+.st-key-intro_layout [data-testid="stExpander"] {
+    margin: 0.1rem 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+.st-key-intro_layout [data-testid="stExpander"] summary {
+    padding: 0.25rem 0.1rem !important;
+    min-height: auto !important;
+    font-size: 0.82rem !important;
+    color: #6b7280 !important;
+}
 .st-key-intro_data [data-testid="stTextInput"] input,
 .st-key-intro_data [data-baseweb="select"] > div,
 .st-key-intro_data [data-testid="stNumberInput"] input {
@@ -713,7 +694,7 @@ div[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
     }
 }
 .drawer-student strong { color: #12263a; }
-.st-key-intro_layout [data-testid="stMarkdownContainer"]:has(.intro-stats),
+.st-key-intro_layout [data-testid="stMarkdownContainer"]:has(.intro-coef-table),
 .st-key-intro_layout [data-testid="stMarkdownContainer"]:has(.line-legend),
 .st-key-intro_layout [data-testid="stMarkdownContainer"]:has(.chart-title),
 .st-key-intro_layout [data-testid="stMarkdownContainer"]:has(.drawer-kicker),
@@ -1558,10 +1539,15 @@ p.fit-why-step-title {
   margin: 0.35rem 0 0 0; font-size: 0.88rem; font-style: italic;
   color: #475569; line-height: 1.5rem;
 }
-.st-key-fit_std_panel {
-  min-height: 460px; display: flex; flex-direction: column; justify-content: center;
+.fit-std-qualify {
+  margin: 0.3rem 0 0 0; font-size: 0.82rem; font-style: italic;
+  color: #94A3B8; line-height: 1.4rem;
 }
-.st-key-fit_std_panel [data-testid="stElementContainer"] { margin-bottom: 0.9rem; }
+.st-key-fit_std_panel {
+  min-height: 460px; display: flex; flex-direction: column; justify-content: flex-start;
+  padding-top: 0.15rem;
+}
+.st-key-fit_std_panel [data-testid="stElementContainer"] { margin-bottom: 0.7rem; }
 .st-key-fit_std_panel [data-testid="stElementContainer"]:last-child { margin-bottom: 0; }
 .st-key-fit_std_panel .fit-std-note,
 .st-key-fit_std_panel .fit-std-slope {
@@ -1570,6 +1556,13 @@ p.fit-why-step-title {
 .st-key-fit_std_panel .fit-r2-summary-table th,
 .st-key-fit_std_panel .fit-r2-summary-table td {
   padding: 0.55rem 0.8rem; font-size: 0.92rem;
+}
+/* Stage 3's coefficient table: β* is the point of the lesson, R² secondary. */
+.fit-r2-summary-table.std-compare-table td:nth-child(2) {
+  color: #1D4ED8; font-weight: 780; font-size: 1.05em;
+}
+.fit-r2-summary-table.std-compare-table td:nth-child(3) {
+  color: #94A3B8; font-weight: 500;
 }
 .st-key-fit_std_stage_grid [data-testid="stHorizontalBlock"] { align-items: stretch; }
 .st-key-fit_std_grid [data-testid="stHorizontalBlock"] { align-items: stretch; }
@@ -2870,138 +2863,80 @@ def _signed_label(value: str) -> str:
     return value
 
 
-def _coef_cell(kind: str, symbol: str, value: str) -> str:
-    return (
-        f'<span class="cell {kind}">'
-        f'<span class="sym">{symbol}</span>'
-        f'<span class="eq">=</span>'
-        f'<span class="num">{value}</span>'
-        "</span>"
-    )
+def _intro_coef_table_html(population, view: IntroductionView) -> str:
+    """Conventional 3-column coefficient table (Intercept / Slope).
 
-
-def _diff_cell(value: str) -> str:
-    return (
-        '<span class="cell diff">'
-        '<span class="sym"></span><span class="eq"></span>'
-        f'<span class="num">{value}</span>'
-        "</span>"
-    )
-
-
-def _information_strip(population, view: IntroductionView) -> str:
-    """Fixed sample line plus a three-row coefficient grid.
-
-    Every row is present before its numbers exist, so the block never
-    grows when a line is estimated or the population is revealed.
+    Only rendered once there is something real to show: the sample-estimate
+    row needs a fit, and the population/difference rows need the reveal —
+    callers only invoke this once the population has been revealed, so
+    every row returned here is always fully populated (no dashes, no
+    partially blank table).
     """
-    if view.sample is None:
-        sample = "—"
-    else:
-        fraction = format_sampling_fraction(view.sample.n, population.n)
-        sample = f"{view.sample.n:,} ({fraction})"
-    fitted = view.fit is not None and not view.fit.degenerate
-    alpha_hat = format_number(view.fit.alpha) if fitted else "—"
-    beta_hat = format_number(view.fit.beta) if fitted else "—"
+    if view.fit is None or view.fit.degenerate:
+        return ""
+    alpha_hat = format_number(view.fit.alpha)
+    beta_hat = format_number(view.fit.beta)
+    rows = [
+        '<tr class="est"><td>Sample estimate</td>'
+        f"<td>{_ALPHA_HAT} = {alpha_hat}</td><td>{_BETA_HAT} = {beta_hat}</td></tr>"
+    ]
     if view.population_revealed:
         alpha = format_number(population.alpha)
         beta = format_number(population.beta)
-        if fitted:
-            gap_alpha, gap_beta = displayed_coefficient_gap(
-                view.fit, population.alpha, population.beta
-            )
-            alpha_error = _signed_label(format_signed(gap_alpha))
-            beta_error = _signed_label(format_signed(gap_beta))
-        else:
-            alpha_error = "—"
-            beta_error = "—"
-    else:
-        alpha = "—"
-        beta = "—"
-        alpha_error = "—"
-        beta_error = "—"
-    sample_line = (
-        '<div class="intro-sample-line">'
-        f'<span><span class="k">Population</span> <span class="v">{population.n:,}</span></span>'
-        f'<span><span class="k">Sample</span> <span class="v">{sample}</span></span>'
-        "</div>"
-    )
-    cells = [
-        "<span></span>",
-        '<span class="colhead">INTERCEPT</span>',
-        '<span class="colhead">SLOPE</span>',
-        '<span class="rowlabel strong">Sample estimate</span>',
-        _coef_cell("est", _ALPHA_HAT, alpha_hat),
-        _coef_cell("est", _BETA_HAT, beta_hat),
-        '<span class="rowlabel pop-label">Population</span>',
-        _coef_cell("pop", "α", alpha),
-        _coef_cell("pop", "β", beta),
-        '<span class="rowlabel">Difference</span>',
-        _diff_cell(alpha_error),
-        _diff_cell(beta_error),
-    ]
+        gap_alpha, gap_beta = displayed_coefficient_gap(
+            view.fit, population.alpha, population.beta
+        )
+        alpha_error = _signed_label(format_signed(gap_alpha))
+        beta_error = _signed_label(format_signed(gap_beta))
+        rows.append(f'<tr class="pop"><td>Population</td><td>α = {alpha}</td><td>β = {beta}</td></tr>')
+        rows.append(f'<tr class="diff"><td>Difference</td><td>{alpha_error}</td><td>{beta_error}</td></tr>')
     return (
-        f'<div class="intro-stats">{sample_line}'
-        f'<div class="intro-grid">{"".join(cells)}</div></div>'
+        '<table class="intro-coef-table">'
+        "<thead><tr><th></th><th>Intercept</th><th>Slope</th></tr></thead>"
+        f'<tbody>{"".join(rows)}</tbody></table>'
     )
 
 
 def _intro_panel_objective_html(population, view: IntroductionView) -> str:
-    """Stage-dependent objective/explanation text for the right-hand panel.
+    """Concise, stage-dependent text for the right-hand panel: one short
+    statement plus one highlighted takeaway/instruction, nothing more.
 
     The stage is read entirely from `view` (no separate stage counter): no
     sample → Draw; sample but no fit → Estimate is next; fit but not
-    revealed → this is an estimate; revealed → Compare to the truth.
+    revealed → this is an estimate; revealed → Compare to the truth. The
+    formula(s) and coefficient table for stages 3-4 are rendered by the
+    caller, interleaved with this text in the order the lesson wants.
     """
     degenerate = view.fit is not None and view.fit.degenerate
     if view.sample is None:
-        head = "Why draw a sample?"
-        body = (
-            '<p class="fit-std-interp">Each grey point is one student. The '
-            f"population contains <b>{population.n:,}</b> students.</p>"
-            '<p class="fit-std-note">We cannot generally observe the entire '
-            "population in real statistical investigations — so we draw a "
-            "random sample instead.</p>"
+        return (
+            '<p class="fit-std-stage-head">Why draw a sample?</p>'
+            '<p class="fit-std-interp">Each grey point represents one '
+            f"student in a population of {population.n:,}.</p>"
+            '<p class="fit-std-note">We usually cannot observe the entire '
+            "population, so we estimate its characteristics from a random "
+            "sample.</p>"
         )
-    elif degenerate:
-        head = "This sample can't be fit"
-        body = (
+    if degenerate:
+        return (
+            '<p class="fit-std-stage-head">This sample can\'t be fit</p>'
             '<p class="fit-std-note">This sample has no variation in hours '
-            "studied, so a line cannot be fit. Draw a new sample to "
-            "continue.</p>"
+            "studied. Draw a new sample to continue.</p>"
         )
-    elif view.fit is None:
-        head = "Estimate a regression from this sample"
-        body = (
-            f'<p class="fit-std-interp"><b>{view.sample.n:,}</b> students are '
-            "highlighted in blue.</p>"
-            '<p class="fit-std-note">Click <b>Estimate regression</b> to fit '
-            "a line using only these sampled observations.</p>"
-        )
-    elif not view.population_revealed:
-        head = "The sample regression is an estimate"
-        body = (
-            '<p class="fit-std-interp">This line is fitted using only the '
-            f"{view.sample.n:,} sampled students. It estimates — but will "
-            "not generally equal — the true population relationship.</p>"
-            '<p class="fit-std-note">Click <b>Show population regression</b> '
-            "to compare it with the truth.</p>"
-        )
-    else:
-        head = "Compare the estimate to the truth"
-        body = (
-            '<p class="fit-std-interp">The population regression describes '
-            "the true conditional mean relationship. The sample regression "
-            "estimates that relationship using only the selected "
+    if view.fit is None:
+        return (
+            '<p class="fit-std-stage-head">Estimate a regression</p>'
+            f'<p class="fit-std-interp">{view.sample.n:,} students have been '
+            "selected at random.</p>"
+            '<p class="fit-std-note">Fit a regression using only these '
             "observations.</p>"
-            '<p class="fit-std-takeaway">A sample regression is an estimate, '
-            "not the truth. Different random samples generally produce "
-            "different estimates of the same population relationship.</p>"
-            '<p class="fit-std-transition">Was this sample unusually '
-            "accurate, or would another sample produce different "
-            "estimates?</p>"
         )
-    return f'<p class="fit-std-stage-head">{head}</p>{body}'
+    if not view.population_revealed:
+        return (
+            '<p class="fit-std-stage-head">The sample regression is an '
+            "estimate</p>"
+        )
+    return '<p class="fit-std-stage-head">Compare the estimate with the truth</p>'
 
 
 _SORT_COLUMNS = {
@@ -3837,10 +3772,10 @@ def _line_legend(*, has_sample: bool, show_sample_line: bool, show_population_li
 
     return (
         '<div class="line-legend">'
-        + entry("dot obs-pop", "Population observations", True)
-        + entry("dot obs-est", "Sample observations", has_sample)
-        + entry("est", "Sample regression (estimated)", show_sample_line)
-        + entry("pop", "Population regression (true)", show_population_line)
+        + entry("dot obs-pop", "Population", True)
+        + entry("dot obs-est", "Sample", has_sample)
+        + entry("est", "Estimated line", show_sample_line)
+        + entry("pop", "True line", show_population_line)
         + "</div>"
     )
 
@@ -3886,17 +3821,24 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                 gap="small",
                 wrap=False,
             )
-            # Progressive disclosure: each later action is hidden (not just
-            # disabled) until the previous one has happened, so the student
-            # is never shown a control they can't yet use.
-            intro_hide_rules = "".join([
-                '.st-key-intro_btn_estimate, .st-key-intro_btn_estimate * '
-                '{ visibility: hidden !important; }' if not has_sample else "",
-                '.st-key-intro_btn_show, .st-key-intro_btn_show * '
-                '{ visibility: hidden !important; }' if not fitted else "",
-            ])
-            if intro_hide_rules:
-                st.markdown(f"<style>{intro_hide_rules}</style>", unsafe_allow_html=True)
+            # Progressive disclosure: one second button slot that is hidden
+            # (not disabled) until a sample exists, and then always shows
+            # exactly the single next action — it never stays visible,
+            # greyed out, after that action has been taken.
+            if not has_sample:
+                action_label, action_kind = "Estimate regression", "estimate"
+            elif not fitted:
+                action_label, action_kind = "Estimate regression", "estimate"
+            elif not revealed:
+                action_label, action_kind = "Show population regression", "show"
+            else:
+                action_label, action_kind = "Hide population regression", "show"
+            if not has_sample:
+                st.markdown(
+                    '<style>.st-key-intro_btn_action, .st-key-intro_btn_action * '
+                    '{ visibility: hidden !important; }</style>',
+                    unsafe_allow_html=True,
+                )
             with toolbar:
                 st.select_slider(
                     "Sample size",
@@ -3911,30 +3853,21 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                     disabled=generator is None,
                     wrap=False,
                 )
-                with st.container(key="intro_btn_estimate"):
-                    estimate_clicked = st.button(
-                        "Estimate regression",
-                        type="primary" if has_sample and not fitted else "secondary",
-                        key="intro_estimate",
-                        disabled=not (has_sample and not fitted),
-                        wrap=False,
-                    )
-                with st.container(key="intro_btn_show"):
-                    show_clicked = st.button(
-                        "Hide population regression" if revealed else "Show population regression",
-                        type="primary" if fitted and not revealed else "secondary",
-                        key="intro_show",
-                        disabled=not fitted,
+                with st.container(key="intro_btn_action"):
+                    action_clicked = st.button(
+                        action_label,
+                        type="primary",
+                        key="intro_action",
                         wrap=False,
                     )
 
         if draw_clicked and generator is not None:
             _apply_intro_new_sample(population, view, generator)
             st.rerun()
-        if estimate_clicked and view.sample is not None and view.fit is None:
+        if action_clicked and action_kind == "estimate" and view.sample is not None and view.fit is None:
             st.session_state.intro = estimate_sample(view)
             st.rerun()
-        if show_clicked and view.fit is not None:
+        if action_clicked and action_kind == "show" and view.fit is not None:
             st.session_state.intro = (
                 hide_population(view) if view.population_revealed else reveal_population(view)
             )
@@ -4012,11 +3945,29 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
             with panel_col:
                 with st.container(key="intro_panel"):
                     st.markdown(_intro_panel_objective_html(population, view), unsafe_allow_html=True)
-                    if view.fit is not None and not view.fit.degenerate:
+                    fitted_ok = view.fit is not None and not view.fit.degenerate
+                    if fitted_ok and not view.population_revealed:
                         st.latex(r"\hat{Y} = \hat{\alpha} + \hat{\beta}X")
-                    if view.population_revealed:
+                        st.markdown(
+                            '<p class="fit-std-interp">The blue line estimates '
+                            "the population relationship using only the "
+                            "sampled students.</p>"
+                            '<p class="fit-std-note">Reveal the population '
+                            "regression to compare.</p>",
+                            unsafe_allow_html=True,
+                        )
+                    elif fitted_ok and view.population_revealed:
+                        st.latex(r"\hat{Y} = \hat{\alpha} + \hat{\beta}X")
                         st.latex(r"E[Y \mid X] = \alpha + \beta X")
-                    st.markdown(_information_strip(population, view), unsafe_allow_html=True)
+                        st.markdown(_intro_coef_table_html(population, view), unsafe_allow_html=True)
+                        st.markdown(
+                            '<p class="fit-std-takeaway">Different random '
+                            "samples produce different estimates of the same "
+                            "population relationship.</p>"
+                            '<p class="fit-std-transition">How much do '
+                            "regression estimates vary across samples?</p>",
+                            unsafe_allow_html=True,
+                        )
         if drawer_open:
             _dataset_overlay_dialog(
                 "intro",
@@ -7328,29 +7279,6 @@ def _std_insight_name(key: str) -> tuple[str, str]:
     return "Attendance", "has"
 
 
-def _std_comparison_insight(
-    *,
-    key_a: str,
-    key_b: str,
-    star_a: float,
-    star_b: float,
-) -> str:
-    """Dynamic sentence comparing the two standardised slopes."""
-    name_a, verb_a = _std_insight_name(key_a)
-    name_b, verb_b = _std_insight_name(key_b)
-    a_stronger = abs(float(star_a)) >= abs(float(star_b))
-    strong_name = name_a if a_stronger else name_b
-    strong_verb = verb_a if a_stronger else verb_b
-    star_hi = float(star_a) if a_stronger else float(star_b)
-    star_lo = float(star_b) if a_stronger else float(star_a)
-    return (
-        f"{strong_name} {strong_verb} the stronger association "
-        f"(β* = <b>{_format_coef(star_hi)}</b> vs <b>{_format_coef(star_lo)}</b>). "
-        "Standardised coefficients are comparable because both predictors "
-        "and the outcome are measured in standard-deviation units."
-    )
-
-
 # Standalone conceptual illustration: slope vs. fit quality. Uses its own
 # small synthetic dataset — never the Students population/sample.
 _SLOPE_FIT_SEED = 20261024
@@ -7533,7 +7461,9 @@ _STD_N_STAGES = 4
 
 def _std_replay() -> None:
     st.session_state.fit_std_stage = 1
-    st.session_state.fit_std_view = "Original"
+    st.session_state.fit_std_view_radio = "Original"
+    st.session_state.fit_std_stage2_choice = "Original"
+    st.session_state.fit_std_stage_prev = 1
 
 
 def render_standardisation_subtab(view) -> None:
@@ -7579,8 +7509,24 @@ def render_standardisation_subtab(view) -> None:
     r_b = pearson_r(x_b, scores)
 
     st.session_state.setdefault("fit_std_stage", 1)
-    st.session_state.setdefault("fit_std_view", "Original")
+    st.session_state.setdefault("fit_std_view_radio", "Original")
+    st.session_state.setdefault("fit_std_stage2_choice", "Original")
+    st.session_state.setdefault("fit_std_stage_prev", 1)
     stage = int(st.session_state.fit_std_stage)
+
+    # Units follow the stage on entry: Original in stage 1, the student's
+    # own stage-2 choice when (re)entering stage 2, and auto-Standardised
+    # from stage 3 on — but the toggle stays live in 2-4 so the student can
+    # still flip it manually to compare. This only fires once per transition
+    # (not on every rerun), so a manual flip inside stage 3/4 isn't undone.
+    if stage != int(st.session_state.fit_std_stage_prev):
+        if stage == 1:
+            st.session_state.fit_std_view_radio = "Original"
+        elif stage == 2:
+            st.session_state.fit_std_view_radio = st.session_state.fit_std_stage2_choice
+        else:
+            st.session_state.fit_std_view_radio = "Standardised"
+        st.session_state.fit_std_stage_prev = stage
 
     # The toggle only matters from stage 2 onward; a scoped visibility rule
     # (not disabled=) hides it earlier without shifting anything below it.
@@ -7592,17 +7538,16 @@ def render_standardisation_subtab(view) -> None:
         unsafe_allow_html=True,
     )
     with st.container(key=toggle_key):
-        view_choice = st.radio(
+        st.radio(
             "Units",
             options=("Original", "Standardised"),
-            index=0 if st.session_state.fit_std_view == "Original" else 1,
             key="fit_std_view_radio",
             horizontal=True,
             label_visibility="collapsed",
         )
-    if not hide_toggle:
-        st.session_state.fit_std_view = view_choice
-    standardised = bool(not hide_toggle and st.session_state.fit_std_view == "Standardised")
+    if stage == 2:
+        st.session_state.fit_std_stage2_choice = st.session_state.fit_std_view_radio
+    standardised = bool(not hide_toggle and st.session_state.fit_std_view_radio == "Standardised")
 
     with st.container(key="fit_std_stage_grid"):
         left, right = st.columns([3, 2], gap="medium")
@@ -7650,37 +7595,38 @@ def render_standardisation_subtab(view) -> None:
                             f"{label_a} · β̂ = <b>{_format_coef(ols_a.beta)}</b> {unit_a}<br>"
                             f"{label_b} · β̂ = <b>{_format_coef(ols_b.beta)}</b> {unit_b}"
                             "</p>"
-                            f'<p class="fit-std-interp">Does {_format_coef(ols_a.beta)} '
-                            f"&gt; {_format_coef(ols_b.beta)} mean studying is a "
-                            "stronger predictor than attendance?</p>"
-                            '<p class="fit-std-note">Not directly — the two '
-                            "coefficients are measured in different units "
-                            "(exam points per hour vs. exam points per percentage "
-                            "point), so their raw sizes cannot be compared.</p>"
+                            '<p class="fit-std-interp">Does the larger numerical '
+                            "coefficient mean studying is the stronger "
+                            "predictor?</p>"
+                            '<p class="fit-std-note">No. Different units make raw '
+                            "slopes incomparable.</p>"
                         ),
                         unsafe_allow_html=True,
                     )
                 elif stage == 2:
                     st.markdown(
-                        '<p class="fit-std-stage-head">Putting both predictors '
-                        "on the same scale</p>",
+                        '<p class="fit-std-stage-head">Put both variables on '
+                        "the same scale</p>",
                         unsafe_allow_html=True,
                     )
-                    st.latex(r"z = \dfrac{x - \text{mean}}{\text{standard deviation}}")
+                    st.latex(r"z = \dfrac{x - \text{mean}}{\text{SD}}")
                     st.markdown(
                         tipify(
                             '<p class="fit-std-interp">'
-                            "<b>Centre:</b> subtract the mean → the new mean is 0.<br>"
-                            "<b>Scale:</b> divide by the standard deviation → the new "
-                            "standard deviation is 1."
+                            "<b>Centre:</b> subtract the mean → mean becomes 0.<br>"
+                            "<b>Scale:</b> divide by SD → SD becomes 1."
                             "</p>"
-                            '<p class="fit-std-note">Standardisation changes the '
-                            "units, not the underlying relationship.</p>"
-                            '<p class="fit-std-interp">Use the toggle above the '
-                            "charts to switch both predictors and the outcome to "
-                            "standardised (z-score) units, and watch the same "
-                            "observations and fitted lines reappear on the new "
-                            "scale.</p>"
+                            '<table class="fit-r2-summary-table">'
+                            "<thead><tr><th>Predictor</th><th>Original β</th>"
+                            "<th>Standardised β*</th></tr></thead>"
+                            "<tbody>"
+                            f"<tr><td>{label_a}</td><td>{_format_coef(ols_a.beta)}</td>"
+                            f"<td>{_format_coef(beta_star_a)}</td></tr>"
+                            f"<tr><td>{label_b}</td><td>{_format_coef(ols_b.beta)}</td>"
+                            f"<td>{_format_coef(beta_star_b)}</td></tr>"
+                            "</tbody></table>"
+                            '<p class="fit-std-note">Same observations. Same '
+                            "relationships. Different units.</p>"
                         ),
                         unsafe_allow_html=True,
                     )
@@ -7690,9 +7636,11 @@ def render_standardisation_subtab(view) -> None:
                         "relationships</p>",
                         unsafe_allow_html=True,
                     )
+                    stronger_a = abs(beta_star_a) >= abs(beta_star_b)
+                    stronger_name, stronger_verb = _std_insight_name(pred_a if stronger_a else pred_b)
                     st.markdown(
                         tipify(
-                            '<table class="fit-r2-summary-table">'
+                            '<table class="fit-r2-summary-table std-compare-table">'
                             "<thead><tr><th>Predictor</th><th>β*</th><th>R²</th></tr></thead>"
                             "<tbody>"
                             f"<tr><td>{label_a}</td><td>{_format_coef(beta_star_a)}</td>"
@@ -7700,20 +7648,20 @@ def render_standardisation_subtab(view) -> None:
                             f"<tr><td>{label_b}</td><td>{_format_coef(beta_star_b)}</td>"
                             f"<td>{_format_r_squared(r2_b)}</td></tr>"
                             "</tbody></table>"
-                            '<p class="fit-std-interp">A one-standard-deviation '
-                            f"increase in study hours predicts a "
-                            f"<b>{_format_coef(beta_star_a)}</b>-standard-deviation "
-                            "increase in exam score. For attendance, the "
-                            f"corresponding increase is <b>{_format_coef(beta_star_b)}"
-                            "</b> standard deviations.</p>"
-                            f'<p class="fit-std-takeaway">{_std_comparison_insight(key_a=pred_a, key_b=pred_b, star_a=beta_star_a, star_b=beta_star_b)} '
-                            "(This reflects association, not causation.)</p>"
+                            f'<p class="fit-std-interp">A 1-SD increase in study '
+                            f"hours predicts a {_format_coef(beta_star_a)}-SD "
+                            f"increase in exam score, versus {_format_coef(beta_star_b)}"
+                            " SD for attendance.</p>"
+                            f'<p class="fit-std-takeaway">{stronger_name} {stronger_verb} '
+                            "the stronger individual association.</p>"
+                            '<p class="fit-std-qualify">Association does not '
+                            "establish causation.</p>"
                         ),
                         unsafe_allow_html=True,
                     )
                 else:
                     st.markdown(
-                        '<p class="fit-std-stage-head">Connecting β*, correlation '
+                        '<p class="fit-std-stage-head">Connect β*, correlation '
                         "and R²</p>",
                         unsafe_allow_html=True,
                     )
@@ -7726,17 +7674,16 @@ def render_standardisation_subtab(view) -> None:
                             f"{label_b} · {_format_coef(beta_star_b)}² ≈ "
                             f"{_format_r_squared(r2_b)} (r = {_format_coef(r_b)})"
                             "</p>"
-                            '<p class="fit-std-interp">Standardisation reveals the '
-                            "connection between regression slopes, correlation and "
-                            "explained variance. This β* = r identity holds for "
-                            "simple regression with an intercept — it does "
-                            "<b>not</b> generally hold in multiple regression.</p>"
-                            '<p class="fit-std-takeaway">Standardisation makes '
-                            "coefficients comparable by expressing variables in "
-                            "standard deviations. It changes their numerical scale "
-                            "but not the underlying relationships.</p>"
-                            '<p class="fit-std-transition">Comparing predictors '
-                            "individually is useful — but what happens when both "
+                            '<p class="fit-std-interp">β* indicates the direction '
+                            "and strength of the linear association.<br>"
+                            "R² measures the proportion of variance explained, "
+                            "without indicating direction.</p>"
+                            '<p class="fit-std-takeaway">Standardisation changes '
+                            "units, not the relationship.</p>"
+                            '<p class="fit-std-qualify">These identities hold for '
+                            "simple regression with an intercept, not generally "
+                            "for multiple regression.</p>"
+                            '<p class="fit-std-transition">What happens when both '
                             "predictors enter the same model?</p>"
                         ),
                         unsafe_allow_html=True,
