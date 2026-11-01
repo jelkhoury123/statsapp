@@ -7,6 +7,7 @@ persistence across sessions.
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 from typing import TypedDict
 
@@ -37,8 +38,21 @@ def _state_key(week: str, suffix: str) -> str:
 
 
 def _reset_quiz_state(week: str) -> None:
-    for suffix in ("idx", "score", "answers", "revealed"):
+    for suffix in ("idx", "score", "answers", "revealed", "order"):
         st.session_state.pop(_state_key(week, suffix), None)
+
+
+def _quiz_order(week: str) -> list[list[int]]:
+    """Per-question display order (shuffled once per quiz attempt), so the
+    correct answer isn't always choice A. Original indices are preserved in
+    QUIZZES/answers — only the on-screen position changes."""
+    order_key = _state_key(week, "order")
+    if order_key not in st.session_state:
+        st.session_state[order_key] = [
+            random.sample(range(len(q["choices"])), len(q["choices"]))
+            for q in QUIZZES[week]
+        ]
+    return st.session_state[order_key]
 
 
 def _render_sheet_card(sheet: _Sheet) -> None:
@@ -74,6 +88,7 @@ def _render_sheet_card(sheet: _Sheet) -> None:
 
 def _render_quiz_question(week: str, idx: int, n: int) -> None:
     question = QUIZZES[week][idx]
+    order = _quiz_order(week)[idx]  # display position -> original choice index
     revealed_key = _state_key(week, "revealed")
     answers_key = _state_key(week, "answers")
     answers = st.session_state.get(answers_key, [])
@@ -89,8 +104,8 @@ def _render_quiz_question(week: str, idx: int, n: int) -> None:
     choice_key = f"rs_choice_{week}_{idx}"
     selected = st.radio(
         "Choose an answer",
-        options=list(range(len(question["choices"]))),
-        format_func=lambda i: question["choices"][i],
+        options=list(range(len(order))),
+        format_func=lambda position: question["choices"][order[position]],
         key=choice_key,
         label_visibility="collapsed",
         index=None,
@@ -102,16 +117,17 @@ def _render_quiz_question(week: str, idx: int, n: int) -> None:
             "Submit Answer", key=f"rs_submit_{week}_{idx}",
             type="primary", disabled=selected is None,
         ):
+            chosen_original = order[selected]
             st.session_state[answers_key] = answers + [
                 {
                     "q": question["q"],
                     "choices": question["choices"],
-                    "chosen": selected,
+                    "chosen": chosen_original,
                     "correct": question["correct"],
                     "explanation": question["explanation"],
                 }
             ]
-            if selected == question["correct"]:
+            if chosen_original == question["correct"]:
                 score_key = _state_key(week, "score")
                 st.session_state[score_key] = st.session_state.get(score_key, 0) + 1
             st.session_state[revealed_key] = True
