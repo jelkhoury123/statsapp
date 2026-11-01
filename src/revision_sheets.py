@@ -57,7 +57,6 @@ def _quiz_order(week: str) -> list[list[int]]:
 
 
 def _render_sheet_card(sheet: _Sheet) -> None:
-    path = _SHEETS_DIR / sheet["file"]
     thumb_path = _THUMBS_DIR / f"{sheet['key']}.png"
 
     with st.container(key=f"rs_sheet_card_{sheet['key']}"):
@@ -71,15 +70,11 @@ def _render_sheet_card(sheet: _Sheet) -> None:
             )
         col1, col2 = st.columns(2, gap="small")
         with col1:
-            if path.exists():
-                st.download_button(
-                    "View / Download PDF",
-                    data=path.read_bytes(),
-                    file_name=sheet["file"],
-                    mime="application/pdf",
-                    key=f"rs_download_{sheet['key']}",
-                    width="stretch",
-                )
+            if st.button(
+                "View PDF", key=f"rs_view_{sheet['key']}", width="stretch",
+            ):
+                st.session_state.rs_active_viewer = sheet["key"]
+                st.rerun()
         with col2:
             if st.button(
                 "Take Quiz", key=f"rs_quiz_btn_{sheet['key']}", type="primary", width="stretch",
@@ -87,6 +82,29 @@ def _render_sheet_card(sheet: _Sheet) -> None:
                 st.session_state.rs_active_quiz = sheet["key"]
                 _reset_quiz_state(sheet["key"])
                 st.rerun()
+
+
+def _render_pdf_viewer(week: str) -> None:
+    sheet = next(s for s in _SHEETS if s["key"] == week)
+    path = _SHEETS_DIR / sheet["file"]
+
+    if st.button("← Back to Revision Sheets", key=f"rs_viewer_back_{week}", type="primary"):
+        st.session_state.rs_active_viewer = None
+        st.rerun()
+
+    st.markdown(f'<p class="rs-card-title">{sheet["title"]}</p>', unsafe_allow_html=True)
+
+    if path.exists():
+        try:
+            st.pdf(str(path), height="stretch")
+        except Exception:
+            st.markdown(
+                '<p class="rs-note">The in-app PDF viewer isn\'t available in '
+                "this environment.</p>",
+                unsafe_allow_html=True,
+            )
+    else:
+        st.markdown('<p class="rs-note">PDF file not found.</p>', unsafe_allow_html=True)
 
 
 def _render_quiz_question(week: str, idx: int, n: int) -> None:
@@ -224,9 +242,14 @@ def render_revision_sheets_tab() -> None:
         "you like. Nothing here is saved between visits."
     )
 
-    active = st.session_state.get("rs_active_quiz")
-    if active in QUIZZES:
-        _render_quiz(active)
+    active_viewer = st.session_state.get("rs_active_viewer")
+    if active_viewer in _SHEET_TITLES:
+        _render_pdf_viewer(active_viewer)
+        return
+
+    active_quiz = st.session_state.get("rs_active_quiz")
+    if active_quiz in QUIZZES:
+        _render_quiz(active_quiz)
         return
 
     cols = st.columns(2, gap="medium")
