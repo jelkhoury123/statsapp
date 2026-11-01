@@ -2606,24 +2606,28 @@ p.fit-why-step-title {
 }
 .rs-note { margin: 0.4rem 0; font-size: 0.85rem; color: #52606D; }
 div[class*="st-key-rs_sheet_card_"] {
-  padding: 0.55rem 0.7rem 0.6rem 0.7rem; margin: 0 0 0.4rem 0;
+  padding: 0.75rem 0.9rem 0.8rem 0.9rem; margin: 0 0 0.5rem 0;
   background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-  height: 100%; display: flex; flex-direction: column; align-items: center;
+  height: 176px !important; flex: 0 0 176px !important; display: flex;
+  flex-direction: column; align-items: center; justify-content: space-between;
+  overflow: hidden;
 }
-div[class*="st-key-rs_sheet_card_"] .rs-card-title {
-  text-align: center; margin: 0 0 0.3rem 0; font-size: 0.86rem; min-height: 2.0rem;
+.rs-card-week {
+  margin: 0; font-size: 0.72rem; font-weight: 750; letter-spacing: 0.04em;
+  text-transform: uppercase; color: #2563EB; text-align: center;
 }
-div[class*="st-key-rs_sheet_card_"] [data-testid="stImage"] {
-  display: flex; justify-content: center; margin: 0 0 0.35rem 0;
+.rs-card-name {
+  margin: 0.15rem 0 0.3rem 0; font-size: 0.94rem; font-weight: 750; color: #12263a;
+  text-align: center; line-height: 1.22rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-div[class*="st-key-rs_sheet_card_"] [data-testid="stImage"] img {
-  max-width: 118px !important; width: 100% !important; height: auto !important;
-  border: 1px solid #E2E8F0; border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+.rs-card-topics {
+  margin: 0; font-size: 0.78rem; color: #52606D; text-align: center; line-height: 1.15rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-div[class*="st-key-rs_sheet_card_"] [data-testid="stImageCaption"] { display: none; }
 div[class*="st-key-rs_sheet_card_"] [data-testid="stHorizontalBlock"] { width: 100%; }
+div[class*="st-key-rs_sheet_card_"] [data-testid="stColumn"] { min-width: 0 !important; }
 div[class*="st-key-rs_quiz_panel"] {
   max-width: 820px; margin: 0.2rem auto 0 auto; padding: 1.3rem 1.7rem 1.5rem 1.7rem;
   background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px;

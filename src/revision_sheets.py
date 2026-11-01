@@ -16,20 +16,42 @@ import streamlit as st
 from src.quiz_data import QUIZZES
 
 _SHEETS_DIR = Path(__file__).resolve().parent.parent / "data" / "revision_sheets"
-_THUMBS_DIR = _SHEETS_DIR / "thumbnails"
 
 
 class _Sheet(TypedDict):
     key: str
+    week: int
+    name: str
     title: str
+    topics: str
     file: str
 
 
 _SHEETS: tuple[_Sheet, ...] = (
-    {"key": "w1", "title": "Week 1 — Introduction to Linear Regression", "file": "w1_linear_regression.pdf"},
-    {"key": "w2", "title": "Week 2 — Interpreting Linear Models", "file": "w2_interpreting_linear_models.pdf"},
-    {"key": "w3", "title": "Week 3 — Testing & Evaluating Linear Models", "file": "w3_testing_evaluating.pdf"},
-    {"key": "w4", "title": "Week 4 — F-tests & Model Comparison", "file": "w4_f_tests_model_comparison.pdf"},
+    {
+        "key": "w1", "week": 1, "name": "Introduction to Linear Regression",
+        "title": "Week 1 — Introduction to Linear Regression",
+        "topics": "Intercept & slope · residuals · least squares · lm() in R",
+        "file": "w1_linear_regression.pdf",
+    },
+    {
+        "key": "w2", "week": 2, "name": "Interpreting Linear Models",
+        "title": "Week 2 — Interpreting Linear Models",
+        "topics": "Interpreting coefficients · standardisation · multiple regression",
+        "file": "w2_interpreting_linear_models.pdf",
+    },
+    {
+        "key": "w3", "week": 3, "name": "Testing & Evaluating Linear Models",
+        "title": "Week 3 — Testing & Evaluating Linear Models",
+        "topics": "Hypothesis tests for β · R² & adjusted R² · reading lm() output",
+        "file": "w3_testing_evaluating.pdf",
+    },
+    {
+        "key": "w4", "week": 4, "name": "F-tests & Model Comparison",
+        "title": "Week 4 — F-tests & Model Comparison",
+        "topics": "Overall & incremental F-tests · nested models · AIC & BIC",
+        "file": "w4_f_tests_model_comparison.pdf",
+    },
 )
 _SHEET_TITLES = {sheet["key"]: sheet["title"] for sheet in _SHEETS}
 
@@ -57,17 +79,13 @@ def _quiz_order(week: str) -> list[list[int]]:
 
 
 def _render_sheet_card(sheet: _Sheet) -> None:
-    thumb_path = _THUMBS_DIR / f"{sheet['key']}.png"
-
     with st.container(key=f"rs_sheet_card_{sheet['key']}"):
-        st.markdown(f'<p class="rs-card-title">{sheet["title"]}</p>', unsafe_allow_html=True)
-        if thumb_path.exists():
-            st.image(str(thumb_path), width="stretch")
-        else:
-            st.markdown(
-                '<p class="rs-note">Preview unavailable — use the button below.</p>',
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            f'<p class="rs-card-week">Week {sheet["week"]}</p>'
+            f'<p class="rs-card-name">{sheet["name"]}</p>'
+            f'<p class="rs-card-topics">{sheet["topics"]}</p>',
+            unsafe_allow_html=True,
+        )
         col1, col2 = st.columns(2, gap="small")
         with col1:
             if st.button(
