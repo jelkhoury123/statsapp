@@ -39,8 +39,22 @@ FT_SUBTABS: tuple[tuple[str, str], ...] = (
     ("dist", "The F-distribution"),
     ("dof", "Degrees of Freedom"),
     ("interpret", "Interpreting the Result"),
+    ("compare", "Model Comparison"),
 )
 FT_SUBTAB_LABELS = dict(FT_SUBTABS)
+
+# Model Comparison: one nested pair (reuses scenario "one") and one
+# non-nested pair — two single-predictor models where neither predictor
+# set contains the other — both fit to the same observations/response.
+_FT_COMPARE_MODES: tuple[tuple[str, str], ...] = (
+    ("nested", "Nested example"),
+    ("nonnested", "Non-nested example"),
+)
+_FT_COMPARE_MODE_LABELS = dict(_FT_COMPARE_MODES)
+_FT_COMPARE_PAIRS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    "nested": (("hours",), ("hours", "attendance")),
+    "nonnested": (("hours",), ("sleep",)),
+}
 
 # Three nested-model comparisons, all fit to the same observations and the
 # same illustrative scores (see _f_test_scores): a single added predictor
@@ -830,6 +844,180 @@ def _render_interpret(sample: Sample, scenario: str) -> None:
         )
 
 
+def _aic_bic(fit: MultiFit) -> tuple[float, float, int]:
+    """AIC, BIC and equivalent df (R's edf = coefficients + 1 for σ²)."""
+    n = fit.n
+    rss = max(fit.sse, 1e-12)
+    edf = len(fit.coefs) + 2  # intercept + slopes + σ²
+    loglik = -n / 2.0 * (np.log(2.0 * np.pi) + np.log(rss / n) + 1.0)
+    aic = -2.0 * loglik + 2.0 * edf
+    bic = -2.0 * loglik + edf * np.log(n)
+    return aic, bic, edf
+
+
+def _render_compare(sample: Sample) -> None:
+    st.markdown(
+        '<p class="mr-sub">Comparing two models doesn\'t always mean an '
+        "F-test — only nested models fit to identical observations can "
+        "use one.</p>",
+        unsafe_allow_html=True,
+    )
+
+    if "ft_compare_mode" not in st.session_state:
+        st.session_state.ft_compare_mode = "nested"
+    mode = st.segmented_control(
+        "Comparison type",
+        options=[key for key, _ in _FT_COMPARE_MODES],
+        format_func=lambda key: _FT_COMPARE_MODE_LABELS[key],
+        key="ft_compare_mode",
+        label_visibility="collapsed",
+        width="content",
+    )
+    if mode not in _FT_COMPARE_MODE_LABELS:
+        mode = "nested"
+    nested = mode == "nested"
+
+    names1, names2 = _FT_COMPARE_PAIRS[mode]
+    y = _f_test_scores(sample)
+    arrays = _predictor_arrays(sample)
+    fit1 = fit_multiple(y, {n: arrays[n] for n in names1})
+    fit2 = fit_multiple(y, {n: arrays[n] for n in names2})
+
+    relation = (
+        f"<b>{_model_label(names1)}</b>'s predictor set is contained in "
+        f"<b>{_model_label(names2)}</b>'s — the restricted model is "
+        "nested inside the full model."
+        if nested else
+        f"<b>{_model_label(names1)}</b> and <b>{_model_label(names2)}</b> "
+        "each use a predictor the other doesn't — neither model's "
+        "predictor set contains the other's."
+    )
+    st.markdown(
+        f'<p class="mr-note"><b>{"Nested" if nested else "Non-nested"}:</b> '
+        f"{relation}</p>",
+        unsafe_allow_html=True,
+    )
+
+    aic1, bic1, edf1 = _aic_bic(fit1)
+    aic2, bic2, edf2 = _aic_bic(fit2)
+
+    left, right = st.columns(2, gap="large")
+    with left:
+        st.markdown(
+            '<div class="mr-model-card-lg">'
+            f'<p class="mr-model-name">Model 1 — {_model_label(names1)}</p>'
+            f'<p class="mr-model-eq">{_model_equation(fit1)}</p>'
+            '<div class="mr-metric-row">'
+            '<div class="mr-metric-tile"><p class="mr-metric-label">AIC</p>'
+            f'<p class="mr-metric-value">{aic1:,.1f}</p></div>'
+            '<div class="mr-metric-tile"><p class="mr-metric-label">BIC</p>'
+            f'<p class="mr-metric-value">{bic1:,.1f}</p></div>'
+            "</div></div>",
+            unsafe_allow_html=True,
+        )
+    with right:
+        st.markdown(
+            '<div class="mr-model-card-lg">'
+            f'<p class="mr-model-name">Model 2 — {_model_label(names2)}</p>'
+            f'<p class="mr-model-eq">{_model_equation(fit2)}</p>'
+            '<div class="mr-metric-row">'
+            '<div class="mr-metric-tile accent"><p class="mr-metric-label">AIC</p>'
+            f'<p class="mr-metric-value">{aic2:,.1f}</p></div>'
+            '<div class="mr-metric-tile accent"><p class="mr-metric-label">BIC</p>'
+            f'<p class="mr-metric-value">{bic2:,.1f}</p></div>'
+            "</div></div>",
+            unsafe_allow_html=True,
+        )
+
+    aic_winner = "Model 1" if aic1 < aic2 else "Model 2"
+    bic_winner = "Model 1" if bic1 < bic2 else "Model 2"
+    st.markdown(
+        f'<p class="mr-stat">Lower AIC favors <b>{aic_winner}</b> '
+        f"&nbsp;·&nbsp; lower BIC favors <b>{bic_winner}</b></p>",
+        unsafe_allow_html=True,
+    )
+    if aic_winner != bic_winner:
+        st.markdown(
+            '<p class="mr-compare">AIC and BIC disagree here — BIC\'s '
+            "heavier penalty for extra parameters can favor the simpler "
+            "model even when AIC does not.</p>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<p class="mr-sub">Choosing the method</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="mr-note">An <b>incremental F-test</b> (<code>anova()</code>) '
+        "only applies when the restricted model's predictors are a subset "
+        "of the full model's, both fit to the same observations. "
+        "<b>AIC</b> and <b>BIC</b> carry no such restriction — they can "
+        "compare any two models predicting the same response, nested or "
+        "not.</p>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<p class="mr-sub">AIC &amp; BIC</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="mr-note">Both trade off fit against complexity: fit '
+        "improves (log-likelihood rises) as RSS falls, while a penalty "
+        "grows with the number of parameters k. AIC penalizes by 2k; "
+        "BIC penalizes by k·ln(n) — strictly larger than 2k once n ≥ 8, "
+        "so BIC favors simpler models more strongly than AIC, especially "
+        "in larger samples.</p>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<p class="mr-sub">R examples</p>', unsafe_allow_html=True)
+    formula1 = " + ".join(names1) if names1 else "1"
+    formula2 = " + ".join(names2) if names2 else "1"
+    st.code(
+        f"model1 <- lm(score ~ {formula1}, data = students)\n"
+        f"model2 <- lm(score ~ {formula2}, data = students)",
+        language="r",
+    )
+
+    if nested:
+        n = int(sample.n)
+        q = len(names2) - len(names1)
+        df1_res, df2_res = n - len(names1) - 1, n - len(names2) - 1
+        rss1, rss2 = fit1.sse, fit2.sse
+        sum_sq = rss1 - rss2
+        f_stat = (sum_sq / q) / (rss2 / df2_res)
+        p_value = float(fisher_f.sf(f_stat, q, df2_res))
+        p_str = _format_p_value(p_value)
+        stars = _significance_stars(p_value)
+        st.code(
+            "anova(model1, model2)\n\n"
+            "Analysis of Variance Table\n\n"
+            f"Model 1: score ~ {formula1}\n"
+            f"Model 2: score ~ {formula2}\n"
+            "  Res.Df      RSS Df Sum of Sq       F  Pr(>F)\n"
+            f"1 {df1_res:6d} {rss1:8.2f}\n"
+            f"2 {df2_res:6d} {rss2:8.2f}  {q} {sum_sq:9.2f} {f_stat:7.3f} {p_str} {stars}\n"
+            "---\n"
+            "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1",
+            language=None,
+        )
+    else:
+        st.markdown(
+            '<p class="mr-note"><code>anova(model1, model2)</code> is '
+            "<b>not valid</b> here — the models are non-nested, so R "
+            "refuses to compare them this way.</p>",
+            unsafe_allow_html=True,
+        )
+
+    st.code(
+        "AIC(model1, model2)\n\n"
+        "        df      AIC\n"
+        f"model1  {edf1:2d} {aic1:8.2f}\n"
+        f"model2  {edf2:2d} {aic2:8.2f}\n\n"
+        "BIC(model1, model2)\n\n"
+        "        df      BIC\n"
+        f"model1  {edf1:2d} {bic1:8.2f}\n"
+        f"model2  {edf2:2d} {bic2:8.2f}",
+        language=None,
+    )
+
+
 def _render_placeholder(title: str) -> None:
     st.markdown(
         f'<p class="mr-note"><b>{title}</b> — coming in a later phase.</p>',
@@ -860,6 +1048,9 @@ def render_f_test_tab(population: Population) -> None:
     if sub == "dof":
         # Degrees of Freedom compares illustrative F-distributions by df
         # alone; the comparison scenario has no effect on its content.
+        scenario = "one"
+    elif sub == "compare":
+        # Model Comparison picks its own nested/non-nested pair below.
         scenario = "one"
     else:
         if "ft_scenario" not in st.session_state:
@@ -910,3 +1101,5 @@ def render_f_test_tab(population: Population) -> None:
         _render_dof(sample, scenario)
     elif sub == "interpret":
         _render_interpret(sample, scenario)
+    elif sub == "compare":
+        _render_compare(sample)
