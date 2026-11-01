@@ -71,7 +71,7 @@ def _render_sheet_card(sheet: _Sheet) -> None:
         col1, col2 = st.columns(2, gap="small")
         with col1:
             if st.button(
-                "View PDF", key=f"rs_view_{sheet['key']}", width="stretch",
+                "View", key=f"rs_view_{sheet['key']}", width="stretch",
             ):
                 st.session_state.rs_active_viewer = sheet["key"]
                 st.rerun()
@@ -88,9 +88,24 @@ def _render_pdf_viewer(week: str) -> None:
     sheet = next(s for s in _SHEETS if s["key"] == week)
     path = _SHEETS_DIR / sheet["file"]
 
-    if st.button("← Back to Revision Sheets", key=f"rs_viewer_back_{week}", type="primary"):
-        st.session_state.rs_active_viewer = None
-        st.rerun()
+    back_col, download_col = st.columns(2, gap="small")
+    with back_col:
+        if st.button(
+            "← Back to Revision Sheets", key=f"rs_viewer_back_{week}",
+            type="primary", width="stretch",
+        ):
+            st.session_state.rs_active_viewer = None
+            st.rerun()
+    with download_col:
+        if path.exists():
+            st.download_button(
+                "Download",
+                data=path.read_bytes(),
+                file_name=sheet["file"],
+                mime="application/pdf",
+                key=f"rs_viewer_download_{week}",
+                width="stretch",
+            )
 
     st.markdown(f'<p class="rs-card-title">{sheet["title"]}</p>', unsafe_allow_html=True)
 
