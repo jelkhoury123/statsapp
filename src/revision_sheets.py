@@ -16,6 +16,7 @@ import streamlit as st
 from src.quiz_data import QUIZZES
 
 _SHEETS_DIR = Path(__file__).resolve().parent.parent / "data" / "revision_sheets"
+_THUMBS_DIR = _SHEETS_DIR / "thumbnails"
 
 
 class _Sheet(TypedDict):
@@ -57,33 +58,35 @@ def _quiz_order(week: str) -> list[list[int]]:
 
 def _render_sheet_card(sheet: _Sheet) -> None:
     path = _SHEETS_DIR / sheet["file"]
-    st.markdown(f'<p class="rs-card-title">{sheet["title"]}</p>', unsafe_allow_html=True)
-    try:
-        st.pdf(str(path), height=380)
-    except Exception:
-        st.markdown(
-            '<p class="rs-note">PDF preview unavailable in this environment '
-            "— use Download below.</p>",
-            unsafe_allow_html=True,
-        )
-    col1, col2 = st.columns(2, gap="small")
-    with col1:
-        if path.exists():
-            st.download_button(
-                "Download PDF",
-                data=path.read_bytes(),
-                file_name=sheet["file"],
-                mime="application/pdf",
-                key=f"rs_download_{sheet['key']}",
-                width="stretch",
+    thumb_path = _THUMBS_DIR / f"{sheet['key']}.png"
+
+    with st.container(key=f"rs_sheet_card_{sheet['key']}"):
+        st.markdown(f'<p class="rs-card-title">{sheet["title"]}</p>', unsafe_allow_html=True)
+        if thumb_path.exists():
+            st.image(str(thumb_path), width="stretch")
+        else:
+            st.markdown(
+                '<p class="rs-note">Preview unavailable — use the button below.</p>',
+                unsafe_allow_html=True,
             )
-    with col2:
-        if st.button(
-            "Quiz", key=f"rs_quiz_btn_{sheet['key']}", type="primary", width="stretch",
-        ):
-            st.session_state.rs_active_quiz = sheet["key"]
-            _reset_quiz_state(sheet["key"])
-            st.rerun()
+        col1, col2 = st.columns(2, gap="small")
+        with col1:
+            if path.exists():
+                st.download_button(
+                    "View / Download PDF",
+                    data=path.read_bytes(),
+                    file_name=sheet["file"],
+                    mime="application/pdf",
+                    key=f"rs_download_{sheet['key']}",
+                    width="stretch",
+                )
+        with col2:
+            if st.button(
+                "Take Quiz", key=f"rs_quiz_btn_{sheet['key']}", type="primary", width="stretch",
+            ):
+                st.session_state.rs_active_quiz = sheet["key"]
+                _reset_quiz_state(sheet["key"])
+                st.rerun()
 
 
 def _render_quiz_question(week: str, idx: int, n: int) -> None:
@@ -226,7 +229,7 @@ def render_revision_sheets_tab() -> None:
         _render_quiz(active)
         return
 
-    cols = st.columns(2, gap="large")
+    cols = st.columns(2, gap="medium")
     for i, sheet in enumerate(_SHEETS):
         with cols[i % 2]:
             _render_sheet_card(sheet)

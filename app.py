@@ -2605,6 +2605,25 @@ p.fit-why-step-title {
   margin: 0 0 0.4rem 0; font-size: 1.0rem; font-weight: 750; color: #12263a;
 }
 .rs-note { margin: 0.4rem 0; font-size: 0.85rem; color: #52606D; }
+div[class*="st-key-rs_sheet_card_"] {
+  padding: 0.55rem 0.7rem 0.6rem 0.7rem; margin: 0 0 0.4rem 0;
+  background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  height: 100%; display: flex; flex-direction: column; align-items: center;
+}
+div[class*="st-key-rs_sheet_card_"] .rs-card-title {
+  text-align: center; margin: 0 0 0.3rem 0; font-size: 0.86rem; min-height: 2.0rem;
+}
+div[class*="st-key-rs_sheet_card_"] [data-testid="stImage"] {
+  display: flex; justify-content: center; margin: 0 0 0.35rem 0;
+}
+div[class*="st-key-rs_sheet_card_"] [data-testid="stImage"] img {
+  max-width: 118px !important; width: 100% !important; height: auto !important;
+  border: 1px solid #E2E8F0; border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+div[class*="st-key-rs_sheet_card_"] [data-testid="stImageCaption"] { display: none; }
+div[class*="st-key-rs_sheet_card_"] [data-testid="stHorizontalBlock"] { width: 100%; }
 div[class*="st-key-rs_quiz_panel"] {
   max-width: 820px; margin: 0.2rem auto 0 auto; padding: 1.3rem 1.7rem 1.5rem 1.7rem;
   background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px;
