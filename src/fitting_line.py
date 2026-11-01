@@ -309,7 +309,7 @@ STD_PREDICTOR_KEYS: tuple[str, ...] = (
     "sleep_hours",
 )
 STD_PREDICTOR_META: dict[str, tuple[str, str]] = {
-    # key -> (axis label, raw slope unit phrase after β̂)
+    # key -> (axis label, raw slope unit phrase after β̂₁)
     "hours_studied": ("Hours studied", "exam points / hour studied"),
     "attendance": ("Attendance (%)", "exam points / %-attendance"),
     "sleep_hours": ("Sleep (hours)", "exam points / hour of sleep"),
@@ -467,7 +467,7 @@ def regression_sum_of_squares(
     alpha: float,
     beta: float,
 ) -> float:
-    """SS Model = Σ(ŷᵢ − ȳ)² for predictions ŷᵢ = α + βxᵢ."""
+    """SS Model = Σ(ŷᵢ − ȳ)² for predictions ŷᵢ = β₀ + β₁xᵢ."""
     y = np.asarray(scores, dtype=np.float64)
     x = np.asarray(hours, dtype=np.float64)
     y_hat = float(alpha) + float(beta) * x
@@ -502,7 +502,7 @@ def zscore(values: np.ndarray) -> np.ndarray:
 
 
 def standardised_slope(beta: float, sd_x: float, sd_y: float) -> float:
-    """β* = β̂ × SD(X) / SD(Y)."""
+    """β* = β̂₁ × SD(X) / SD(Y)."""
     if not np.isfinite(beta) or not np.isfinite(sd_x) or not np.isfinite(sd_y):
         return float("nan")
     if sd_y == 0.0:
@@ -816,7 +816,7 @@ def sse_from_ols_identity(
     x_mean: float,
     sxx: float,
 ) -> float | np.ndarray:
-    """SSE(α, β) via the exact OLS quadratic identity."""
+    """SSE(β₀, β₁) via the exact OLS quadratic identity."""
     da = np.asarray(alpha, dtype=np.float64) - float(alpha_ols)
     db = np.asarray(beta, dtype=np.float64) - float(beta_ols)
     values = (
@@ -830,7 +830,7 @@ def sse_from_ols_identity(
 
 
 def sse_surface_scales(hours: np.ndarray, scores: np.ndarray) -> tuple[float, float, object]:
-    """Adaptive α/β scales so normalised (u, v) axes are visually comparable."""
+    """Adaptive β₀/β₁ scales so normalised (u, v) axes are visually comparable."""
     x = np.asarray(hours, dtype=np.float64)
     y = np.asarray(scores, dtype=np.float64)
     ols = fit_ols(x, y)
@@ -857,7 +857,7 @@ def expand_surface_domain(
     previous: tuple[float, float, float, float] | None = None,
     pad_scales: float = 2.0,
 ) -> tuple[float, float, float, float]:
-    """α/β domain around OLS (and candidate). Expands monotonically if previous given."""
+    """β₀/β₁ domain around OLS (and candidate). Expands monotonically if previous given."""
     half_a = float(pad_scales) * float(alpha_scale)
     half_b = float(pad_scales) * float(beta_scale)
     a0 = float(alpha_ols) - half_a
@@ -996,7 +996,7 @@ def animation_metric_trajectories(
     steps: list[tuple[float, float]],
     sst: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """SSE and R² at each (α, β) animation step — real metrics, not interpolated."""
+    """SSE and R² at each (β₀, β₁) animation step — real metrics, not interpolated."""
     sses = np.empty(len(steps), dtype=np.float64)
     r2s = np.empty(len(steps), dtype=np.float64)
     for index, (alpha, beta) in enumerate(steps):

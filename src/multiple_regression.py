@@ -23,8 +23,8 @@ from src.stat_tips import tipify
 MR_SAMPLE_SIZE = 150
 MR_SEED = 20261019
 PLOTLY_CONFIG = {"displaylogo": False, "responsive": True}
-_BETA_HAT = "β̂"
-_ALPHA_HAT = "α̂"
+_BETA_HAT = "β̂₁"
+_ALPHA_HAT = "β̂₀"
 
 
 def mr_sample(population: Population) -> Sample:
@@ -403,10 +403,10 @@ def _render_why_and_equation(sample: Sample) -> None:
     eq_old, eq_new = st.columns(2, gap="medium")
     with eq_old:
         st.markdown('<p class="mr-eq-label">Simple regression</p>', unsafe_allow_html=True)
-        st.latex(r"\hat{y} = \hat{\alpha} + \hat{\beta}_1 X_1")
+        st.latex(r"\hat{y} = \hat{\beta}_0 + \hat{\beta}_1 X_1")
     with eq_new:
         st.markdown('<p class="mr-eq-label">Multiple regression</p>', unsafe_allow_html=True)
-        st.latex(rf"\hat{{y}} = \hat{{\alpha}} + \hat{{\beta}}_1 X_1 + \color{{{ORANGE}}}{{\hat{{\beta}}_2 X_2}}")
+        st.latex(rf"\hat{{y}} = \hat{{\beta}}_0 + \hat{{\beta}}_1 X_1 + \color{{{ORANGE}}}{{\hat{{\beta}}_2 X_2}}")
     st.markdown(
         '<p class="mr-note">With one predictor, OLS fits a <b>line</b>. '
         "With two predictors, OLS fits a <b>plane</b>.</p>",
@@ -509,7 +509,7 @@ def _render_fit_plane(sample: Sample) -> None:
     toolbar = st.container(horizontal=True, vertical_alignment="bottom", gap="small", wrap=False)
     with toolbar:
         st.slider(
-            "Intercept α", -40.0, 60.0, key="mr_plane_alpha", step=0.5,
+            "Intercept β₀", -40.0, 60.0, key="mr_plane_alpha", step=0.5,
             on_change=_plane_slider_changed, width=180, disabled=animating,
         )
         st.slider(

@@ -435,7 +435,7 @@ def test_sse_surface_readable_across_datasets(key):
     direct = sum_of_squared_errors(view.x, view.y, alpha, beta)
     assert abs(float(surface["sse_grid"][i, j]) - direct) <= 1e-6 * max(1.0, abs(direct))
     assert abs(float(surface["excess_grid"][i, j]) - (direct - ols.sse)) <= 1e-6 * max(1.0, abs(direct))
-    # Normalised axes share comparable ranges (not raw α/β magnitudes).
+    # Normalised axes share comparable ranges (not raw β₀/β₁ magnitudes).
     u_span = float(np.ptp(surface["u_grid"]))
     v_span = float(np.ptp(surface["v_grid"]))
     assert 0.25 < u_span / v_span < 4.0

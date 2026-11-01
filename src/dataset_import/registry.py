@@ -159,7 +159,7 @@ def _upload_catalog(entry: dict[str, Any]) -> DatasetCatalog:
         variables=variables,
         default_x=entry["default_x"],
         default_y=entry["default_y"],
-        caveat="Uploaded observed data — no known population α or β.",
+        caveat="Uploaded observed data — no known population β₀ or β₁.",
         simulated=False,
     )
 

@@ -86,7 +86,7 @@ def test_standardisation_frame_same_sample_and_r2_equals_beta_star_sq():
 
 
 def test_hours_vs_sleep_often_shows_raw_vs_standardised_reversal():
-    """Study hours typically win on β*; sleep can win on raw β̂ (different SD)."""
+    """Study hours typically win on β*; sleep can win on raw β̂₁ (different SD)."""
     pool = load_fitting_dataset("students")
     view = subsample_observations(pool, 200, np.random.default_rng(11))
     sample = standardisation_student_frame(view)

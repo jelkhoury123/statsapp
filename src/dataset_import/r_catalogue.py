@@ -74,7 +74,7 @@ def r_dataset_catalog(name: str) -> DatasetCatalog:
         default_x=default_x,
         default_y=default_y,
         file_stem=None,
-        caveat="Observed data from R's datasets package — no known population α or β.",
+        caveat="Observed data from R's datasets package — no known population β₀ or β₁.",
         simulated=False,
         csv_path=_R_DIR / f"{name}.csv",
     )

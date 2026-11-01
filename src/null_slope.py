@@ -28,7 +28,7 @@ class NullPopulation:
 
 @dataclass(frozen=True)
 class SlopeTTest:
-    """Two-sided t-test of H0: β = 0 from one sample."""
+    """Two-sided t-test of H0: β₁ = 0 from one sample."""
 
     n: int
     beta: float | None
@@ -50,7 +50,7 @@ def _null_design() -> tuple[np.ndarray, np.ndarray]:
 
 
 def null_population(beta: float = NULL_BETA) -> NullPopulation:
-    """Scores are 45 + β × hours + noise. β = 0 leaves scores equal to 45 plus noise."""
+    """Scores are 45 + β₁ × hours + noise. β₁ = 0 leaves scores equal to 45 plus noise."""
     hours, noise = _null_design()
     slope = float(beta)
     return NullPopulation(
@@ -71,7 +71,7 @@ def draw_null_sample(
 
 
 def slope_t_test(x: np.ndarray, y: np.ndarray) -> SlopeTTest:
-    """t = β̂ / SE(β̂), with SE from this sample's residuals and df = n − 2."""
+    """t = β̂₁ / SE(β̂₁), with SE from this sample's residuals and df = n − 2."""
     error = one_sample_standard_errors(x, y)
     degrees = int(error.n) - 2
     if (

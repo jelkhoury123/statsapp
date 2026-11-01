@@ -99,7 +99,7 @@ def test_reference_charts_stay_centred_at_zero():
     from src.null_slope import t_density_curve
 
     sampling = slope_sampling_figure(beta=-0.4, standard_error=0.2)
-    assert sampling.layout.title.text == "Distribution of \u03b2\u0302 if \u03b2 = 0"
+    assert sampling.layout.title.text == "Distribution of \u03b2\u0302\u2081 if \u03b2\u2081 = 0"
     assert sampling.layout.title.subtitle.text == "Sampling distribution of the estimated slope."
     centres = [round(float(shape.x0), 6) for shape in sampling.layout.shapes]
     assert 0.0 in centres
@@ -108,14 +108,14 @@ def test_reference_charts_stay_centred_at_zero():
     peak = float(curve.x[int(np.argmax(curve.y))])
     assert abs(peak) < 0.05
     upper_labels = [annotation.text for annotation in sampling.layout.annotations]
-    assert "Observed \u03b2\u0302 = -0.400" in upper_labels
+    assert "Observed \u03b2\u0302\u2081 = -0.400" in upper_labels
     assert "5% rejection thresholds" in upper_labels
     assert sampling.layout.height == 236
 
     critical = 1.984
     grid, density = t_density_curve(98, -1.2, critical)
     tested = t_test_figure(grid=grid, density=density, statistic=-1.2, critical=critical, degrees=98)
-    assert tested.layout.title.text.startswith("Distribution of t if \u03b2 = 0")
+    assert tested.layout.title.text.startswith("Distribution of t if \u03b2\u2081 = 0")
     assert "df = n − 2 = 98" in tested.layout.title.text
     assert "Significance level: 5%" in tested.layout.title.subtitle.text
     labels = [annotation.text for annotation in tested.layout.annotations]

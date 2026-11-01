@@ -1469,7 +1469,7 @@ def slope_sampling_figure(
     standard_error: float | None,
     height: int = 236,
 ) -> go.Figure:
-    """Approximate normal sampling distribution of the slope when β = 0."""
+    """Approximate normal sampling distribution of the slope when β₁ = 0."""
     fig = go.Figure()
     usable = standard_error is not None and np.isfinite(standard_error) and standard_error > 0
     if usable:
@@ -1509,7 +1509,7 @@ def slope_sampling_figure(
             fig.add_annotation(
                 x=observed,
                 y=peak * 0.96,
-                text=f"Observed \u03b2\u0302 = {observed:.3f}",
+                text=f"Observed \u03b2\u0302\u2081 = {observed:.3f}",
                 showarrow=False,
                 xanchor=side,
                 xshift=shift,
@@ -1523,7 +1523,7 @@ def slope_sampling_figure(
         template="plotly_white",
         height=height,
         title=dict(
-            text="Distribution of \u03b2\u0302 if \u03b2 = 0",
+            text="Distribution of \u03b2\u0302\u2081 if \u03b2\u2081 = 0",
             subtitle=dict(text="Sampling distribution of the estimated slope.", font=_NULL_DIST_SUBTITLE),
             x=0,
             xanchor="left",
@@ -1628,9 +1628,9 @@ def t_test_figure(
         template="plotly_white",
         height=height,
         title=dict(
-            text=f"Distribution of t if \u03b2 = 0 · df = n − 2 = {degrees}",
+            text=f"Distribution of t if \u03b2\u2081 = 0 · df = n − 2 = {degrees}",
             subtitle=dict(
-                text="Standardized \u03b2\u0302 in SE units. Significance level: 5%.",
+                text="Standardized \u03b2\u0302\u2081 in SE units. Significance level: 5%.",
                 font=_NULL_DIST_SUBTITLE,
             ),
             x=0,
@@ -1774,7 +1774,7 @@ def _add_coefficient_geometry(
     alpha = float(alpha)
     beta = float(beta)
 
-    # --- Intercept α̂ ---
+    # --- Intercept β̂₀ ---
     zero_in_x = x_min <= 0.0 <= x_max
     alpha_in_y = y_min <= alpha <= y_max
     if zero_in_x and alpha_in_y:
@@ -1794,7 +1794,7 @@ def _add_coefficient_geometry(
                 x=[0.0],
                 y=[alpha],
                 mode="markers",
-                name="Intercept α<sup>ˆ</sup>",
+                name="Intercept β̂₀",
                 marker=dict(
                     size=14,
                     color="#0F766E",
@@ -1802,7 +1802,7 @@ def _add_coefficient_geometry(
                     line=dict(width=1.5, color="white"),
                 ),
                 hovertemplate=(
-                    f"Intercept α<sup>ˆ</sup> = {_format_quantity(alpha)}<br>"
+                    f"Intercept β̂₀ = {_format_quantity(alpha)}<br>"
                     f"Predicted {y_title} when predictor = 0"
                     "<extra></extra>"
                 ),
@@ -1812,7 +1812,7 @@ def _add_coefficient_geometry(
             dict(
                 x=0.0,
                 y=alpha,
-                text=f"Intercept α<sup>ˆ</sup> = {_format_quantity(alpha)}",
+                text=f"Intercept β̂₀ = {_format_quantity(alpha)}",
                 showarrow=True,
                 arrowhead=2,
                 ax=28,
@@ -1830,7 +1830,7 @@ def _add_coefficient_geometry(
         if not zero_in_x:
             reason.append("X = 0 is outside the observed X range")
         if zero_in_x and not alpha_in_y:
-            reason.append("α<sup>ˆ</sup> is outside the visible Y range")
+            reason.append("β̂₀ is outside the visible Y range")
         reason_text = "; ".join(reason) if reason else "Intercept lies outside this window"
         annotations.append(
             dict(
@@ -1843,7 +1843,7 @@ def _add_coefficient_geometry(
                 text=(
                     "<b>Intercept inset</b> "
                     "<span style='color:#7B8794'>(schematic)</span><br>"
-                    f"α<sup>ˆ</sup> = {_format_quantity(alpha)} at X = 0<br>"
+                    f"β̂₀ = {_format_quantity(alpha)} at X = 0<br>"
                     f"Predicted {y_title} when predictor = 0<br>"
                     f"<span style='color:#9B6B2F'>{reason_text}</span>"
                 ),
@@ -1899,13 +1899,13 @@ def _add_coefficient_geometry(
                 y=0.84,
                 xanchor="left",
                 yanchor="middle",
-                text="α<sup>ˆ</sup>",
+                text="β̂₀",
                 showarrow=False,
                 font=dict(size=10, color="#0F766E", family=FONT),
             )
         )
 
-    # --- Slope triangle β̂ ---
+    # --- Slope triangle β̂₁ ---
     x_start, delta_x, delta_y = _choose_slope_triangle(
         x_values=x_values,
         y_values=y_values,
@@ -1959,7 +1959,7 @@ def _add_coefficient_geometry(
         dict(
             x=xb,
             y=0.5 * (yb + yc),
-            text=f"β<sup>ˆ</sup> = {_format_quantity(beta)}",
+            text=f"β̂₁ = {_format_quantity(beta)}",
             showarrow=False,
             xanchor="left",
             xshift=6,
@@ -2720,7 +2720,7 @@ def sse_slope_figure(
             x=slopes,
             y=curve,
             mode="lines",
-            name="SSR curve (best α̂)",
+            name="SSR curve (best β̂₀)",
             line=dict(color=INK, width=2.2),
             hovertemplate=(
                 "Slope %{x:.2f}<br>"
@@ -2818,7 +2818,7 @@ def sse_slope_figure(
                 ),
             )
         )
-    fig.update_xaxes(title_text="Candidate slope β̂", title_font=dict(size=11))
+    fig.update_xaxes(title_text="Candidate slope β̂₁", title_font=dict(size=11))
     fig.update_yaxes(
         title_text="SSR",
         title_font=dict(size=11),
@@ -2862,7 +2862,7 @@ def _surface_tick_labels(
     u_max: float,
     count: int = 5,
 ) -> tuple[list[float], list[str]]:
-    """Tick positions in normalised u/v with labels showing real α/β."""
+    """Tick positions in normalised u/v with labels showing real β₀/β₁."""
     lo = float(u_min)
     hi = float(u_max)
     if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
@@ -3177,14 +3177,14 @@ def sse_surface_figure(
             domain=dict(x=[0.0, 1.0], y=[0.0, 0.96]),
             xaxis=dict(
                 **axis_style,
-                title=dict(text="Intercept α", font=title_font),
+                title=dict(text="Intercept β₀", font=title_font),
                 range=[u_min, u_max],
                 tickvals=u_ticks,
                 ticktext=u_labels,
             ),
             yaxis=dict(
                 **axis_style,
-                title=dict(text="Slope β", font=title_font),
+                title=dict(text="Slope β₁", font=title_font),
                 range=[v_min, v_max],
                 tickvals=v_ticks,
                 ticktext=v_labels,

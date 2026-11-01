@@ -60,18 +60,18 @@ _FT_SCENARIO_PREDICTORS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 }
 
 _FT_SCENARIO_H0: dict[str, str] = {
-    "one": "β<sub>attendance</sub> = 0",
-    "joint": "β<sub>attendance</sub> = β<sub>sleep</sub> = 0",
+    "one": "β₂ = 0",
+    "joint": "β₂ = β₃ = 0",
     "overall": (
-        "β<sub>hours</sub> = β<sub>attendance</sub> = β<sub>sleep</sub> = 0"
+        "β₁ = β₂ = β₃ = 0"
     ),
 }
 _FT_SCENARIO_H1: dict[str, str] = {
-    "one": "β<sub>attendance</sub> ≠ 0",
-    "joint": "at least one of β<sub>attendance</sub>, β<sub>sleep</sub> ≠ 0",
+    "one": "β₂ ≠ 0",
+    "joint": "at least one of β₂, β₃ ≠ 0",
     "overall": (
-        "at least one of β<sub>hours</sub>, β<sub>attendance</sub>, "
-        "β<sub>sleep</sub> ≠ 0"
+        "at least one of β₁, β₂, "
+        "β₃ ≠ 0"
     ),
 }
 

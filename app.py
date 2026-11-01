@@ -2851,8 +2851,8 @@ def equation(alpha: float, beta: float) -> str:
     return f"exam score = {alpha:.3f} + {beta:.3f} × hours studied"
 
 
-_ALPHA_HAT = "α\u0302"
-_BETA_HAT = "β\u0302"
+_ALPHA_HAT = "β\u0302\u2080"
+_BETA_HAT = "β\u0302\u2081"
 
 
 def _intro_chart_caption() -> str:
@@ -2894,7 +2894,7 @@ def _intro_coef_table_html(population, view: IntroductionView) -> str:
         )
         alpha_error = _signed_label(format_signed(gap_alpha))
         beta_error = _signed_label(format_signed(gap_beta))
-        rows.append(f'<tr class="pop"><td>Population</td><td>α = {alpha}</td><td>β = {beta}</td></tr>')
+        rows.append(f'<tr class="pop"><td>Population</td><td>β₀ = {alpha}</td><td>β₁ = {beta}</td></tr>')
         rows.append(f'<tr class="diff"><td>Difference</td><td>{alpha_error}</td><td>{beta_error}</td></tr>')
     return (
         '<table class="intro-coef-table">'
@@ -3953,7 +3953,7 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                     st.markdown(_intro_panel_objective_html(population, view), unsafe_allow_html=True)
                     fitted_ok = view.fit is not None and not view.fit.degenerate
                     if fitted_ok and not view.population_revealed:
-                        st.latex(r"\hat{Y} = \hat{\alpha} + \hat{\beta}X")
+                        st.latex(r"\hat{Y} = \hat{\beta}_0 + \hat{\beta}_1X")
                         st.markdown(
                             '<p class="fit-std-interp">The blue line estimates '
                             "the population relationship using only the "
@@ -3964,8 +3964,8 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
                         )
                         st.markdown(_intro_coef_table_html(population, view), unsafe_allow_html=True)
                     elif fitted_ok and view.population_revealed:
-                        st.latex(r"\hat{Y} = \hat{\alpha} + \hat{\beta}X")
-                        st.latex(r"\hat{Y}_{\text{population}} = \alpha + \beta X")
+                        st.latex(r"\hat{Y} = \hat{\beta}_0 + \hat{\beta}_1X")
+                        st.latex(r"\hat{Y}_{\text{population}} = \beta_0 + \beta_1 X")
                         st.markdown(_intro_coef_table_html(population, view), unsafe_allow_html=True)
                         st.markdown(
                             '<p class="fit-std-takeaway">Different random '
@@ -4016,9 +4016,9 @@ def render_introduction_tab(population, rng: np.random.Generator) -> None:
         with st.expander("How this works"):
             st.markdown(
                 f"**{_ALPHA_HAT}** and **{_BETA_HAT}** are the intercept and slope "
-                "fitted on the current sample. **α** and **β** are the population "
+                "fitted on the current sample. **β₀** and **β₁** are the population "
                 "coefficients, fitted on all 100,000 students. "
-                f"**{_ALPHA_HAT} − α** and **{_BETA_HAT} − β** are the sample estimate "
+                f"**{_ALPHA_HAT} − β₀** and **{_BETA_HAT} − β₁** are the sample estimate "
                 "minus the population coefficient. They fill in when the population "
                 "line is revealed. **Y_mean** is the average population outcome at a "
                 "given X — the population regression traces how that average changes "
@@ -4110,7 +4110,7 @@ def _repeated_sampling_auto_show(experiment) -> bool:
 
 
 def _paint_beta_histogram(slot, population, experiment, *, show_normal: bool, show_2se: bool) -> None:
-    """Sampling distribution of β̂ — thin wrapper fixing the labels for this page."""
+    """Sampling distribution of β̂₁ — thin wrapper fixing the labels for this page."""
     _paint_histogram(
         slot,
         values=experiment.betas,
@@ -4118,7 +4118,7 @@ def _paint_beta_histogram(slot, population, experiment, *, show_normal: bool, sh
         population_value=population.beta,
         title=f"Sampling distribution of {_BETA_HAT}",
         x_title=f"Estimated slope {_BETA_HAT}",
-        true_label="True β",
+        true_label="True β₁",
         mean_label=f"Mean {_BETA_HAT}",
         sd_label=f"SD({_BETA_HAT})",
         show_normal=show_normal,
@@ -4375,14 +4375,14 @@ def _paint_one_sample_hist(population, experiment) -> None:
     st.plotly_chart(histogram, width="stretch", config=PLOTLY_CONFIG, key="dist_hist_beta_one")
     if mean is not None and spread is not None and np.isfinite(mean) and np.isfinite(spread):
         st.markdown(
-            f'<p class="dist-stat"><span class="pop">β {population.beta:.3f}</span>'
+            f'<p class="dist-stat"><span class="pop">β₁ {population.beta:.3f}</span>'
             f'<span class="est">Mean {_BETA_HAT} {_dist_number(mean)}</span>'
             f"<span>Observed SE {_dist_number(spread)}</span></p>",
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            '<p class="dist-stat">Draw repeated samples in Step 1 to see the spread of β̂.</p>',
+            '<p class="dist-stat">Draw repeated samples in Step 1 to see the spread of β̂₁.</p>',
             unsafe_allow_html=True,
         )
 
@@ -4436,7 +4436,7 @@ def _null_rng() -> np.random.Generator:
 _TTEST_INTRO = (
     '<div class="dist-step-test"></div>'
     '<p class="dist-intro">Is the slope really different from zero?</p>'
-    '<p class="dist-note-line">Even if the true population slope β is zero, '
+    '<p class="dist-note-line">Even if the true population slope β₁ is zero, '
     "random samples can produce nonzero estimated slopes.</p>"
     '<p class="dist-note-line">The t-test asks: is our observed slope '
     "unusually far from zero, given the uncertainty we estimated from one "
@@ -4457,14 +4457,14 @@ def _ttest_steps_html(result) -> str:
         '<p class="dist-note-line">The t-statistic tells us how many estimated '
         "standard errors our observed slope is from zero.</p>"
         '<p class="dist-note-heading">2. Compare with the null distribution</p>'
-        "<p class=\"dist-note-line\">If β = 0, the t-statistic follows a "
+        "<p class=\"dist-note-line\">If β₁ = 0, the t-statistic follows a "
         "Student's t-distribution under the usual regression assumptions. It "
         "resembles the normal bell curve, but accounts for the uncertainty in "
         "our estimated SE.</p>"
         f'<p class="dist-note-line">Degrees of freedom: df = n − 2 = {result.degrees_of_freedom}.</p>'
         '<p class="dist-note-heading">3. Calculate the p-value</p>'
         '<p class="dist-note-line">The p-value is the probability, assuming '
-        "β = 0, of obtaining a t-statistic at least as extreme as ours.</p>"
+        "β₁ = 0, of obtaining a t-statistic at least as extreme as ours.</p>"
         f'<p class="dist-note-line">Observed p-value: <b>{_p_text(result.p_value)}</b></p>'
         "</div>"
     )
@@ -4475,7 +4475,7 @@ _TTEST_CONCLUSION_NOTE = (
     "the slope differs from zero.</p>"
     '<p class="dist-note-line"><b>p ≥ 0.05</b>: Fail to reject H₀ — '
     "insufficient evidence.</p>"
-    '<p class="dist-takeaway">Failing to reject H₀ does not prove β = 0.</p>'
+    '<p class="dist-takeaway">Failing to reject H₀ does not prove β₁ = 0.</p>'
 )
 
 
@@ -4633,7 +4633,7 @@ def _render_ttest_why_case_a() -> None:
     st.markdown(
         '<p class="mr-note"><b>Does studying more predict higher exam '
         "scores?</b></p>"
-        '<p class="mr-stat">Score = α + β₁ × Hours + ε &nbsp;·&nbsp; '
+        '<p class="mr-stat">Score = β₀ + β₁ × Hours + ε &nbsp;·&nbsp; '
         "H₀: β₁ = 0 &nbsp;·&nbsp; H₁: β₁ ≠ 0</p>",
         unsafe_allow_html=True,
     )
@@ -4704,7 +4704,7 @@ def _render_ttest_why_case_b(population) -> None:
     st.markdown(
         '<p class="mr-note"><b>Does attendance help predict exam scores '
         "after accounting for study hours?</b></p>"
-        '<p class="mr-stat">Score = α + β₁ × Hours + β₂ × Attendance + ε '
+        '<p class="mr-stat">Score = β₀ + β₁ × Hours + β₂ × Attendance + ε '
         "&nbsp;·&nbsp; H₀: β₂ = 0 &nbsp;·&nbsp; H₁: β₂ ≠ 0</p>",
         unsafe_allow_html=True,
     )
@@ -4768,7 +4768,7 @@ def _render_ttest_why(population) -> None:
     render_ttest_intro()
 
 
-def _t_fraction_html(numerator: float, denominator: float, result: float, beta_label: str = "β̂") -> str:
+def _t_fraction_html(numerator: float, denominator: float, result: float, beta_label: str = "β̂₁") -> str:
     """One inline chain: symbolic fraction = numeric fraction = result."""
 
     def stacked(top: str, bottom: str) -> str:
@@ -4842,7 +4842,7 @@ def _t_understand_figure(
 
     fig.add_shape(type="line", x0=0, x1=0, y0=0, y1=y_top * 0.8,
                   line=dict(color=GREY, width=2, dash="dash"))
-    fig.add_annotation(x=0, y=y_top * 0.95, yanchor="top", text="β = 0 (H₀)",
+    fig.add_annotation(x=0, y=y_top * 0.95, yanchor="top", text="β₁ = 0 (H₀)",
                        showarrow=False, font=dict(size=11, color=INK, family=FONT))
 
     if stage >= 4 and critical is not None and critical <= _T_DIST_X_MAX:
@@ -5125,7 +5125,7 @@ def _render_ttest_understand_case_a() -> None:
         return
     _render_t_understand_body(
         beta=result.beta, se=result.standard_error, t_stat=result.t_statistic,
-        df=result.degrees_of_freedom, beta_label="β̂", suffix="a",
+        df=result.degrees_of_freedom, beta_label="β̂₁", suffix="a",
     )
 
 
@@ -5403,7 +5403,7 @@ def _dist_learned_html(population, experiment) -> str:
         '<p class="dist-note-heading">What have we learned?</p>'
         '<ul class="dist-learned-list">'
         f"<li><b>Centre:</b> mean estimated slope = {_dist_number(mean)}, "
-        f"compared with true β = {population.beta:.3f}.</li>"
+        f"compared with true β₁ = {population.beta:.3f}.</li>"
         f"<li><b>Spread:</b> SD of estimated slopes = {_dist_number(sd)}.</li>"
         f"{shape_line}"
         "</ul>"
@@ -5647,7 +5647,7 @@ def _render_ttest_sampling(population, rng: np.random.Generator) -> None:
             width=200,
         )
         true_beta = st.slider(
-            "True population slope (β)",
+            "True population slope (β₁)",
             min_value=0.0,
             max_value=2.0,
             value=0.0,
@@ -6438,12 +6438,12 @@ def _render_r_code_panel(view, ols, *, alpha: float, beta: float, lm_run: bool) 
     with st.container(key="fit_r_panel"):
         yours = (
             f'<span class="yours">Your line (sliders): '
-            f"α = {float(alpha):.4f}, β = {float(beta):.4f}</span>"
+            f"β₀ = {float(alpha):.4f}, β₁ = {float(beta):.4f}</span>"
         )
         if lm_run and not ols.degenerate:
             ols_bit = (
                 f'<span class="ols">lm() OLS: '
-                f"α̂ = {float(ols.alpha):.4f}, β̂ = {float(ols.beta):.4f}</span>"
+                f"β̂₀ = {float(ols.alpha):.4f}, β̂₁ = {float(ols.beta):.4f}</span>"
             )
         else:
             ols_bit = (
@@ -6707,12 +6707,12 @@ def render_why_model_subtab() -> None:
         elif step == 3:
             slot_html = (
                 '<p class="fit-why-eq-formula" style="color:#EA580C;">'
-                "ŷ = α̂ + β̂x</p>"
+                "ŷ = β̂₀ + β̂₁x</p>"
             )
         elif step == 4:
             slot_html = (
                 '<p class="fit-why-eq-formula" style="color:#EA580C;">'
-                "ŷ = α̂ + β̂x</p>"
+                "ŷ = β̂₀ + β̂₁x</p>"
                 '<p class="fit-why-eq-formula" style="color:#1F2933;">'
                 "y<sub>i</sub> = ŷ<sub>i</sub> + ε<sub>i</sub></p>"
                 '<div class="fit-r2-lesson" style="margin:0.2rem 0 0 0;'
@@ -7224,15 +7224,15 @@ _SLOPE_FIT_N = 120
 _SLOPE_FIT_ALPHA = 20.0  # fixed intercept — the line's position never moves
 _SLOPE_FIT_X_RANGE = (0.0, 10.0)
 _SLOPE_FIT_Y_RANGE = (-15.0, 55.0)  # fixed by default; comfortably covers
-# the line across the full β range and typical (R² ≳ 0.1) residual spread —
-# very low R² at large |β| legitimately exceeds it, which is the point.
+# the line across the full β₁ range and typical (R² ≳ 0.1) residual spread —
+# very low R² at large |β₁| legitimately exceeds it, which is the point.
 
 
 def _slope_fit_base() -> tuple[np.ndarray, np.ndarray, float]:
     """Fixed X values and a fixed residual pattern orthogonal to X (zero
     mean, zero correlation with X, unit sum of squares). Computed once from
     a fixed seed; the sliders only rescale this pattern's magnitude, so
-    points never reshuffle as β or R² change."""
+    points never reshuffle as β₁ or R² change."""
     rng = np.random.default_rng(_SLOPE_FIT_SEED)
     x = np.sort(rng.uniform(0.5, 9.5, size=_SLOPE_FIT_N))
     xc = x - float(np.mean(x))
@@ -7252,10 +7252,10 @@ def _slope_fit_sample(
     """(x, y, fitted alpha, fitted beta, fitted R²) for the chosen slider values.
 
     e_unit is orthogonal to x, so the fitted slope equals `beta` exactly no
-    matter how it is scaled — changing R² never changes β. Its scale is
-    then set to hit `target_r2` exactly — changing β only changes how much
+    matter how it is scaled — changing R² never changes β₁. Its scale is
+    then set to hit `target_r2` exactly — changing β₁ only changes how much
     scaling that takes to hit the SAME target, so R² never drifts from the
-    slider either. At β = 0 the signal is zero, so R² is exactly 0 by
+    slider either. At β₁ = 0 the signal is zero, so R² is exactly 0 by
     construction regardless of noise scale; at R² = 1 the residual is zero.
     """
     x, e_unit, sxx = _slope_fit_base()
@@ -7315,7 +7315,7 @@ def _slope_fit_figure(
 def render_slope_vs_fit_subtab() -> None:
     """Standalone conceptual illustration: does a steeper slope mean a better fit?
 
-    One large interactive scatterplot driven by two sliders — slope β and
+    One large interactive scatterplot driven by two sliders — slope β₁ and
     target R² — so the same question the matrix used to pose across nine
     charts can instead be explored continuously on one.
     """
@@ -7327,8 +7327,8 @@ def render_slope_vs_fit_subtab() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<p class="mr-note">Change β while keeping R² fixed. Then change R² '
-        "while keeping β fixed. Observe how the line and scatter change.</p>",
+        '<p class="mr-note">Change β₁ while keeping R² fixed. Then change R² '
+        "while keeping β₁ fixed. Observe how the line and scatter change.</p>",
         unsafe_allow_html=True,
     )
 
@@ -7338,7 +7338,7 @@ def render_slope_vs_fit_subtab() -> None:
         )
         with slider_row:
             beta = st.slider(
-                "Slope β", min_value=-1.0, max_value=1.0, step=0.1, value=0.5,
+                "Slope β₁", min_value=-1.0, max_value=1.0, step=0.1, value=0.5,
                 key="slope_fit_beta", width=280,
             )
             target_r2 = st.slider(
@@ -7363,7 +7363,7 @@ def render_slope_vs_fit_subtab() -> None:
 
     if abs(beta) < 1e-9:
         st.markdown(
-            '<p class="mr-note">At β = 0, X carries no linear information '
+            '<p class="mr-note">At β₁ = 0, X carries no linear information '
             "about Y — the model predicts the same value for everyone, so "
             "it explains none of the variation. R² is exactly 0 here, "
             "regardless of the R² slider.</p>",
@@ -7385,7 +7385,7 @@ def render_slope_vs_fit_subtab() -> None:
 
     st.markdown(
         '<div class="fit-slopefit-insight"><p>'
-        "<b>Key insight:</b> β determines the direction and steepness of the "
+        "<b>Key insight:</b> β₁ determines the direction and steepness of the "
         "relationship. R² measures how closely observations follow the "
         "fitted line. A steeper slope does not necessarily mean a better fit."
         "</p></div>",
@@ -7533,8 +7533,8 @@ def render_standardisation_subtab(view) -> None:
                     st.markdown(
                         tipify(
                             '<p class="fit-std-slope">'
-                            f"{label_a} · β̂ = <b>{_format_coef(ols_a.beta)}</b> {unit_a}<br>"
-                            f"{label_b} · β̂ = <b>{_format_coef(ols_b.beta)}</b> {unit_b}"
+                            f"{label_a} · β̂₁ = <b>{_format_coef(ols_a.beta)}</b> {unit_a}<br>"
+                            f"{label_b} · β̂₁ = <b>{_format_coef(ols_b.beta)}</b> {unit_b}"
                             "</p>"
                             '<p class="fit-std-interp">Does the larger numerical '
                             "coefficient mean studying is the stronger "
@@ -7558,7 +7558,7 @@ def render_standardisation_subtab(view) -> None:
                             "<b>Scale:</b> divide by SD → SD becomes 1."
                             "</p>"
                             '<table class="fit-r2-summary-table">'
-                            "<thead><tr><th>Predictor</th><th>Original β</th>"
+                            "<thead><tr><th>Predictor</th><th>Original β₁</th>"
                             "<th>Standardised β*</th></tr></thead>"
                             "<tbody>"
                             f"<tr><td>{label_a}</td><td>{_format_coef(ols_a.beta)}</td>"
@@ -7927,10 +7927,10 @@ def _render_rout_summary(view) -> None:
             st.markdown(
                 '<div class="rout-card">'
                 '<p class="rout-card-title">Coefficients</p>'
-                f'<p class="rout-card-note"><b>Intercept (α̂)</b> = '
+                f'<p class="rout-card-note"><b>Intercept (β̂₀)</b> = '
                 f"{_r_format_float(s['alpha'])} — predicted {response.lower()} "
                 f"when {predictor.lower()} = 0.</p>"
-                f'<p class="rout-card-note"><b>Slope (β̂)</b> = '
+                f'<p class="rout-card-note"><b>Slope (β̂₁)</b> = '
                 f"{_r_format_float(s['beta'])} — change in {response.lower()} "
                 f"per unit of {predictor.lower()}.</p>"
                 f'<p class="rout-card-note"><b>Std. Error</b> = '
@@ -8374,7 +8374,7 @@ def _render_fitting_line_subtab(
                 tipify(
                     '<div class="fit-build-prompt">'
                     '<p class="title">Your turn: Find the best-fitting line</p>'
-                    '<p class="body">Adjust the intercept (α̂) and slope (β̂). '
+                    '<p class="body">Adjust the intercept (β̂₀) and slope (β̂₁). '
                     "Watch how SSR and R² change. Can you find the best fit "
                     "before clicking Fit OLS?</p>"
                     "</div>"
@@ -8432,11 +8432,11 @@ def _render_fitting_line_subtab(
         with col_coefs:
             with st.container(key="fit_coefs_wrap"):
                 st.markdown(
-                    '<p class="fit-toggle-lab">α̂ and β̂</p>',
+                    '<p class="fit-toggle-lab">β̂₀ and β̂₁</p>',
                     unsafe_allow_html=True,
                 )
                 show_coefs = st.toggle(
-                    "α̂ and β̂",
+                    "β̂₀ and β̂₁",
                     key="fit_show_coefs",
                     label_visibility="collapsed",
                 )

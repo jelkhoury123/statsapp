@@ -330,7 +330,7 @@ def _render_understanding() -> None:
         with mid:
             st.latex(r"\beta^{*} = r \qquad R^2 = r^2")
         with st.expander("Connections to regression", expanded=False):
-            st.latex(r"\hat{\beta} = r \times \dfrac{\mathrm{SD}(Y)}{\mathrm{SD}(X)}")
+            st.latex(r"\hat{\beta}_1 = r \times \dfrac{\mathrm{SD}(Y)}{\mathrm{SD}(X)}")
             st.markdown(
                 tipify(
                     "<p style='color:#334155;font-weight:400;font-size:0.84rem;"
@@ -533,7 +533,7 @@ def _render_control() -> None:
             "</div>",
             unsafe_allow_html=True,
         )
-        st.latex(r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} + \varepsilon")
+        st.latex(r"\text{Drownings} = \beta_0 + \beta_1 \times \text{Ice cream} + \varepsilon")
 
     with right:
         st.markdown(
@@ -590,7 +590,7 @@ def _render_control() -> None:
                 unsafe_allow_html=True,
             )
             st.latex(
-                r"\text{Drownings} = \alpha + \beta_1 \times \text{Ice cream} "
+                r"\text{Drownings} = \beta_0 + \beta_1 \times \text{Ice cream} "
                 r"\textcolor{#1D4ED8}{+\ \beta_2 \times \text{Temperature}} "
                 r"+ \varepsilon"
             )
