@@ -31,25 +31,25 @@ _SHEETS: tuple[_Sheet, ...] = (
     {
         "key": "w1", "week": 1, "name": "Introduction to Linear Regression",
         "title": "Week 1 — Introduction to Linear Regression",
-        "topics": "Intercept & slope · residuals · least squares · lm() in R",
+        "topics": "Models · Intercept & slope · Residuals · Least squares",
         "file": "w1_linear_regression.pdf",
     },
     {
         "key": "w2", "week": 2, "name": "Interpreting Linear Models",
         "title": "Week 2 — Interpreting Linear Models",
-        "topics": "Interpreting coefficients · standardisation · multiple regression",
+        "topics": "Coefficient interpretation · Standardisation · Multiple regression",
         "file": "w2_interpreting_linear_models.pdf",
     },
     {
         "key": "w3", "week": 3, "name": "Testing & Evaluating Linear Models",
         "title": "Week 3 — Testing & Evaluating Linear Models",
-        "topics": "Hypothesis tests for β · R² & adjusted R² · reading lm() output",
+        "topics": "t-tests · p-values · R² · Adjusted R²",
         "file": "w3_testing_evaluating.pdf",
     },
     {
         "key": "w4", "week": 4, "name": "F-tests & Model Comparison",
         "title": "Week 4 — F-tests & Model Comparison",
-        "topics": "Overall & incremental F-tests · nested models · AIC & BIC",
+        "topics": "Overall & incremental F-tests · Nested models · AIC & BIC",
         "file": "w4_f_tests_model_comparison.pdf",
     },
 )
