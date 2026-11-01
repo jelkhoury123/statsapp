@@ -156,6 +156,7 @@ MAIN_LAB_TABS: tuple[tuple[str, str], ...] = (
     ("ttest", "The t-test"),
     ("f_tests", "The F-test"),
     ("library", "Dataset Library"),
+    ("revision", "Revision Sheets"),
 )
 MAIN_LAB_TAB_LABELS = dict(MAIN_LAB_TABS)
 
@@ -2599,6 +2600,39 @@ p.fit-why-step-title {
   .st-key-journey_card_interpret,
   .st-key-journey_card_multiple_regression,
   .st-key-journey_card_f_tests { min-height: 0 !important; }
+}
+.rs-card-title {
+  margin: 0 0 0.4rem 0; font-size: 1.0rem; font-weight: 750; color: #12263a;
+}
+.rs-note { margin: 0.4rem 0; font-size: 0.85rem; color: #52606D; }
+.rs-quiz-progress {
+  margin: 0.6rem 0 0.1rem 0; font-size: 0.8rem; font-weight: 650; color: #52606D;
+}
+.rs-quiz-q {
+  margin: 0 0 0.6rem 0; font-size: 0.95rem; font-weight: 650; color: #12263a;
+  line-height: 1.4rem;
+}
+.rs-feedback {
+  margin: 0.6rem 0; padding: 0.65rem 0.85rem;
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border: 1.5px solid #4ADE80; border-left: 5px solid #16A34A;
+  border-radius: 8px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.12);
+}
+.rs-feedback.incorrect {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  border-color: #FCA5A5; border-left-color: #DC2626;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.12);
+}
+.rs-feedback .title {
+  margin: 0 0 0.15rem 0; font-size: 0.92rem; font-weight: 800; color: #15803D;
+}
+.rs-feedback.incorrect .title { color: #B91C1C; }
+.rs-feedback .body { margin: 0; font-size: 0.85rem; color: #334155; line-height: 1.35rem; }
+.rs-quiz-score {
+  margin: 0.4rem 0 0.6rem 0; font-size: 1.3rem; font-weight: 800; color: #12263a;
+}
+.rs-quiz-review-head {
+  margin: 0.2rem 0 0.4rem 0; font-size: 0.88rem; font-weight: 700; color: #374151;
 }
 </style>
 """
@@ -8809,6 +8843,10 @@ def main() -> None:
         render_ttest_lesson(population, rng)
     elif active == "library":
         render_dataset_library_tab()
+    elif active == "revision":
+        from src.revision_sheets import render_revision_sheets_tab
+
+        render_revision_sheets_tab()
 
 
 main()
