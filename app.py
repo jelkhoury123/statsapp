@@ -2605,18 +2605,44 @@ p.fit-why-step-title {
   margin: 0 0 0.4rem 0; font-size: 1.0rem; font-weight: 750; color: #12263a;
 }
 .rs-note { margin: 0.4rem 0; font-size: 0.85rem; color: #52606D; }
+div[class*="st-key-rs_quiz_panel"] {
+  max-width: 820px; margin: 0.2rem auto 0 auto; padding: 1.3rem 1.7rem 1.5rem 1.7rem;
+  background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+div[class*="st-key-rs_quiz_panel"] .rs-card-title { font-size: 1.05rem; }
 .rs-quiz-progress {
-  margin: 0.6rem 0 0.1rem 0; font-size: 0.8rem; font-weight: 650; color: #52606D;
+  margin: 0 0 0.35rem 0; font-size: 0.82rem; font-weight: 650; color: #52606D;
 }
 .rs-quiz-q {
-  margin: 0 0 0.6rem 0; font-size: 0.95rem; font-weight: 650; color: #12263a;
-  line-height: 1.4rem;
+  margin: 0 0 0.95rem 0; font-size: 1.2rem; font-weight: 700; color: #12263a;
+  line-height: 1.55rem;
+}
+div[class*="st-key-rs_quiz_panel"] [data-testid="stRadio"] div[role="radiogroup"] {
+  gap: 0.55rem;
+}
+div[class*="st-key-rs_quiz_panel"] [data-testid="stRadio"] label {
+  padding: 0.7rem 0.95rem; margin: 0;
+  border: 1.5px solid #E2E8F0; border-radius: 10px; background: #F8FAFC;
+  transition: border-color 0.12s, background 0.12s;
+}
+div[class*="st-key-rs_quiz_panel"] [data-testid="stRadio"] label:hover {
+  border-color: #93C5FD; background: #EFF6FF;
+}
+div[class*="st-key-rs_quiz_panel"] [data-testid="stRadio"] label p {
+  font-size: 1.05rem; line-height: 1.4rem; color: #1F2937;
+}
+div[class*="st-key-rs_quiz_panel"] [data-testid="stRadio"] label:has(input:checked) {
+  border-color: #2563EB; background: #DBEAFE; box-shadow: 0 0 0 1px #2563EB inset;
+}
+div[class*="st-key-rs_quiz_panel"] [data-testid="stRadio"] label:has(input:checked) p {
+  font-weight: 700; color: #1E3A8A;
 }
 .rs-feedback {
-  margin: 0.6rem 0; padding: 0.65rem 0.85rem;
+  margin: 0.9rem 0 0.5rem 0; padding: 0.8rem 1rem;
   background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
   border: 1.5px solid #4ADE80; border-left: 5px solid #16A34A;
-  border-radius: 8px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.12);
+  border-radius: 10px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.12);
 }
 .rs-feedback.incorrect {
   background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
@@ -2624,15 +2650,15 @@ p.fit-why-step-title {
   box-shadow: 0 1px 3px rgba(220, 38, 38, 0.12);
 }
 .rs-feedback .title {
-  margin: 0 0 0.15rem 0; font-size: 0.92rem; font-weight: 800; color: #15803D;
+  margin: 0 0 0.25rem 0; font-size: 1.0rem; font-weight: 800; color: #15803D;
 }
 .rs-feedback.incorrect .title { color: #B91C1C; }
-.rs-feedback .body { margin: 0; font-size: 0.85rem; color: #334155; line-height: 1.35rem; }
+.rs-feedback .body { margin: 0; font-size: 0.92rem; color: #334155; line-height: 1.45rem; }
 .rs-quiz-score {
-  margin: 0.4rem 0 0.6rem 0; font-size: 1.3rem; font-weight: 800; color: #12263a;
+  margin: 0.4rem 0 0.6rem 0; font-size: 1.4rem; font-weight: 800; color: #12263a;
 }
 .rs-quiz-review-head {
-  margin: 0.2rem 0 0.4rem 0; font-size: 0.88rem; font-weight: 700; color: #374151;
+  margin: 0.2rem 0 0.4rem 0; font-size: 0.9rem; font-weight: 700; color: #374151;
 }
 </style>
 """

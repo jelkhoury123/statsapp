@@ -202,13 +202,14 @@ def _render_quiz(week: str) -> None:
         st.session_state.rs_active_quiz = None
         st.rerun()
 
-    st.markdown(f'<p class="rs-card-title">{title} — Quiz</p>', unsafe_allow_html=True)
+    with st.container(key="rs_quiz_panel"):
+        st.markdown(f'<p class="rs-card-title">{title} — Quiz</p>', unsafe_allow_html=True)
 
-    idx = st.session_state.get(_state_key(week, "idx"), 0)
-    if idx >= n:
-        _render_quiz_results(week, title, n)
-    else:
-        _render_quiz_question(week, idx, n)
+        idx = st.session_state.get(_state_key(week, "idx"), 0)
+        if idx >= n:
+            _render_quiz_results(week, title, n)
+        else:
+            _render_quiz_question(week, idx, n)
 
 
 def render_revision_sheets_tab() -> None:
